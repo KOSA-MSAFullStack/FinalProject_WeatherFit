@@ -23,8 +23,6 @@ spring:
 
   # --- JPA/HIBERNATE SETTINGS ---
   jpa:
-    hibernate:
-      ddl-auto: validate
     properties:
       hibernate:
         # JPA가 실행하는 모든 SQL 쿼리를 콘솔 로그에 출력해주는 기능
