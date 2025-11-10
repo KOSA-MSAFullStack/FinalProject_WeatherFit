@@ -1,9 +1,11 @@
 package com.fitcaster.weatherfit.user;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitcaster.weatherfit.common.config.security.SecurityConfig;
 import com.fitcaster.weatherfit.common.exception.DuplicateUserException;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
+import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
 import com.fitcaster.weatherfit.user.application.UserService;
 import com.fitcaster.weatherfit.user.domain.repository.AddressRepository;
@@ -11,14 +13,24 @@ import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
+import org.springframework.http.MediaType;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @Import(SecurityConfig.class) // PasswordEncoder Bean을 로드하기 위해 SecurityConfig 임포트
 @Transactional // 테스트 후 롤백 (DB에 영향 X)
 class UserServiceTest {
@@ -26,6 +38,9 @@ class UserServiceTest {
     @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
     @Autowired private AddressRepository addressRepository;
+
+    @Autowired private MockMvc mockMvc; // 💡 MockMvc 주입
+    @Autowired private ObjectMapper objectMapper;
 
     private SignupRequest createDefaultSignupRequest() {
         // SignupRequest DTO 구조에 맞춰 데이터를 준비
@@ -45,6 +60,14 @@ class UserServiceTest {
         addressRequest.setDetail("101호");
         request.setAddress(addressRequest);
 
+        return request;
+    }
+
+    // --- 새로운 로그인 요청 DTO 생성 메서드 ---
+    private LoginRequest createLoginRequest(String email, String password) {
+        LoginRequest request = new LoginRequest();
+        request.setEmail(email);
+        request.setPassword(password);
         return request;
     }
 
@@ -120,5 +143,70 @@ class UserServiceTest {
         assertThrows(InternalServerException.class, () -> {
             userService.signup(request);
         });
+    }
+
+    @Test
+    @DisplayName("로그인에 성공하면 유효한 JWT 토큰과 Bearer 응답을 반환해야 한다")
+    void login_Success_ReturnsJwtTokens() throws Exception {
+        // given
+        // 테스트 사용자 사전 등록 (DB에 저장)
+        SignupRequest signupRequest = createDefaultSignupRequest();
+        userService.signup(signupRequest);
+
+        // 로그인 요청 객체 준비 (이메일: test@fitcaster.com, 비밀번호: Password!123)
+        LoginRequest loginRequest = createLoginRequest(
+                signupRequest.getEmail(),
+                signupRequest.getPassword()
+        );
+
+        // when
+        // API 엔드포인트: POST /users/login
+        ResultActions result = mockMvc.perform(
+                post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest))
+        ).andDo(print()); // 요청 및 응답 로그 출력
+
+        // then
+        // HTTP 상태 코드 200 OK 검증
+        result.andExpect(status().isOk())
+                // 응답 본문의 형식과 데이터 존재 여부 검증
+                .andExpect(jsonPath("$.tokenType").value("Bearer")) // tokenType 확인
+                .andExpect(jsonPath("$.accessToken").exists()) // Access Token 존재 확인
+                .andExpect(jsonPath("$.refreshToken").exists()) // Refresh Token 존재 확인
+                .andExpect(jsonPath("$.expiresIn").isNumber()); // 만료 시간(초)이 숫자 형식인지 확인
+
+        // (선택적) JWT 토큰이 유효한 형식인지 추가 확인
+        String responseString = result.andReturn().getResponse().getContentAsString();
+        LoginResponse response = objectMapper.readValue(responseString, LoginResponse.class);
+
+        // 토큰이 Base64로 인코딩된 JWT 형식 (헤더.페이로드.서명)인지 확인
+        assertThat(response.getAccessToken().split("\\.").length).isEqualTo(3);
+        assertThat(response.getRefreshToken().split("\\.").length).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("잘못된 비밀번호로 로그인 시도 시 401 Unauthorized가 발생해야 한다")
+    void login_Fail_ThrowsUnauthorizedForWrongPassword() throws Exception {
+        // given
+        // 테스트 사용자 사전 등록
+        userService.signup(createDefaultSignupRequest());
+
+        // 잘못된 비밀번호 요청 객체 준비
+        LoginRequest loginRequest = createLoginRequest(
+                "test@fitcaster.com",
+                "WrongPassword!123" // 잘못된 비밀번호
+        );
+
+        // when & then
+        // API 엔드포인트: POST /users/login
+        mockMvc.perform(
+                        post("/users/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest))
+                )
+                .andDo(print())
+                // 인증 실패 시 Spring Security가 반환하는 상태 코드 (401) 검증
+                .andExpect(status().isUnauthorized());
     }
 }
