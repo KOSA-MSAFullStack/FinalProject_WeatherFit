@@ -42,6 +42,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// 외부 API 호출을 위한 WebClient 사용을 위해 추가
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 dependencyManagement {
@@ -53,3 +55,4 @@ dependencyManagement {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
