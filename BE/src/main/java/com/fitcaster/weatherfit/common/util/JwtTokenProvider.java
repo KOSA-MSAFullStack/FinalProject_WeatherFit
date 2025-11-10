@@ -14,6 +14,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,49 +53,74 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Access Token 생성 메서드
+    public String createAccessToken(Authentication authentication) {
+        return createToken(authentication, accessTokenExpirationMs, false);
+    }
+
+    // Refresh Token 생성 메서드
+    public String createRefreshToken(Authentication authentication) {
+        return createToken(authentication, refreshTokenExpirationMs, true);
+    }
+
     /**
-     * Access Token과 Refresh Token을 동시에 생성합니다.
-     * @param authentication 인증된 사용자 정보
-     * @return Access Token과 Refresh Token을 포함하는 맵
+     * JWT 생성을 위한 private 헬퍼 메서드
+     * @param authentication 인증 정보
+     * @param expirationMs 만료 시간 (밀리초)
+     * @return 생성된 JWT 문자열
      */
-    public Map<String, String> createToken(Authentication authentication) {
+    private String createToken(Authentication authentication, long expirationMs, boolean isRefreshToken) {
         String userEmail = authentication.getName();
-        // authorities: ROLE_USER 추출
-        String authorities = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+
+        // Claims를 Map으로 대체하여 초기화 (subject를 Map에 직접 추가)
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, userEmail);
+
+        if (isRefreshToken) {
+            // Refresh Token 클레임 설정: 'roles' 제외, 'token_type' 명시
+            claims.put("token_type", "refresh");
+        } else {
+            // Access Token 클레임 설정: 'roles' 포함, 'token_type' 명시
+            String authorities = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.joining(","));
+            claims.put("roles", authorities);
+            claims.put("token_type", "access");
+        }
 
         Date now = new Date();
-        // Access Token 생성
-        Date accessTokenExpiryDate = new Date(now.getTime() + accessTokenExpirationMs);
-        String accessToken = Jwts.builder()
-                .subject(userEmail)
-                .claim("roles", authorities)
-                .issuedAt(now)
-                .expiration(accessTokenExpiryDate)
+        Date expiryDate = new Date(now.getTime() + expirationMs);
+
+        return Jwts.builder()
+                .claims(claims)
+                .issuedAt(now) // 토큰 발급 시간
+                .expiration(expiryDate) // 토큰 만료 시간
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
-
-        // Refresh Token 생성
-        Date refreshTokenExpiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
-        String refreshToken = Jwts.builder()
-                .subject(userEmail)
-                .issuedAt(now)
-                .expiration(refreshTokenExpiryDate)
-                .signWith(secretKey, Jwts.SIG.HS256)
-                .compact();
-
-        // 맵에 담아 반환
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("accessToken", accessToken);
-        tokens.put("refreshToken", refreshToken);
-
-        return tokens;
     }
 
     // Access Token의 만료 시간(초 단위)을 제공하는 메서드 추가
     public long getAccessTokenExpiresIn() {
         return accessTokenExpirationMs / 1000;
+    }
+
+    /**
+     * JWT에서 만료 시점(LocalDateTime)을 추출
+     * @param token JWT (Refresh Token)
+     * @return 만료 시점 LocalDateTime
+     */
+    public LocalDateTime getExpirationDate(String token) {
+        // 토큰 파싱
+        Claims claims = Jwts.parser()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        // java.util.Date를 LocalDateTime으로 변환
+        return claims.getExpiration().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 
     /**
