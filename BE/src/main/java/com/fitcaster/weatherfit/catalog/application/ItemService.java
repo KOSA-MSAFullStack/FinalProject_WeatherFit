@@ -29,13 +29,20 @@ public class ItemService {
         return itemRepository.findAll();
     }
 
+    // [상품 단건 조회]
+    @Transactional(readOnly = true)
+    public ItemResponseDTO getItemById(Long itemId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new InternalServerException("Item not found with id: " + itemId));
+        return ItemResponseDTO.from(item);
+    }
 
     // [상품 이름으로 검색]
     public List<Item> searchItemsByName(String name) {
         return itemRepository.findByNameContainingIgnoreCase(name);
     }
 
-
+    
     // [상품 등록]
     @Transactional
     public ItemResponseDTO createItem(ItemRequestDTO.Create request) {

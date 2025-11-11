@@ -6,7 +6,9 @@ package com.fitcaster.weatherfit.catalog.api.controller;
 import com.fitcaster.weatherfit.catalog.application.ItemService;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +29,13 @@ public class ItemController {
         return itemService.getAllItems().stream()
                 .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
+    }
+
+    // [상품 단건 조회]
+    @GetMapping("/{itemId}")
+    public ResponseEntity<ItemResponseDTO> getItemById(@PathVariable Long itemId) {
+        ItemResponseDTO itemResponse = itemService.getItemById(itemId);
+        return ResponseEntity.ok(itemResponse);
     }
 
     // [상품 검색]
