@@ -5,17 +5,21 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class User implements UserDetails {
 
     // PK 설정
     @Id
@@ -26,7 +30,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
     @Column(nullable = false)
-    private String password; // 암호화된 비밀번호
+    private String password;
     @Column(nullable = false)
     private String name;
 
@@ -51,6 +55,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> addresses = new ArrayList<>();
 
+    // RefreshToken 엔티티와 일대일 관계 설정
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private RefreshToken refreshToken;
+
     @Builder
     public User(String email, String password, String name, String phone,
                 Gender gender, LocalDate birth, TemperatureSensitivity temperatureSensitivity,
@@ -72,5 +80,51 @@ public class User {
         if (address.getUser() != this) {
             address.setUser(this);
         }
+    }
+
+    public void setRefreshToken(RefreshToken refreshToken) {
+        this.refreshToken = refreshToken;
+
+        if (refreshToken.getUser() != this) {
+            refreshToken.setUser(this);
+        }
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // role 필드 (예: "ROLE_USER")를 사용하여 권한 객체를 생성
+        return List.of(new SimpleGrantedAuthority(role));
+    }
+
+    @Override
+    public String getPassword() {
+        // 암호화된 비밀번호를 반환
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        // 로그인 식별자인 username을 email로 반환
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // 계정 만료되지 않음
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // 계정 잠금되지 않음
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // 비밀번호 만료되지 않음
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // 계정 활성화됨
     }
 }

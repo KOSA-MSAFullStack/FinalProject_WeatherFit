@@ -29,3 +29,16 @@ spring:
         show_sql: true
         # show_sql: true 설정으로 출력되는 SQL 쿼리에 줄 바꿈과 적절한 들여쓰기를 추가하여 가독성을 높여주는 기능
         format_sql: true
+
+
+# JWT (JSON Web Token) 설정
+jwt:
+  # 토큰을 서명할 때 사용할 Secret Key
+  secret: ${JWT_SECRET_KEY}
+
+  # 토큰 만료 시간 설정 (단위: 밀리초)
+  # Access Token: 짧게 설정 (60분)
+  access-token-expiration-ms: 3600000
+
+  # Refresh Token: 길게 설정 (7일)
+  refresh-token-expiration-ms: 604800000

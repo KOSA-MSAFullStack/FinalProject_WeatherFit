@@ -1,4 +1,4 @@
 package com.fitcaster.weatherfit.recommendation.api.controller;
 
-public class RecommendationService {
+public class RecommendationController {
 }
