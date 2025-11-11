@@ -2,6 +2,7 @@
 <!-- 관리자 페이지 -->
 
 <template>
+  <ProductModal v-if="isProductModalVisible" @close="isProductModalVisible = false" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -152,11 +153,17 @@
 </template>
 
 <script>
+import ProductModal from '../components/ProductModal.vue';
+
 export default {
   name: 'AdminMyPage',
+  components: {
+    ProductModal,
+  },
   data() {
     return {
       activePage: 'sales',
+      isProductModalVisible: false,
       salesData: [
         { orderId: '20251103-0125', date: '2025.11.03 14:23', product: '울 블렌드 니트', customer: '김철수', qty: 1, price: 435000 },
         { orderId: '20251103-0124', date: '2025.11.03 13:45', product: '라이트 트렌치', customer: '이영희', qty: 1, price: 129000 },
@@ -174,8 +181,7 @@ export default {
       this.activePage = pageId;
     },
     openRegisterProduct() {
-      // 상품 등록 모달을 여는 로직 (추후 구현)
-      alert('상품 등록 모달 열기');
+      this.isProductModalVisible = true;
     }
   }
 };
