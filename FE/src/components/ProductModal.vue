@@ -5,7 +5,7 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>상품 등록</h2>
+        <h2>{{ isEditMode ? '상품 수정' : '상품 등록' }}</h2>
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
@@ -71,6 +71,7 @@
         <hr style="border:none; border-top:1px solid var(--line); margin:8px 0 20px;">
 
         <div class="form-group">
+          <label>AI 설명</label>
           <button class="btn ghost" id="btnGenerateAI" type="button" @click="generateAIDescription" v-if="!aiBoxVisible">AI 설명 생성</button>
           <div class="ai-box" id="aiBox" v-if="aiBoxVisible">
             <div class="ai-box-header">
@@ -83,10 +84,12 @@
       </div>
 
       <div class="modal-footer">
-        <div></div>
+        <div>
+          <button v-if="isEditMode" class="btn danger" @click="handleDelete">삭제하기</button>
+        </div>
         <div>
           <button class="btn ghost" @click="$emit('close')">취소</button>
-          <button class="btn" @click="handleSubmit">등록하기</button>
+          <button class="btn" @click="handleSubmit">{{ isEditMode ? '저장하기' : '등록하기' }}</button>
         </div>
       </div>
     </div>
@@ -96,7 +99,13 @@
 <script>
 export default {
   name: 'ProductModal',
-  emits: ['close', 'submit'],
+  props: {
+    productToEdit: {
+      type: Object,
+      default: null,
+    },
+  },
+  emits: ['close', 'submit', 'delete'],
   data() {
     return {
       product: {
@@ -120,13 +129,42 @@ export default {
       aiBoxVisible: false,
     };
   },
-  created() {
-    this.updateCategoryOptions();
+  computed: {
+    isEditMode() {
+      return !!this.productToEdit;
+    },
+  },
+  watch: {
+    productToEdit: {
+      handler(newVal) {
+        if (newVal) {
+          this.product = { ...newVal };
+          this.imagePreview = newVal.imageURL || '';
+          this.aiBoxVisible = !!newVal.aiDescription;
+        } else {
+          this.product = {
+            itemName: '',
+            price: null,
+            quantity: null,
+            classification: '상의',
+            category: '',
+            gender: [],
+            season: [],
+            image: null,
+            aiDescription: '',
+          };
+          this.imagePreview = '';
+          this.aiBoxVisible = false;
+        }
+        this.updateCategoryOptions();
+      },
+      immediate: true,
+    },
   },
   methods: {
     updateCategoryOptions() {
       this.categories = this.categoryData[this.product.classification] || [];
-      if (this.categories.length > 0) {
+      if (this.categories.length > 0 && !this.categories.includes(this.product.category)) {
         this.product.category = this.categories[0];
       }
     },
@@ -149,8 +187,12 @@ export default {
       this.product.aiDescription = '재생성된 예시: 통기성이 좋아 실내 활동에도 쾌적하며, 약한 바람이나 간헐적 비 날씨에도 무난하게 착용 가능합니다.';
     },
     handleSubmit() {
-      // 부모 컴포넌트로 데이터 전송
       this.$emit('submit', this.product);
+    },
+    handleDelete() {
+      if (confirm('정말로 이 상품을 삭제하시겠습니까?')) {
+        this.$emit('delete', this.product.id);
+      }
     },
   },
 };
@@ -209,7 +251,8 @@ export default {
   padding: 16px;
   border-top: 1px solid var(--line);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
 }
 
@@ -273,6 +316,11 @@ input[type="file"] {
   background: #ffffff;
   border: 1px solid var(--line);
   color: #111827;
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #ffffff;
 }
 
 .radio-group {

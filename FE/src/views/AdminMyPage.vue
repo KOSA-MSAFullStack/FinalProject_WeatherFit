@@ -2,7 +2,7 @@
 <!-- 관리자 페이지 -->
 
 <template>
-  <ProductModal v-if="isProductModalVisible" @close="isProductModalVisible = false" />
+  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -118,29 +118,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>PRD-001</td>
+                  <tr v-for="product in products" :key="product.id">
+                    <td>{{ product.itemCode }}</td>
                     <td>
                       <div class="product-info">
-                        <div class="product-name">울 블렌드 니트 탑</div>
+                        <div class="product-name">{{ product.itemName }}</div>
                       </div>
                     </td>
-                    <td>상의</td>
-                    <td>435,000원</td>
-                    <td>2025.10.01</td>
-                    <td><button class="btn small">수정</button></td>
-                  </tr>
-                  <tr>
-                    <td>PRD-002</td>
-                    <td>
-                      <div class="product-info">
-                        <div class="product-name">라이트 트렌치</div>
-                      </div>
-                    </td>
-                    <td>아우터</td>
-                    <td>129,000원</td>
-                    <td>2025.09.15</td>
-                    <td><button class="btn small">수정</button></td>
+                    <td>{{ product.category }}</td>
+                    <td>{{ product.price.toLocaleString() }}원</td>
+                    <td>{{ product.createdAt }}</td>
+                    <td><button class="btn small" @click="openEditModal(product)">수정</button></td>
                   </tr>
                 </tbody>
               </table>
@@ -164,6 +152,7 @@ export default {
     return {
       activePage: 'sales',
       isProductModalVisible: false,
+      selectedProduct: null,
       salesData: [
         { orderId: '20251103-0125', date: '2025.11.03 14:23', product: '울 블렌드 니트', customer: '김철수', qty: 1, price: 435000 },
         { orderId: '20251103-0124', date: '2025.11.03 13:45', product: '라이트 트렌치', customer: '이영희', qty: 1, price: 129000 },
@@ -173,6 +162,10 @@ export default {
         { orderId: '20251102-0454', date: '2025.11.02 14:50', product: '니트 풀오버', customer: '강민지', qty: 2, price: 138000 },
         { orderId: '20251101-0789', date: '2025.11.01 20:30', product: '울 코트', customer: '송하늘', qty: 1, price: 289000 },
         { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
+      ],
+      products: [
+        { id: 1, itemCode: 'PRD-001', itemName: '울 블렌드 니트 탑', classification: '상의', category: '니트/스웨터', price: 435000, createdAt: '2025.10.01', gender: ['남성'], season: ['가을', '겨울'], aiDescription: '따뜻한 울 소재의 니트입니다.' },
+        { id: 2, itemCode: 'PRD-002', itemName: '라이트 트렌치', classification: '아우터', category: '코트', price: 129000, createdAt: '2025.09.15', gender: ['여성'], season: ['봄', '가을'], aiDescription: '가볍게 걸치기 좋은 트렌치 코트입니다.' },
       ]
     };
   },
@@ -181,6 +174,11 @@ export default {
       this.activePage = pageId;
     },
     openRegisterProduct() {
+      this.selectedProduct = null;
+      this.isProductModalVisible = true;
+    },
+    openEditModal(product) {
+      this.selectedProduct = product;
       this.isProductModalVisible = true;
     }
   }
