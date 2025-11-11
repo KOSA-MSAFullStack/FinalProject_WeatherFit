@@ -64,4 +64,15 @@ public class ItemService {
         // ItemResponse로 변환하여 반환
         return ItemResponseDTO.from(savedItem);
     }
+
+    
+    // [상품 삭제]
+    @Transactional
+    public void deleteItem(Long itemId) {
+        // 상품 존재 여부 확인
+        if (!itemRepository.existsById(itemId)) {
+            throw new InternalServerException("Item not found with id: " + itemId);
+        }
+        itemRepository.deleteById(itemId);
+    }
 }

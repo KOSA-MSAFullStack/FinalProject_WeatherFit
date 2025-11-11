@@ -2,7 +2,7 @@
 <!-- 관리자 페이지 -->
 
 <template>
-  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" />
+  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" @delete="handleProductDelete" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -142,6 +142,7 @@
 
 <script>
 import ProductModal from '../components/ProductModal.vue';
+import axios from 'axios'; // axios import
 
 export default {
   name: 'AdminMyPage',
@@ -180,6 +181,18 @@ export default {
     openEditModal(product) {
       this.selectedProduct = product;
       this.isProductModalVisible = true;
+    },
+    async handleProductDelete(itemId) {
+      try {
+        await axios.delete(`/api/admin/items/${itemId}`);
+        alert('상품이 성공적으로 삭제되었습니다.');
+        this.isProductModalVisible = false;
+        // 상품 목록 새로고침
+        this.products = this.products.filter(product => product.id !== itemId);
+      } catch (error) {
+        console.error('상품 삭제 실패:', error);
+        alert('상품 삭제에 실패했습니다.');
+      }
     }
   }
 };
