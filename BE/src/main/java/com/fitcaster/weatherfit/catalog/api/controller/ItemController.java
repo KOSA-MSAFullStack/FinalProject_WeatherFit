@@ -3,7 +3,7 @@
 
 package com.fitcaster.weatherfit.catalog.api.controller;
 
-import com.fitcaster.weatherfit.catalog.application.ItemListService;
+import com.fitcaster.weatherfit.catalog.application.ItemService;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemController {
 
-    private final ItemListService itemListService;
+    private final ItemService itemService;
 
     // 모든 상품 목록 조회
     @GetMapping
     public List<ItemResponse> getAllItems() {
-        return itemListService.getAllItems().stream()
+        return itemService.getAllItems().stream()
                 .map(ItemResponse::from)
                 .collect(Collectors.toList());
     }
