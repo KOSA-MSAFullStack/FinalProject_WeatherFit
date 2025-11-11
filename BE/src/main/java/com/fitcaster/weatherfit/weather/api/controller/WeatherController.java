@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 날씨에 대한 정보를 요청하는 컨트롤러
  * @author 김경아
@@ -27,5 +29,15 @@ public class WeatherController {
     @GetMapping("/today")
     public WeatherResponse getTodayWeather(@RequestParam String region) {
         return weatherService.getTodayWeather(region);
+    }
+
+    @GetMapping("/tomorrow")
+    public WeatherResponse getTommorwWeather(@RequestParam String region) {
+        return weatherService.getTomorrowWeather(region);
+    }
+
+    @GetMapping("/weekly")
+    public List<WeatherResponse> getWeeklyWeather(@RequestParam String region) {
+        return weatherService.getWeeklyWeather(region);
     }
 }

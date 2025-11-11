@@ -25,6 +25,18 @@ public class WebClientConfig {
     }
 
     /**
+     * OpenWeatherMap API 호출용 WebClient Bean
+     * @param builder Spring이 자동으로 주입하는 WebClient.Builder 객체
+     * @return OpenWeatherMap API 기본 URL("https://api.openweathermap.org/data/3.0")을 가진 WebClient 인스턴스
+     */
+    @Bean(name = "openWeatherWebClient")
+    public WebClient openWeatherWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("https://api.openweathermap.org/data/3.0")
+                .build();
+    }
+
+    /**
      * 카카오 지도 API 호출용 WebClient Bean
      * @param builder     Spring이 자동으로 주입하는 WebClient.Builder 객체
      * @param kakaoApiKey application.yml에서 주입받은 Kakao REST API Key

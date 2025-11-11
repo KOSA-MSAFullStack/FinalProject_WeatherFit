@@ -33,7 +33,9 @@ spring:
 # --- 날씨 API ---
 weather:
   kma:
-    key: ${WEATHER_API_KEY}
+    key: ${KMA_API_KEY}
+  open-weather:
+    key: ${OPEN_WEATHER_API_KEY}
 
 # --- 카카오 지도 API ---
 kakao:
