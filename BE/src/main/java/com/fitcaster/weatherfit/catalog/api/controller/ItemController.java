@@ -4,7 +4,7 @@
 package com.fitcaster.weatherfit.catalog.api.controller;
 
 import com.fitcaster.weatherfit.catalog.application.ItemService;
-import com.fitcaster.weatherfit.catalog.api.dto.ItemResponse;
+import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,19 +20,19 @@ public class ItemController {
 
     private final ItemService itemService;
 
-    // 모든 상품 목록 조회
+    // [모든 상품 목록 조회]
     @GetMapping
-    public List<ItemResponse> getAllItems() {
+    public List<ItemResponseDTO> getAllItems() {
         return itemService.getAllItems().stream()
-                .map(ItemResponse::from)
+                .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
     }
 
-    // 상품 이름으로 검색
+    // [상품 검색]
     @GetMapping("/search")
-    public List<ItemResponse> searchItems(@RequestParam String name) {
+    public List<ItemResponseDTO> searchItems(@RequestParam String name) {
         return itemService.searchItemsByName(name).stream()
-                .map(ItemResponse::from)
+                .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
     }
 }

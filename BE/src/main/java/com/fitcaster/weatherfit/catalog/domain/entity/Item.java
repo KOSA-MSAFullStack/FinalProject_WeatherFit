@@ -33,7 +33,7 @@ public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="item_id", nullable = false)
-    private Long id;
+    private Long itemId;
 
     // 카테고리 (FK)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -56,14 +56,6 @@ public class Item {
     @Column(name="quantity", nullable=false)
     private int quantity;
 
-    // 최저 기온
-    @Column(name="min_temperature", nullable=false)
-    private int minTemperature;
-
-    // 최고 기온
-    @Column(name="max_temperature", nullable=false)
-    private int maxTemperature;
-
     // 성별
     @Column(name="gender", nullable=false, length=1)
     private String gender;
@@ -72,6 +64,19 @@ public class Item {
     @Column(name="image_url", nullable=false, length=255)
     private String imageURL;
 
+    // AI 설명
+    @Lob
+    @Column(name="ai_description", nullable=false)
+    private String aiDescription;
+
+    // 최고 기온
+    @Column(name="max_temperature", nullable=false)
+    private int maxTemperature;
+
+    // 최저 기온
+    @Column(name="min_temperature", nullable=false)
+    private int minTemperature;
+
     // 상품 등록일
     @Column(name="created_at", nullable=false)
     private LocalDate createdAt;
@@ -79,9 +84,4 @@ public class Item {
     // AI가 요약한 리뷰
     @Column(name="review_ai_summary", nullable=true, length=255)
     private String reviewAiSummary;
-
-    // AI 설명
-    @Lob
-    @Column(name="ai_description", nullable=false)
-    private String aiDescription;
 }

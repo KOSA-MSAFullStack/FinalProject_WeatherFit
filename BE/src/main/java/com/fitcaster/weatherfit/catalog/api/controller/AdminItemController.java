@@ -4,7 +4,7 @@
 package com.fitcaster.weatherfit.catalog.api.controller;
 
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
-import com.fitcaster.weatherfit.catalog.api.dto.ItemResponse;
+import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.application.ItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,9 +23,9 @@ public class AdminItemController {
 
     // [상품 등록]
     @PostMapping
-    public ResponseEntity<ItemResponse> createItem(@RequestBody ItemRequestDTO.Create request) {
+    public ResponseEntity<ItemResponseDTO> createItem(@RequestBody ItemRequestDTO.Create request) {
         // ItemService를 통해 상품 등록
-        ItemResponse itemResponse = itemService.createItem(request);
+        ItemResponseDTO itemResponse = itemService.createItem(request);
         // 등록된 상품 정보와 함께 201 Created 응답 반환
         return ResponseEntity.status(HttpStatus.CREATED).body(itemResponse);
     }

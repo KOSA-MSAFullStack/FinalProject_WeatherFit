@@ -3,7 +3,7 @@
 package com.fitcaster.weatherfit.catalog.application;
 
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
-import com.fitcaster.weatherfit.catalog.api.dto.ItemResponse;
+import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.domain.entity.Category;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
 import com.fitcaster.weatherfit.catalog.domain.repository.CategoryRepository;
@@ -23,13 +23,13 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
 
-    // 모든 상품 목록 조회
+    // [모든 상품 목록 조회]
     public List<Item> getAllItems() {
         return itemRepository.findAll();
     }
 
 
-    // 상품 이름으로 검색
+    // [상품 이름으로 검색]
     public List<Item> searchItemsByName(String name) {
         return itemRepository.findByNameContainingIgnoreCase(name);
     }
@@ -37,7 +37,7 @@ public class ItemService {
 
     // [상품 등록]
     @Transactional
-    public ItemResponse createItem(ItemRequestDTO.Create request) {
+    public ItemResponseDTO createItem(ItemRequestDTO.Create request) {
         // 카테고리 조회
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new InternalServerException("Category not found with id: " + request.getCategoryId()));
@@ -61,6 +61,6 @@ public class ItemService {
         Item savedItem = itemRepository.save(item);
 
         // ItemResponse로 변환하여 반환
-        return ItemResponse.from(savedItem);
+        return ItemResponseDTO.from(savedItem);
     }
 }

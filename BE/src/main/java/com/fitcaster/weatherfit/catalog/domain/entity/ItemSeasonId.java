@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode
 public class ItemSeasonId implements Serializable {
+    // 복합키 (상품, 계절)
     private Long item;
     private Long season;
 }
