@@ -35,6 +35,10 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     // Spring Boot Validation (유효성 검증 어노테이션 사용을 위해 추가)
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // JWT (JSON Web Token) 라이브러리 추가
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
