@@ -1,5 +1,5 @@
 // Season.java
-// [Entity] 계절
+// 계절 엔티티
 
 package com.fitcaster.weatherfit.catalog.domain.entity;
 
