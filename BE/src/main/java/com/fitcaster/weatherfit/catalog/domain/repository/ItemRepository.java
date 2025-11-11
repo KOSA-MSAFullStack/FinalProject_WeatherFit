@@ -4,7 +4,9 @@
 package com.fitcaster.weatherfit.catalog.domain.repository;
 
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ItemRepository extends JpaRepository<Item, Long> {
+    List<Item> findByNameContainingIgnoreCase(String name);
 }

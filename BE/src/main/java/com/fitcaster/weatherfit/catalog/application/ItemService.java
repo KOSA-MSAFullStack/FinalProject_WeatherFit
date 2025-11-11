@@ -21,4 +21,9 @@ public class ItemService {
     public List<Item> getAllItems() {
         return itemRepository.findAll();
     }
+
+    // 상품 이름으로 검색
+    public List<Item> searchItemsByName(String name) {
+        return itemRepository.findByNameContainingIgnoreCase(name);
+    }
 }
