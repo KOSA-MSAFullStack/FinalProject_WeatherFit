@@ -1,22 +1,24 @@
 package com.fitcaster.weatherfit.user.api.controller;
 
+import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
+import com.fitcaster.weatherfit.user.application.AuthService;
 import com.fitcaster.weatherfit.user.application.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user") // 또는 /auth
+@RequestMapping("/users") // 또는 /auth
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@Valid @RequestBody SignupRequest request) {
@@ -25,5 +27,12 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 Created 응답
     }
 
-    // ... 로그인 API는 추후 추가
+    /**
+     * POST /users/login (로그인)
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+        LoginResponse loginResponse = authService.login(request, response);
+        return ResponseEntity.ok(loginResponse);
+    }
 }

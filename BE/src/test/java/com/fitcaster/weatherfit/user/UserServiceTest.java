@@ -1,24 +1,39 @@
 package com.fitcaster.weatherfit.user;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fitcaster.weatherfit.common.config.security.SecurityConfig;
 import com.fitcaster.weatherfit.common.exception.DuplicateUserException;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
+import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.UserService;
 import com.fitcaster.weatherfit.user.domain.repository.AddressRepository;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @Import(SecurityConfig.class) // PasswordEncoder Bean을 로드하기 위해 SecurityConfig 임포트
 @Transactional // 테스트 후 롤백 (DB에 영향 X)
 class UserServiceTest {
@@ -26,6 +41,9 @@ class UserServiceTest {
     @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
     @Autowired private AddressRepository addressRepository;
+
+    @Autowired private MockMvc mockMvc; // 💡 MockMvc 주입
+    @Autowired private ObjectMapper objectMapper;
 
     private SignupRequest createDefaultSignupRequest() {
         // SignupRequest DTO 구조에 맞춰 데이터를 준비
@@ -46,6 +64,25 @@ class UserServiceTest {
         request.setAddress(addressRequest);
 
         return request;
+    }
+
+    // --- 로그인 요청 DTO 생성 메서드 ---
+    private LoginRequest createLoginRequest(String email, String password) {
+        LoginRequest request = new LoginRequest();
+        request.setEmail(email);
+        request.setPassword(password);
+        return request;
+    }
+
+    // --- 쿠키 값 추출 헬퍼 ---
+    private String extractTokenFromCookie(String cookieHeader, String tokenName) {
+        // Set-Cookie 헤더에서 특정 토큰 이름에 해당하는 값을 추출하는 정규식
+        Pattern pattern = Pattern.compile(tokenName + "=([^;]+)");
+        Matcher matcher = pattern.matcher(cookieHeader);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        throw new IllegalStateException("응답 헤더에서 " + tokenName + " 쿠키를 찾을 수 없습니다.");
     }
 
     @Test
@@ -120,5 +157,79 @@ class UserServiceTest {
         assertThrows(InternalServerException.class, () -> {
             userService.signup(request);
         });
+    }
+
+    @Test
+    @DisplayName("로그인 성공 시, JWT 토큰이 HttpOnly 쿠키로 반환되어야 한다")
+    void login_Success_ReturnsJwtTokensAsHttpOnlyCookies() throws Exception {
+        // given
+        // 테스트 사용자 사전 등록 (DB에 저장)
+        SignupRequest signupRequest = createDefaultSignupRequest();
+        userService.signup(signupRequest);
+
+        // 로그인 요청 객체 준비 (이메일: test@fitcaster.com, 비밀번호: Password!123)
+        LoginRequest loginRequest = createLoginRequest(
+                signupRequest.getEmail(),
+                signupRequest.getPassword()
+        );
+
+        // when
+        // API 엔드포인트: POST /users/login
+        ResultActions result = mockMvc.perform(
+                post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest))
+        ).andDo(print()); // 요청 및 응답 로그 출력
+
+        // then
+        // HTTP 상태 코드 200 OK 검증 및 응답 본문 검증 (토큰 값 대신 expiresIn만 존재하는지 확인)
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath("$.expiresIn").isNumber()) // Access Token 만료 시간(초)이 숫자 형식인지 확인
+                .andExpect(jsonPath("$.accessToken").doesNotExist()) // Access Token 필드가 응답 본문에 없어야 함
+                .andExpect(jsonPath("$.refreshToken").doesNotExist()); // Refresh Token 필드가 응답 본문에 없어야 함
+
+        // 응답 헤더에서 'Set-Cookie' 검증 (가장 중요)
+        String setCookieHeader = result.andReturn().getResponse().getHeader("Set-Cookie");
+
+        // Access Token 쿠키 검증 (HttpOnly, Secure, SameSite=Lax 속성 확인)
+        String expectedAccessCookieRegex = "accessToken=([A-Za-z0-9-_\\.]+); Path=/; Max-Age=\\d+; Expires=.*?; Secure; HttpOnly; SameSite=Lax";
+        assertThat(setCookieHeader).containsPattern(expectedAccessCookieRegex);
+
+        // Refresh Token 쿠키 검증 (HttpOnly, Secure, SameSite=Strict 속성 확인)
+        String expectedRefreshCookieRegex = "refreshToken=([A-Za-z0-9-_\\.]+); Path=/; Max-Age=\\d+; Expires=.*?; Secure; HttpOnly; SameSite=Strict";
+        assertThat(setCookieHeader).containsPattern(expectedRefreshCookieRegex);
+
+        // 쿠키에서 토큰 값 추출 및 JWT 형식 검증
+        String accessToken = extractTokenFromCookie(setCookieHeader, "accessToken");
+        String refreshToken = extractTokenFromCookie(setCookieHeader, "refreshToken");
+
+        // 토큰이 Base64로 인코딩된 JWT 형식 (헤더.페이로드.서명)인지 확인
+        assertThat(accessToken.split("\\.").length).isEqualTo(3);
+        assertThat(refreshToken.split("\\.").length).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("잘못된 비밀번호로 로그인 시도 시 401 Unauthorized가 발생해야 한다")
+    void login_Fail_ThrowsUnauthorizedForWrongPassword() throws Exception {
+        // given
+        // 테스트 사용자 사전 등록
+        userService.signup(createDefaultSignupRequest());
+
+        // 잘못된 비밀번호 요청 객체 준비
+        LoginRequest loginRequest = createLoginRequest(
+                "test@fitcaster.com",
+                "WrongPassword!123" // 잘못된 비밀번호
+        );
+
+        // when & then
+        // API 엔드포인트: POST /users/login
+        mockMvc.perform(
+                        post("/users/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest))
+                )
+                .andDo(print())
+                // 인증 실패 시 Spring Security가 반환하는 상태 코드 (401) 검증
+                .andExpect(status().isUnauthorized());
     }
 }
