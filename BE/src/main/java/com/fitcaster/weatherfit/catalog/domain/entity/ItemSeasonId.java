@@ -7,6 +7,7 @@ import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+// * author: 김기성
 @NoArgsConstructor
 @EqualsAndHashCode
 public class ItemSeasonId implements Serializable {

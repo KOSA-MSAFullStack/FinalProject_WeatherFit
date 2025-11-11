@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// * author: 김기성
 @RestController
 @RequestMapping("/api/items")
 @RequiredArgsConstructor

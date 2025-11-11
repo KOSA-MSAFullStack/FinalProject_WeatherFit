@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+// * author: 김기성
 public class ItemRequestDTO {
     // 상품 등록 요청 DTO
     @Getter

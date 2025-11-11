@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDate;
 
+// * author: 김기성
 @Getter
 @Builder
 public class ItemResponseDTO {

@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+// * author: 김기성
 @Entity
 @Table(name = "ITEM")
 @Getter

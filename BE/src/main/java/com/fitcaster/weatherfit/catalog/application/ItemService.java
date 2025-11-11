@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+// * author: 김기성
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
