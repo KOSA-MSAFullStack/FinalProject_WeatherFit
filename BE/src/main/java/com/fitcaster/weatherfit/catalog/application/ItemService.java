@@ -1,5 +1,5 @@
 // ItemService.java
-// [상품 서비스]
+// 상품 서비스
 
 package com.fitcaster.weatherfit.catalog.application;
 
