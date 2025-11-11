@@ -1,5 +1,5 @@
 // Item.java
-// [Entity] 상품
+// 상품 엔티티
 
 package com.fitcaster.weatherfit.catalog.domain.entity;
 
@@ -13,11 +13,21 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "ITEM")
 @Getter
+@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Item {
     // 상품 ID (PK)
     @Id
@@ -25,8 +35,8 @@ public class Item {
     @Column(name="item_id", nullable = false)
     private Long id;
 
-    // 카테고리 ID (FK)
-    @ManyToOne
+    // 카테고리 (FK)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="category_id", nullable=false)
     private Category category;
 
