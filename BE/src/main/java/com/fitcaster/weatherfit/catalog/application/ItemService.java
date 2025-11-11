@@ -49,12 +49,12 @@ public class ItemService {
                 .itemCode(request.getItemCode())
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
-                .minTemperature(request.getMinTemperature())
-                .maxTemperature(request.getMaxTemperature())
                 .gender(request.getGender())
                 .imageURL(request.getImageURL())
-                .createdAt(LocalDate.now()) // 현재 날짜로 등록일 설정
                 .aiDescription(request.getAiDescription())
+                .maxTemperature(request.getMaxTemperature())
+                .minTemperature(request.getMinTemperature())
+                .createdAt(LocalDate.now()) // 현재 날짜로 등록일 설정
                 .build();
 
         // Item 저장

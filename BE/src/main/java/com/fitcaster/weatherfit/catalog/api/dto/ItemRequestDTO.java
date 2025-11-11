@@ -17,15 +17,15 @@ public class ItemRequestDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Create {
-        private Long categoryId;        // 상품 ID
+        private Long categoryId;        // 카테고리 ID
         private String itemName;        // 상품명
         private String itemCode;        // 상품코드
         private int price;              // 가격
         private int quantity;           // 재고 수량
-        private int minTemperature;     // 최저기온
-        private int maxTemperature;     // 최고기온
         private String gender;          // 성별
         private String imageURL;        // 이미지 URL
         private String aiDescription;   // AI 설명
+        private int maxTemperature;     // 최고기온
+        private int minTemperature;     // 최저기온
     }
 }
