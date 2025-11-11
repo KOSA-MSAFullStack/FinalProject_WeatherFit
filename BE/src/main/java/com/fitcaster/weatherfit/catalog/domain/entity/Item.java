@@ -57,7 +57,7 @@ public class Item {
     @Column(name="quantity", nullable=false)
     private int quantity;
 
-    // 성별
+    // 성별 (남-M / 여-F / 남여공용-C)
     @Column(name="gender", nullable=false, length=1)
     private String gender;
 

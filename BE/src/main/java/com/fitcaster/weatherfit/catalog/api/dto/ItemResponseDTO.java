@@ -12,15 +12,15 @@ import java.time.LocalDate;
 @Getter
 @Builder
 public class ItemResponseDTO {
-    private Long itemId;
-    private String itemName;
-    private String itemCode;
-    private int price;
-    private String gender;
-    private String imageURL;
-    private String aiDescription;
-    private LocalDate createdAt;
-    private String reviewAiSummary;
+    private Long itemId;            // 상품 ID
+    private String itemName;        // 상품명
+    private String itemCode;        // 상품코드
+    private int price;              // 가격
+    private String gender;          // 성별 (남-M / 여-F / 남여공용-C)
+    private String imageURL;        // 이미지 URL
+    private String aiDescription;   // AI 설명
+    private LocalDate createdAt;    // 상품 등록일
+    private String reviewAiSummary; // AI가 요약한 리뷰
 
     // Item 엔티티로부터 DTO를 생성하는 메서드
     public static ItemResponseDTO from(Item item) {

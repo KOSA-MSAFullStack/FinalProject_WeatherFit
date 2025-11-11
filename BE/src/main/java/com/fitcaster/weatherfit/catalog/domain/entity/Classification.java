@@ -31,7 +31,7 @@ public class Classification {
     @Column(name="classification_id", nullable=false)
     private Long classificationId;
 
-    // 분류
+    // 분류 (아우터 / 상의 / 하의)
     @Column(name="classification", nullable=false, length=50)
     private String classification;
 

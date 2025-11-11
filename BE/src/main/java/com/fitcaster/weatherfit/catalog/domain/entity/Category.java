@@ -39,7 +39,7 @@ public class Category {
     @JoinColumn(name="classification_id", nullable=false)
     private Classification classification;
 
-    // 카테고리
+    // 카테고리 (자켓, 패딩, 후드집업, 가디건 등)
     @Column(name="category", nullable=false, length=50)
     private String category;
 

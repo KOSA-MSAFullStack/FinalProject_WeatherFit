@@ -31,7 +31,7 @@ public class Season {
     @Column(name="season_id", nullable=false)
     private Long seasonId;
 
-    // 계절명
+    // 계절명 (봄, 여름, 가을, 겨울)
     @Column(name="season_name", nullable=false, length=10)
     private String seasonName;
 }
