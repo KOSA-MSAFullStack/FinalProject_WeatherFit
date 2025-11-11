@@ -104,6 +104,11 @@ public class JwtTokenProvider {
         return accessTokenExpirationMs / 1000;
     }
 
+    // Refresh Token의 만료 시간(초 단위)을 제공하는 메서드 추가
+    public long getRefreshTokenExpiresIn() {
+        return refreshTokenExpirationMs / 1000;
+    }
+
     /**
      * JWT에서 만료 시점(LocalDateTime)을 추출
      * @param token JWT (Refresh Token)

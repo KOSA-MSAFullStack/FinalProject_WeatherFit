@@ -5,6 +5,7 @@ import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.AuthService;
 import com.fitcaster.weatherfit.user.application.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,8 +31,8 @@ public class UserController {
      * POST /users/login (로그인)
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+        LoginResponse loginResponse = authService.login(request, response);
+        return ResponseEntity.ok(loginResponse);
     }
 }

@@ -7,6 +7,7 @@ import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.UserService;
 import com.fitcaster.weatherfit.user.domain.repository.AddressRepository;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
@@ -16,18 +17,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
-import org.springframework.http.MediaType;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -63,12 +66,23 @@ class UserServiceTest {
         return request;
     }
 
-    // --- 새로운 로그인 요청 DTO 생성 메서드 ---
+    // --- 로그인 요청 DTO 생성 메서드 ---
     private LoginRequest createLoginRequest(String email, String password) {
         LoginRequest request = new LoginRequest();
         request.setEmail(email);
         request.setPassword(password);
         return request;
+    }
+
+    // --- 쿠키 값 추출 헬퍼 ---
+    private String extractTokenFromCookie(String cookieHeader, String tokenName) {
+        // Set-Cookie 헤더에서 특정 토큰 이름에 해당하는 값을 추출하는 정규식
+        Pattern pattern = Pattern.compile(tokenName + "=([^;]+)");
+        Matcher matcher = pattern.matcher(cookieHeader);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        throw new IllegalStateException("응답 헤더에서 " + tokenName + " 쿠키를 찾을 수 없습니다.");
     }
 
     @Test
@@ -146,8 +160,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("로그인에 성공하면 유효한 JWT 토큰과 Bearer 응답을 반환해야 한다")
-    void login_Success_ReturnsJwtTokens() throws Exception {
+    @DisplayName("로그인 성공 시, JWT 토큰이 HttpOnly 쿠키로 반환되어야 한다")
+    void login_Success_ReturnsJwtTokensAsHttpOnlyCookies() throws Exception {
         // given
         // 테스트 사용자 사전 등록 (DB에 저장)
         SignupRequest signupRequest = createDefaultSignupRequest();
@@ -168,21 +182,30 @@ class UserServiceTest {
         ).andDo(print()); // 요청 및 응답 로그 출력
 
         // then
-        // HTTP 상태 코드 200 OK 검증
+        // HTTP 상태 코드 200 OK 검증 및 응답 본문 검증 (토큰 값 대신 expiresIn만 존재하는지 확인)
         result.andExpect(status().isOk())
-                // 응답 본문의 형식과 데이터 존재 여부 검증
-                .andExpect(jsonPath("$.tokenType").value("Bearer")) // tokenType 확인
-                .andExpect(jsonPath("$.accessToken").exists()) // Access Token 존재 확인
-                .andExpect(jsonPath("$.refreshToken").exists()) // Refresh Token 존재 확인
-                .andExpect(jsonPath("$.expiresIn").isNumber()); // 만료 시간(초)이 숫자 형식인지 확인
+                .andExpect(jsonPath("$.expiresIn").isNumber()) // Access Token 만료 시간(초)이 숫자 형식인지 확인
+                .andExpect(jsonPath("$.accessToken").doesNotExist()) // Access Token 필드가 응답 본문에 없어야 함
+                .andExpect(jsonPath("$.refreshToken").doesNotExist()); // Refresh Token 필드가 응답 본문에 없어야 함
 
-        // (선택적) JWT 토큰이 유효한 형식인지 추가 확인
-        String responseString = result.andReturn().getResponse().getContentAsString();
-        LoginResponse response = objectMapper.readValue(responseString, LoginResponse.class);
+        // 응답 헤더에서 'Set-Cookie' 검증 (가장 중요)
+        String setCookieHeader = result.andReturn().getResponse().getHeader("Set-Cookie");
+
+        // Access Token 쿠키 검증 (HttpOnly, Secure, SameSite=Lax 속성 확인)
+        String expectedAccessCookieRegex = "accessToken=([A-Za-z0-9-_\\.]+); Path=/; Max-Age=\\d+; Expires=.*?; Secure; HttpOnly; SameSite=Lax";
+        assertThat(setCookieHeader).containsPattern(expectedAccessCookieRegex);
+
+        // Refresh Token 쿠키 검증 (HttpOnly, Secure, SameSite=Strict 속성 확인)
+        String expectedRefreshCookieRegex = "refreshToken=([A-Za-z0-9-_\\.]+); Path=/; Max-Age=\\d+; Expires=.*?; Secure; HttpOnly; SameSite=Strict";
+        assertThat(setCookieHeader).containsPattern(expectedRefreshCookieRegex);
+
+        // 쿠키에서 토큰 값 추출 및 JWT 형식 검증
+        String accessToken = extractTokenFromCookie(setCookieHeader, "accessToken");
+        String refreshToken = extractTokenFromCookie(setCookieHeader, "refreshToken");
 
         // 토큰이 Base64로 인코딩된 JWT 형식 (헤더.페이로드.서명)인지 확인
-        assertThat(response.getAccessToken().split("\\.").length).isEqualTo(3);
-        assertThat(response.getRefreshToken().split("\\.").length).isEqualTo(3);
+        assertThat(accessToken.split("\\.").length).isEqualTo(3);
+        assertThat(refreshToken.split("\\.").length).isEqualTo(3);
     }
 
     @Test
