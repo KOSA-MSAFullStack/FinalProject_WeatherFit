@@ -22,11 +22,11 @@ public class UserController {
     private final AuthService authService;
 
     /**
-     * GET /users/check-email (이메일 중복 확인)
+     * GET /users/checkEmail (이메일 중복 확인)
      * @param email 확인할 이메일 주소
      * @return 이메일 사용 가능 여부를 포함하는 응답 DTO
      */
-    @GetMapping("/check-email")
+    @GetMapping("/checkEmail")
     public ResponseEntity<EmailCheckResponse> checkEmailDuplication(@RequestParam("email") String email) {
 
         // 서비스 호출하여 중복 여부 확인
