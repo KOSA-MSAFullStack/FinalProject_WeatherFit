@@ -10,6 +10,7 @@ import com.fitcaster.weatherfit.catalog.domain.repository.CategoryRepository;
 import com.fitcaster.weatherfit.catalog.domain.repository.ItemRepository;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -66,10 +67,14 @@ public class ItemService {
                 .build();
 
         // Item 저장
-        Item savedItem = itemRepository.save(item);
-
-        // ItemResponse로 변환하여 반환
-        return ItemResponseDTO.from(savedItem);
+        try {
+            Item savedItem = itemRepository.save(item);
+            // ItemResponse로 변환하여 반환
+            return ItemResponseDTO.from(savedItem);
+        } catch (DataIntegrityViolationException e) {
+            // DB 제약 조건 위반 시 (예: 유니크 키 중복) - 409 Conflict
+            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다.!");
+        }
     }
 
     
