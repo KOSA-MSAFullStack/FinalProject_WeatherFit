@@ -74,7 +74,43 @@ public class ItemService {
             return ItemResponseDTO.from(savedItem);
         } catch (DataIntegrityViolationException e) {
             // DB 제약 조건 위반 시 (예: 유니크 키 중복) - 409 Conflict
-            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다!");
+            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다.");
+        }
+    }
+
+    // [상품 수정]
+    @Transactional
+    public ItemResponseDTO updateItem(Long itemId, ItemRequestDTO.Update request) {
+        // 1) 상품 조회
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음"));
+
+        // 2) 카테고리 업데이트
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 카테고리 찾을 수 없음"));
+            item.updateCategory(category);
+        }
+
+        // 3) 나머지 필드 업데이트
+        item.updateDetails(
+                request.getItemName(),
+                request.getItemCode(),
+                request.getPrice(),
+                request.getQuantity(),
+                request.getGender(),
+                request.getImageURL(),
+                request.getAiDescription(),
+                request.getMaxTemperature(),
+                request.getMinTemperature()
+        );
+
+        // 4) 상품 저장 및 반환
+        try {
+            Item updatedItem = itemRepository.save(item);
+            return ItemResponseDTO.from(updatedItem);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다.");
         }
     }
 

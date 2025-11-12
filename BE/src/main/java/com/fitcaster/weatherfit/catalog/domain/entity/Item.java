@@ -85,4 +85,44 @@ public class Item {
     // AI가 요약한 리뷰
     @Column(name="review_ai_summary", nullable=true, length=255)
     private String reviewAiSummary;
+
+
+
+    // == 비즈니스 로직 == //
+    // 카테고리 업데이트
+    public void updateCategory(Category category) {
+        this.category = category;
+    }
+
+    // 상품 상세 정보 업데이트 (부분 업데이트 지원)
+    public void updateDetails(String itemName, String itemCode, Integer price, Integer quantity, String gender,
+                              String imageURL, String aiDescription, Integer maxTemperature, Integer minTemperature) {
+        if (itemName != null && !itemName.isEmpty()) {
+            this.itemName = itemName;
+        }
+        if (itemCode != null && !itemCode.isEmpty()) {
+            this.itemCode = itemCode;
+        }
+        if (price != null && price != 0) {
+            this.price = price;
+        }
+        if (quantity != null && quantity != 0) {
+            this.quantity = quantity;
+        }
+        if (gender != null && !gender.isEmpty()) {
+            this.gender = gender;
+        }
+        if (imageURL != null && !imageURL.isEmpty()) {
+            this.imageURL = imageURL;
+        }
+        if (aiDescription != null && !aiDescription.isEmpty()) {
+            this.aiDescription = aiDescription;
+        }
+        if (maxTemperature != null) {
+            this.maxTemperature = maxTemperature;
+        }
+        if (minTemperature != null) {
+            this.minTemperature = minTemperature;
+        }
+    }
 }
