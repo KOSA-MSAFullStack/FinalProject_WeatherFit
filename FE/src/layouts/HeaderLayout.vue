@@ -34,9 +34,13 @@
           <RouterLink to="/cart" aria-label="장바구니" class="hover:text-cyan-600 transition-colors">
             <ShoppingCart class="w-6 h-6" />
           </RouterLink>
-          <RouterLink to="/login" aria-label="로그인/로그아웃" class="hover:text-cyan-600 transition-colors">
+          <div 
+            aria-label="로그아웃" 
+            class="cursor-pointer hover:text-cyan-600 transition-colors"
+            @click="handleLogout"
+          >
             <LogOut class="w-6 h-6" />
-          </RouterLink>
+          </div>
         </div>
         
         <div class="hidden lg:flex items-center space-x-2">
@@ -62,8 +66,11 @@
 
 <script setup>
 import { ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { Heart, UserCircle, ShoppingCart, LogOut, MoveUpRight } from 'lucide-vue-next'; 
+import api from '@/utils/axios';
+
+const router = useRouter();
 
 const weatherData = ref({
   city: '대전',
@@ -80,6 +87,47 @@ const handleWeatherUpdate = () => {
     alert(`도시 '${cityInput.value}'에 대한 날씨 업데이트를 요청합니다.`);
   } else {
     alert('도시를 입력해주세요.');
+  }
+};
+
+/**
+ * 로그아웃 처리 함수
+ * 백엔드의 POST /users/logout 엔드포인트에 요청을 보내고, 
+ * 서버가 쿠키와 DB의 리프레시 토큰을 무효화하도록 합니다.
+ */
+const handleLogout = async () => {
+  console.log('로그아웃 요청 시작...');
+  
+  // 백엔드 API 엔드포인트 URL
+  const logoutUrl = '/users/logout'; 
+  
+  try {
+    // 데이터는 보낼 필요가 없으므로 {} 사용
+    const response = await api.post(logoutUrl, {}, {
+      // api 인스턴스에 withCredentials가 기본 설정되어 있다면 생략 가능
+      withCredentials: true 
+    });
+
+    // 백엔드가 200 OK와 메시지("로그아웃 되었습니다.")를 반환한다고 가정
+    if (response.status === 200) {
+      console.log("✅ 로그아웃 성공 응답:", response.data);
+      alert('로그아웃되었습니다.');
+      
+      // 로그아웃 성공 시 로그인 페이지로 리디렉션
+      router.push('/login'); 
+    }
+  } catch (error) {
+    // 4xx 또는 5xx 오류 처리 (서버에서 쿠키를 지우는 도중 에러가 발생했을 때)
+    console.error('로그아웃 실패:', error);
+    
+    // 로그아웃은 성공적으로 처리되었으나(쿠키가 지워졌으나) 서버에서 오류가 났을 수 있으므로
+    // 최악의 경우를 대비하여 로그인 화면으로 이동시키는 것을 고려할 수 있습니다.
+    // 여기서는 실패 메시지를 띄우는 것으로 처리합니다.
+    let errorMessage = '로그아웃 처리 중 오류가 발생했습니다.';
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message;
+    }
+    alert(errorMessage);
   }
 };
 </script>

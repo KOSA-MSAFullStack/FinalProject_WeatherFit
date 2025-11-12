@@ -6,15 +6,18 @@ import com.fitcaster.weatherfit.user.api.dto.response.EmailCheckResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.AuthService;
 import com.fitcaster.weatherfit.user.application.UserService;
+import com.fitcaster.weatherfit.user.domain.entity.User;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users") // 또는 /auth
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -60,5 +63,18 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request, response);
         return ResponseEntity.ok(loginResponse);
+    }
+
+    /**
+     * POST /users/logout (로그아웃)
+     * 클라이언트의 쿠키에 저장된 액세스/리프레시 토큰을 삭제합니다.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response, @AuthenticationPrincipal User user) {
+        System.out.println(user);
+        Long userId = user.getId();
+        authService.logout(response, userId);
+
+        return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 }

@@ -55,9 +55,10 @@ public class SecurityConfig {
                         // 회원가입 및 로그인은 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.POST, "/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
-
                         // 이메일 중복 확인 경로는 GET 요청으로 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()
 
                         // 그 외 모든 요청은 인증 필요 (로그인이 필요함)
                         .anyRequest().authenticated()

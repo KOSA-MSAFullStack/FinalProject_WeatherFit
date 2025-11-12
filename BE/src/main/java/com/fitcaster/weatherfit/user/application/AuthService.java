@@ -6,6 +6,8 @@ import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.domain.entity.RefreshToken;
 import com.fitcaster.weatherfit.user.domain.repository.RefreshTokenRepository;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
@@ -35,6 +37,9 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    private static final String ACCESS_TOKEN_COOKIE_NAME = "weatherfit_access";
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "weatherfit_refresh";
 
     /**
      * 사용자 로그인을 처리하고 JWT Access Token을 발급
@@ -105,4 +110,27 @@ public class AuthService {
                 .build();
 
     }
+
+    /**
+     * 로그아웃 처리: 쿠키에 저장된 토큰(Access/Refresh)을 삭제
+     */
+    @Transactional
+    public void logout(HttpServletResponse response, Long userId) {
+        // 서버 측 로직: DB에서 Refresh Token 삭제
+        refreshTokenRepository.deleteByUserId(userId);
+
+        // 클라이언트 측 로직: 쿠키 만료시키기
+        expireCookie(response, "accessToken");
+        expireCookie(response, "refreshToken");
+    }
+
+    private void expireCookie(HttpServletResponse response, String cookieName) {
+        Cookie cookie = new Cookie(cookieName, null); // value는 null로 설정
+        cookie.setMaxAge(0); // 만료 시간을 0으로 설정하여 즉시 만료
+        cookie.setPath("/"); // 쿠키가 생성된 경로와 동일하게 설정
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        response.addCookie(cookie);
+    }
+
 }
