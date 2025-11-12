@@ -68,7 +68,20 @@
             id="password"
             required 
             class="w-full bg-white border border-gray-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            :class="{
+              'border-red-500 focus:ring-red-500': !isPasswordValid && passwordValidationMessage,
+              'border-green-500 focus:ring-green-500': isPasswordValid
+            }"
           />
+          <p v-if="passwordValidationMessage"
+            class="mt-1 text-xs font-medium pl-1"
+            :class="{
+              'text-green-600': isPasswordValid,
+              'text-red-600': !isPasswordValid
+            }"
+          >
+            {{ passwordValidationMessage }}
+          </p>
         </div>
         
         <!-- 비밀번호 확인 필드 -->
@@ -80,7 +93,20 @@
             id="passwordConfirm"
             required 
             class="w-full bg-white border border-gray-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            :class="{
+              'border-red-500 focus:ring-red-500': passwordMismatch,
+              'border-green-500 focus:ring-green-500': !passwordMismatch && passwordConfirmMessage
+            }"
           />
+          <p v-if="passwordConfirmMessage" 
+            class="mt-1 text-xs font-medium pl-1"
+            :class="{
+              'text-green-600': !passwordMismatch,
+              'text-red-600': passwordMismatch
+            }"
+          >
+            {{ passwordConfirmMessage }}
+          </p>
         </div>
         
         <!-- 생년월일 필드 -->
@@ -237,7 +263,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import api from '@/utils/axios';
 
@@ -312,6 +338,56 @@ const checkEmailDuplication = async () => {
     }
 };
 
+const passwordMismatch = ref(false); // 비밀번호 불일치 여부
+const passwordConfirmMessage = ref(''); // 보여줄 메시지
+// 비밀번호 유효성 검사 상태
+const isPasswordValid = ref(false);
+const passwordValidationMessage = ref('');
+
+watch(() => signupData.value.password, (newPassword) => {
+  // 정규식은 한 번만 선언해두는 것이 효율적입니다.
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+
+  // 비밀번호 필드가 비어있으면 메시지를 초기화합니다.
+  if (!newPassword) {
+    isPasswordValid.value = false;
+    passwordValidationMessage.value = '';
+    return;
+  }
+  
+  // 정규식으로 유효성 검사
+  if (passwordRegex.test(newPassword)) {
+    isPasswordValid.value = true;
+    passwordValidationMessage.value = '사용 가능한 비밀번호입니다.';
+  } else {
+    isPasswordValid.value = false;
+    passwordValidationMessage.value = '8자 이상, 영문, 숫자, 특수문자를 포함해야 합니다.';
+  }
+});
+
+watch(
+  // 감시할 대상을 배열로 지정
+  [() => signupData.value.password, () => signupData.value.passwordConfirm], 
+  // 값이 변경될 때 실행될 콜백 함수
+  ([newPassword, newConfirm]) => {
+    // 비밀번호 확인 필드가 비어있으면 메시지를 초기화
+    if (!newConfirm) {
+      passwordMismatch.value = false;
+      passwordConfirmMessage.value = '';
+      return;
+    }
+    
+    // 두 필드의 값이 일치하는지 확인
+    if (newPassword === newConfirm) {
+      passwordMismatch.value = false;
+      passwordConfirmMessage.value = '비밀번호가 일치합니다.';
+    } else {
+      passwordMismatch.value = true;
+      passwordConfirmMessage.value = '비밀번호가 일치하지 않습니다.';
+    }
+  }
+);
+
 // 전화번호 형식 자동 변환 및 데이터 정리 함수
 const formatPhoneNumber = () => {
     let raw = signupData.value.phone.replace(/[^0-9]/g, ''); // 숫자 외 모두 제거 (실제 전송할 데이터)
@@ -349,14 +425,9 @@ const handleSignup = async () => {
     return;
   }
 
-  const password = signupData.value.password;
-  // 백엔드 정규식: ^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
-
-  if (!passwordRegex.test(password)) {
-      console.error('비밀번호가 백엔드 요구사항을 충족하지 못합니다.');
-      alert('비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.');
-      return;
+  if (!isPasswordValid.value) { // 새로 만든 상태를 활용할 수도 있습니다.
+    alert('비밀번호 형식이 올바르지 않습니다.');
+    return;
   }
 
   // 필수 선택 항목 확인
