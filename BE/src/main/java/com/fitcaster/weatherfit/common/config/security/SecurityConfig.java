@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
 
                         // 이메일 중복 확인 경로는 GET 요청으로 인증 없이 누구나 접근 허용
-                        .requestMatchers(HttpMethod.GET, "/users/check-email").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
 
                         // 그 외 모든 요청은 인증 필요 (로그인이 필요함)
                         .anyRequest().authenticated()
