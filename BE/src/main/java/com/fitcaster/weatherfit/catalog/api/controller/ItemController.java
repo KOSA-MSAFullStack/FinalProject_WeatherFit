@@ -38,7 +38,7 @@ public class ItemController {
         return ResponseEntity.ok(itemResponse);
     }
 
-    // [상품 검색]
+    // [상품명 검색]
     @GetMapping("/search")
     public List<ItemResponseDTO> searchItems(@RequestParam String name) {
         return itemService.searchItemsByName(name).stream()

@@ -37,7 +37,7 @@ public class ItemService {
         return ItemResponseDTO.from(item);
     }
 
-    // [상품 이름으로 검색]
+    // [상품명 검색]
     public List<Item> searchItemsByName(String name) {
         return itemRepository.findByNameContainingIgnoreCase(name);
     }

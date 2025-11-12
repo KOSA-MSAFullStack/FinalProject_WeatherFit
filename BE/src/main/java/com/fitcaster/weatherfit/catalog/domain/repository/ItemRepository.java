@@ -4,10 +4,11 @@
 package com.fitcaster.weatherfit.catalog.domain.repository;
 
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
 // * author: 김기성
 public interface ItemRepository extends JpaRepository<Item, Long> {
+    // [상품명 검색]
     List<Item> findByNameContainingIgnoreCase(String name);
 }
