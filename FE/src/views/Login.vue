@@ -72,13 +72,49 @@
 <script setup>
 import { ref } from 'vue';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import api from '@/utils/axios';
+
+const router = useRouter();
+
 const imageUrl = new URL('../assets/login-image.jpg', import.meta.url).href;
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 
-const handleLogin = () => {
+const handleLogin = async () => {
   console.log('Login attempt:', { email: email.value, password: password.value });
-  // 여기에 로그인 로직 구현
+  
+  if (!email.value || !password.value) {
+    alert('이메일과 비밀번호를 모두 입력해주세요.');
+    return;
+  }
+
+  const loginDTO = {
+    email: email.value,
+    password: password.value,
+  };
+
+  try {
+  // 백엔드 로그인 API 호출
+  const response = await api.post('/users/login', loginDTO); 
+  console.log('로그인 성공 응답:', response.data);
+  alert('로그인 성공! 환영합니다.');
+  router.push('/main'); 
+
+  } catch (error) {
+    console.error('로그인 실패:', error);
+    let errorMessage = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
+
+    if (error.response) {
+        if (error.response.status === 401) {
+            errorMessage = error.response.data.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
+        } else if (error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+        }
+    }
+    
+    alert(errorMessage);
+  }
 };
 </script>
