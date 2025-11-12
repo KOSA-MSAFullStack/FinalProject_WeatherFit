@@ -431,8 +431,20 @@ const handleSignup = async () => {
   }
 
   // 필수 선택 항목 확인
+  if (!signupData.value.name) {
+    alert('이름을 입력해주세요.');
+    return;
+  }
+  if (!signupData.value.birth) {
+    alert('생년월일을 입력해주세요.');
+    return;
+  }
   if (!signupData.value.gender) {
     alert('성별을 선택해주세요.');
+    return;
+  }
+  if (!signupData.value.postcode || !signupData.value.address || !signupData.value.detailAddress) {
+    alert('주소를 정확히 입력해주세요.');
     return;
   }
   if (!signupData.value.temperatureSensitivity) {
