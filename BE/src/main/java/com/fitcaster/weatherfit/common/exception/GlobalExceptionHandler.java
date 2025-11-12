@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,5 +37,13 @@ public class GlobalExceptionHandler {
         errorResponse.put("error", "⚠️ 알 수 없는 오류 발생!");
         // log.error("Unhandled exception:", e); // 로깅 추가 가능
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR); // 500 Internal Server Error
+    }
+
+    // [데이터를 찾을 수 없음 예외 처리]
+    @ExceptionHandler
+    public ResponseEntity<Map<String, String>> handleNoSuchElementException(NoSuchElementException e) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", e.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404 Not Found
     }
 }

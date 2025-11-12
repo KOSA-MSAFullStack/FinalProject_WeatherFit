@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 // * author: 김기성
 @Service
@@ -73,7 +74,7 @@ public class ItemService {
             return ItemResponseDTO.from(savedItem);
         } catch (DataIntegrityViolationException e) {
             // DB 제약 조건 위반 시 (예: 유니크 키 중복) - 409 Conflict
-            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다.!");
+            throw new IllegalArgumentException("⚠️ 이미 사용 중인 상품 코드입니다!");
         }
     }
 
@@ -83,8 +84,14 @@ public class ItemService {
     public void deleteItem(Long itemId) {
         // 상품 존재 여부 확인
         if (!itemRepository.existsById(itemId)) {
-            throw new InternalServerException("Item not found with id: " + itemId);
+            throw new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음");
         }
-        itemRepository.deleteById(itemId);
+
+        try {
+            itemRepository.deleteById(itemId);
+        } catch (DataIntegrityViolationException e) {
+            // DB 제약 조건 위반 시 (예: 외래 키 참조)
+            throw new IllegalArgumentException("⚠️ 해당 상품을 참조하는 데이터(예: 주문 내역)가 존재하여 삭제할 수 없음");
+        }
     }
 }
