@@ -14,6 +14,9 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Builder;
@@ -85,6 +88,11 @@ public class Item {
     // AI가 요약한 리뷰
     @Column(name="review_ai_summary", nullable=true, length=255)
     private String reviewAiSummary;
+
+    // 상품-계절 연관 관계
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ItemSeason> itemSeasons = new ArrayList<>();
 
 
 

@@ -46,36 +46,40 @@
           <div class="form-group">
             <label>성별</label>
             <div class="radio-group">
-              <input type="checkbox" id="male" value="남성" v-model="product.gender"><label for="male">남성</label>
-              <input type="checkbox" id="female" value="여성" v-model="product.gender"><label for="female">여성</label>
-              <input type="checkbox" id="unisex" value="남여공용" v-model="product.gender"><label for="unisex">남여공용</label>
+              <input type="radio" id="male" value="남성" v-model="product.selectedGender"><label for="male">남성</label>
+              <input type="radio" id="female" value="여성" v-model="product.selectedGender"><label for="female">여성</label>
+              <input type="radio" id="unisex" value="남여공용" v-model="product.selectedGender"><label for="unisex">남여공용</label>
             </div>
           </div>
           <div class="form-group">
             <label>계절</label>
             <div class="radio-group">
-              <input type="checkbox" id="spring" value="봄" v-model="product.season"><label for="spring">봄</label>
-              <input type="checkbox" id="summer" value="여름" v-model="product.season"><label for="summer">여름</label>
-              <input type="checkbox" id="fall" value="가을" v-model="product.season"><label for="fall">가을</label>
-              <input type="checkbox" id="winter" value="겨울" v-model="product.season"><label for="winter">겨울</label>
+              <input type="checkbox" id="spring" value="봄" v-model="product.selectedSeasons"><label for="spring">봄</label>
+              <input type="checkbox" id="summer" value="여름" v-model="product.selectedSeasons"><label for="summer">여름</label>
+              <input type="checkbox" id="fall" value="가을" v-model="product.selectedSeasons"><label for="fall">가을</label>
+              <input type="checkbox" id="winter" value="겨울" v-model="product.selectedSeasons"><label for="winter">겨울</label>
             </div>
           </div>
         </div>
 
         <div class="form-group">
           <label for="itemImage">상품 이미지</label>
-          <input type="file" id="itemImage" accept="image/*" @change="handleImageUpload">
+          <div v-if="isEditMode && product.imageURL" class="muted" style="font-size:13px; margin-bottom:4px;">현재 이미지 파일: {{ product.imageURL }}</div>
+          <div class="custom-file-input-box">
+            <input type="file" id="itemImage" accept="image/*" @change="handleImageUpload" class="hidden-file-input">
+            <label for="itemImage" class="file-select-button">파일 선택</label>
+            <span class="selected-file-name">{{ selectedFileName }}</span>
+          </div>
           <div id="imgPreview" class="img-preview" :style="{ backgroundImage: `url(${imagePreview})` }"></div>
         </div>
 
         <hr style="border:none; border-top:1px solid var(--line); margin:8px 0 20px;">
 
         <div class="form-group">
-          <label>AI 설명</label>
           <button class="btn ghost" id="btnGenerateAI" type="button" @click="generateAIDescription" v-if="!aiBoxVisible">AI 설명 생성</button>
           <div class="ai-box" id="aiBox" v-if="aiBoxVisible">
             <div class="ai-box-header">
-              <h3>생성된 설명</h3>
+              <h3>AI 설명</h3>
               <button class="btn ghost" type="button" id="btnRegenAI" style="font-size:13px; padding:6px 10px;" @click="regenerateAIDescription">다시 생성</button>
             </div>
             <textarea id="aiDescription" placeholder="AI가 생성한 설명이 여기에 표시됩니다." v-model="product.aiDescription"></textarea>
@@ -114,15 +118,24 @@ export default {
         quantity: null,
         classification: '상의',
         category: '',
-        gender: [],
-        season: [],
+        selectedGender: '', // 선택된 성별 (단일 문자열)
+        selectedSeasons: [], // 선택된 계절 (배열)
         image: null,
         aiDescription: '',
       },
+      selectedFileName: '선택된 파일 없음', // 선택된 파일명 표시
       categoryData: {
         '아우터': ['바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
         '상의': ['반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
         '하의': ['데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠컷'],
+      },
+      genderMap: { // 백엔드 코드와 프론트엔드 표시명 매핑
+        'M': '남성',
+        'F': '여성',
+        'C': '남여공용',
+        '남성': 'M',
+        '여성': 'F',
+        '남여공용': 'C',
       },
       categories: [],
       imagePreview: '',
@@ -138,9 +151,20 @@ export default {
     productToEdit: {
       handler(newVal) {
         if (newVal) {
-          this.product = { ...newVal };
+          // 깊은 복사를 통해 부모 컴포넌트의 데이터가 직접 수정되는 것을 방지
+          this.product = JSON.parse(JSON.stringify(newVal));
           this.imagePreview = newVal.imageURL || '';
           this.aiBoxVisible = !!newVal.aiDescription;
+
+          // 성별 데이터 변환 (백엔드 코드 -> 프론트엔드 단일 문자열)
+          this.product.selectedGender = this.genderMap[newVal.gender] || '';
+
+          // 계절 데이터 할당 (백엔드 List<String> -> 프론트엔드 배열)
+          this.product.selectedSeasons = newVal.seasons || [];
+
+          // 파일 이름 초기화
+          this.selectedFileName = newVal.imageURL ? newVal.imageURL.substring(newVal.imageURL.lastIndexOf('/') + 1) : '선택된 파일 없음';
+
         } else {
           this.product = {
             itemName: '',
@@ -148,13 +172,14 @@ export default {
             quantity: null,
             classification: '상의',
             category: '',
-            gender: [],
-            season: [],
+            selectedGender: '',
+            selectedSeasons: [],
             image: null,
             aiDescription: '',
           };
           this.imagePreview = '';
           this.aiBoxVisible = false;
+          this.selectedFileName = '선택된 파일 없음'; // 등록 모드일 때 파일 이름 초기화
         }
         this.updateCategoryOptions();
       },
@@ -172,11 +197,15 @@ export default {
       const file = event.target.files[0];
       if (file) {
         this.product.image = file;
+        this.selectedFileName = file.name; // 파일 이름 업데이트
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imagePreview = e.target.result;
         };
         reader.readAsDataURL(file);
+      } else {
+        this.selectedFileName = '선택된 파일 없음'; // 파일 선택 취소 시
+        this.imagePreview = '';
       }
     },
     generateAIDescription() {
@@ -184,14 +213,28 @@ export default {
       this.product.aiDescription = '이 상품은 가볍고 따뜻한 소재로 제작되어 일상 및 출퇴근용으로 적합합니다. 10~18°C 구간에서 활용도가 높으며, 간절기 착용 시 쾌적함을 유지합니다.';
     },
     regenerateAIDescription() {
+      this.aiBoxVisible = true;
       this.product.aiDescription = '재생성된 예시: 통기성이 좋아 실내 활동에도 쾌적하며, 약한 바람이나 간헐적 비 날씨에도 무난하게 착용 가능합니다.';
     },
     handleSubmit() {
-      this.$emit('submit', this.product);
+      // 제출 전에 성별 데이터를 백엔드 형식으로 변환 (단일 문자열 코드)
+      const submittedProduct = { ...this.product };
+      if (submittedProduct.selectedGender) {
+        submittedProduct.gender = this.genderMap[submittedProduct.selectedGender];
+      } else {
+        submittedProduct.gender = null; // 선택된 성별이 없으면 null
+      }
+      delete submittedProduct.selectedGender; // 임시 필드 삭제
+
+      // 계절 데이터는 이미 배열이므로 그대로 사용
+      submittedProduct.seasons = submittedProduct.selectedSeasons;
+      delete submittedProduct.selectedSeasons; // 임시 필드 삭제
+
+      this.$emit('submit', submittedProduct);
     },
     handleDelete() {
       if (confirm('정말로 이 상품을 삭제하시겠습니까?')) {
-        this.$emit('delete', this.product.id);
+        this.$emit('delete', this.product.itemId);
       }
     },
   },
@@ -289,6 +332,48 @@ textarea {
 
 input[type="file"] {
   padding: 8px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.custom-file-input-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f9fafb;
+  padding: 4px; /* 내부 여백 */
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.file-select-button {
+  cursor: pointer;
+  padding: 10px 16px; /* .btn과 동일한 패딩 */
+  border-radius: 0px; /* 모서리를 뾰족하게 */
+  font-weight: 700; /* .btn과 동일한 font-weight */
+  transition: opacity .2s;
+  background: #ffffff; /* .btn.ghost와 동일한 배경색 */
+  border: 1px solid var(--line); /* .btn.ghost와 동일한 테두리 */
+  color: #111827; /* .btn.ghost와 동일한 글자색 */
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.file-select-button:hover {
+  opacity: .9;
+}
+
+.selected-file-name {
+  flex-grow: 1;
+  color: var(--muted);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px; /* 텍스트 내부 여백 */
 }
 
 .grid2 {

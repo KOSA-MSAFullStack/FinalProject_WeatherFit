@@ -2,7 +2,7 @@
 <!-- 관리자 페이지 -->
 
 <template>
-  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" @delete="handleProductDelete" />
+  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -92,15 +92,15 @@
 
             <div class="stats-grid" style="margin-bottom:20px">
               <div class="stat-box">
-                <div class="stat-value">324</div>
+                <div class="stat-value">{{ products.length }}</div>
                 <div class="stat-label">등록 상품</div>
               </div>
               <div class="stat-box">
-                <div class="stat-value">298</div>
+                <div class="stat-value">{{ sellingProductsCount }}</div>
                 <div class="stat-label">판매 중</div>
               </div>
               <div class="stat-box">
-                <div class="stat-value">18</div>
+                <div class="stat-value">{{ soldOutProductsCount }}</div>
                 <div class="stat-label">품절</div>
               </div>
             </div>
@@ -113,12 +113,13 @@
                     <th>상품명</th>
                     <th>카테고리</th>
                     <th>판매가</th>
+                    <th>재고 수량</th>
                     <th>등록일</th>
                     <th>관리</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="product in products" :key="product.id">
+                  <tr v-for="product in products" :key="product.itemId">
                     <td>{{ product.itemCode }}</td>
                     <td>
                       <div class="product-info">
@@ -126,7 +127,8 @@
                       </div>
                     </td>
                     <td>{{ product.category }}</td>
-                    <td>{{ product.price.toLocaleString() }}원</td>
+                    <td>{{ product.price ? product.price.toLocaleString() : '0' }}원</td>
+                    <td>{{ product.quantity }}개</td>
                     <td>{{ product.createdAt }}</td>
                     <td><button class="btn small" @click="openEditModal(product)">수정</button></td>
                   </tr>
@@ -165,10 +167,22 @@ export default {
         { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
       ],
       products: [
-        { id: 1, itemCode: 'PRD-001', itemName: '울 블렌드 니트 탑', classification: '상의', category: '니트/스웨터', price: 435000, createdAt: '2025.10.01', gender: ['남성'], season: ['가을', '겨울'], aiDescription: '따뜻한 울 소재의 니트입니다.' },
-        { id: 2, itemCode: 'PRD-002', itemName: '라이트 트렌치', classification: '아우터', category: '코트', price: 129000, createdAt: '2025.09.15', gender: ['여성'], season: ['봄', '가을'], aiDescription: '가볍게 걸치기 좋은 트렌치 코트입니다.' },
+        { itemId: 1, itemName: '베이직 라운드 티셔츠', itemCode: 'TOP-001', price: 29000, gender: 'M', imageURL: 'https://picsum.photos/id/10/200/300', aiDescription: '데일리로 착용하기 좋은 베이직 라운드 티셔츠입니다. 부드러운 면 소재로 편안함을 제공합니다.', createdAt: '2025-11-12', reviewAiSummary: '편안하고 기본템으로 좋아요.', category: '반소매 티셔츠', classification: '상의', quantity: 10, seasons: ['봄', '여름'] },
+        { itemId: 2, itemName: '슬림핏 데님 팬츠', itemCode: 'BOT-002', price: 49000, gender: 'F', imageURL: 'https://picsum.photos/id/20/200/300', aiDescription: '활동성이 좋은 슬림핏 데님 팬츠입니다. 어떤 상의와도 잘 어울려 활용도가 높습니다.', createdAt: '2025-11-11', reviewAiSummary: '핏이 예쁘고 착용감이 편해요.', category: '데님 팬츠', classification: '하의', quantity: 0, seasons: ['가을'] },
+        { itemId: 3, itemName: '오버핏 후드티', itemCode: 'TOP-003', price: 39000, gender: 'C', imageURL: 'https://picsum.photos/id/30/200/300', aiDescription: '트렌디한 오버핏 후드티입니다. 캐주얼한 스타일을 연출하기에 좋습니다.', createdAt: '2025-11-10', reviewAiSummary: '색상이 예쁘고 따뜻해요.', category: '후드 티셔츠', classification: '상의', quantity: 5, seasons: ['가을', '겨울'] },
+        { itemId: 4, itemName: '경량 패딩 조끼', itemCode: 'OUT-004', price: 59000, gender: 'C', imageURL: 'https://picsum.photos/id/40/200/300', aiDescription: '가볍고 따뜻하여 간절기에 활용하기 좋은 패딩 조끼입니다.', createdAt: '2025-11-09', reviewAiSummary: '가성비 좋은 패딩 조끼.', category: '패딩', classification: '아우터', quantity: 12, seasons: ['봄', '가을'] },
+        { itemId: 5, itemName: '스트라이프 셔츠', itemCode: 'TOP-005', price: 35000, gender: 'M', imageURL: 'https://picsum.photos/id/50/200/300', aiDescription: '클래식한 스트라이프 패턴의 셔츠입니다. 다양한 스타일에 매치하기 좋습니다.', createdAt: '2025-11-08', reviewAiSummary: '깔끔하고 예뻐요.', category: '셔츠/블라우스', classification: '상의', quantity: 0, seasons: ['봄', '여름'] },
+        { itemId: 6, itemName: '와이드 슬랙스', itemCode: 'BOT-006', price: 45000, gender: 'F', imageURL: 'https://picsum.photos/id/60/200/300', aiDescription: '편안하면서도 스타일리시한 와이드 슬랙스입니다. 데일리룩으로 추천합니다.', createdAt: '2025-11-07', reviewAiSummary: '편하고 핏이 좋아요.', category: '슬랙스', classification: '하의', quantity: 8, seasons: ['가을', '겨울'] }
       ]
     };
+  },
+  computed: {
+    sellingProductsCount() {
+      return this.products.filter(product => product.quantity > 0).length;
+    },
+    soldOutProductsCount() {
+      return this.products.filter(product => product.quantity === 0).length;
+    }
   },
   methods: {
     showPage(pageId) {
@@ -182,18 +196,46 @@ export default {
       this.selectedProduct = product;
       this.isProductModalVisible = true;
     },
+    async handleProductSubmit(productData) {
+      try {
+        if (this.selectedProduct) { // 수정 모드
+          await axios.patch(`/api/admin/items/${this.selectedProduct.itemId}`, productData);
+          alert('상품이 성공적으로 수정되었습니다.');
+        } else { // 등록 모드
+          await axios.post('/api/admin/items', productData);
+          alert('상품이 성공적으로 등록되었습니다.');
+        }
+        this.isProductModalVisible = false;
+        // this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
+      } catch (error) {
+        console.error('상품 처리 실패:', error);
+        alert('상품 처리 중 오류가 발생했습니다: ' + (error.response?.data?.error || error.message));
+      }
+    },
     async handleProductDelete(itemId) {
       try {
         await axios.delete(`/api/admin/items/${itemId}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         this.isProductModalVisible = false;
-        // 상품 목록 새로고침
-        this.products = this.products.filter(product => product.id !== itemId);
+        // this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
+        this.products = this.products.filter(product => product.itemId !== itemId); // 더미 데이터에서 삭제
       } catch (error) {
         console.error('상품 삭제 실패:', error);
-        alert('상품 삭제에 실패했습니다.');
+        alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
+      }
+    },
+    async fetchProducts() {
+      try {
+        const response = await axios.get('/api/items');
+        this.products = response.data;
+      } catch (error) {
+        console.error('상품 목록을 불러오는 데 실패했습니다:', error);
+        alert('상품 목록을 불러오는 데 실패했습니다.');
       }
     }
+  },
+  mounted() {
+    // this.fetchProducts(); // 더미 데이터 사용 시 주석 처리
   }
 };
 </script>
