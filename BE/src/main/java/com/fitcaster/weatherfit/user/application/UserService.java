@@ -23,8 +23,13 @@ import java.time.format.DateTimeParseException;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final AddressRepository addressRepository; // 💡 Address 저장을 위해 주입
+    private final AddressRepository addressRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // 이메일 중복 확인
+    public boolean checkEmailDuplication(String email) {
+        return !userRepository.existsByEmail(email);
+    }
 
     // 회원가입 처리
     @Transactional
