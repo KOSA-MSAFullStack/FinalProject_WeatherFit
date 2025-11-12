@@ -23,16 +23,18 @@ import java.time.format.DateTimeParseException;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final AddressRepository addressRepository; // 💡 Address 저장을 위해 주입
+    private final AddressRepository addressRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // 이메일 중복 확인
+    public boolean checkEmailDuplication(String email) {
+        return !userRepository.existsByEmail(email);
+    }
 
     // 회원가입 처리
     @Transactional
     public void signup(SignupRequest request) {
-        // 비밀번호 일치 확인 및 중복 확인
-        if (!request.getPassword().equals(request.getPasswordConfirm())) {
-            throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
-        }
+        // 중복 확인
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateUserException("이미 가입된 이메일입니다.");
         }

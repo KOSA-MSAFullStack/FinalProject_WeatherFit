@@ -58,6 +58,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
 
+                        // 이메일 중복 확인 경로는 GET 요청으로 인증 없이 누구나 접근 허용
+                        .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
+
                         // 그 외 모든 요청은 인증 필요 (로그인이 필요함)
                         .anyRequest().authenticated()
                 )
@@ -85,7 +88,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 프론트엔드 URL 혹은 Postman 접근을 위해 허용
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:8080"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:8080"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true); // 쿠키나 인증 헤더를 허용
