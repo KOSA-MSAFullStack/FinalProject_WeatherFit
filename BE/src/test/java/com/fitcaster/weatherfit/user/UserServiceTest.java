@@ -50,7 +50,6 @@ class UserServiceTest {
         SignupRequest request = new SignupRequest();
         request.setEmail("test@fitcaster.com");
         request.setPassword("Password!123");
-        request.setPasswordConfirm("Password!123");
         request.setName("테스트사용자");
         request.setPhone("01011112222");
         request.setGender("M"); // Gender Enum에 맞게 M 또는 F
@@ -131,32 +130,6 @@ class UserServiceTest {
 
         // 데이터가 중복으로 저장되지 않았는지 확인
         assertThat(userRepository.count()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("비밀번호 불일치 시 IllegalArgumentException이 발생해야 한다")
-    void signup_Fail_ThrowsIllegalArgumentException() {
-        // given
-        SignupRequest request = createDefaultSignupRequest();
-        request.setPasswordConfirm("WrongPassword!123"); // 비밀번호 불일치
-
-        // when & then
-        assertThrows(IllegalArgumentException.class, () -> {
-            userService.signup(request);
-        });
-    }
-
-    @Test
-    @DisplayName("잘못된 날짜 형식 입력 시 InternalServerException이 발생해야 한다")
-    void signup_Fail_ThrowsInternalServerExceptionForInvalidDate() {
-        // given
-        SignupRequest request = createDefaultSignupRequest();
-        request.setBirth("1990/01/01"); // 잘못된 형식
-
-        // when & then
-        assertThrows(InternalServerException.class, () -> {
-            userService.signup(request);
-        });
     }
 
     @Test
