@@ -64,7 +64,6 @@
 
         <div class="form-group">
           <label for="itemImage">상품 이미지</label>
-          <div v-if="isEditMode && product.imageURL" class="muted" style="font-size:13px; margin-bottom:4px;">현재 이미지 파일: {{ product.imageURL }}</div>
           <div class="custom-file-input-box">
             <input type="file" id="itemImage" accept="image/*" @change="handleImageUpload" class="hidden-file-input">
             <label for="itemImage" class="file-select-button">파일 선택</label>
