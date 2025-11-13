@@ -2,23 +2,24 @@ package com.fitcaster.weatherfit.recommendation.application.service;
 
 import com.fitcaster.weatherfit.catalog.application.ItemService;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
-import com.fitcaster.weatherfit.recommendation.api.dto.AiRecommendRequest;
-import com.fitcaster.weatherfit.recommendation.api.dto.AiTodayRecommendResponse;
-import com.fitcaster.weatherfit.recommendation.api.dto.AiTomorrowRecommendResponse;
-import com.fitcaster.weatherfit.recommendation.api.dto.ItemBrief;
+import com.fitcaster.weatherfit.recommendation.api.dto.*;
 import com.fitcaster.weatherfit.recommendation.application.port.AiPort;
 import com.fitcaster.weatherfit.weather.api.dto.WeatherResponse;
 import com.fitcaster.weatherfit.weather.application.WeatherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 오늘/내일/이번주 날씨 정보를 이용해서 AI에게 옷을 추천받는 비즈니스 로직
  * @author 김경아
  */
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
@@ -57,6 +58,41 @@ public class RecommendationService {
         return aiPort.recommendTomorrow(aiRecommendRequest);
     }
 
+    /**
+     * 이번주 날씨 정보를 이용해 간단 규칙 + AI로 3개의 아이템을 추천 받는 메서드
+     * @param address 지역
+     */
+    public AiWeeklyRecommendResponse getWeeklyRecommendation(String address) {
+        // 1. 일주일 날씨 조회
+        List<WeatherResponse> weeklyList = weatherService.getWeeklyWeather(address);
+
+        // 2. 대표 날씨 1개로 요약
+        WeatherResponse weeklySummary = summarizeWeekly(weeklyList);
+
+        // 3. 계절 계산
+        String season = getSeason(weeklySummary);
+
+        // 4. 계절 기준으로 후보 가져오기
+        List<Item> outers  = itemService.findByClassificationAndSeason("OUTER",  season);
+        List<Item> tops    = itemService.findByClassificationAndSeason("TOP",    season);
+        List<Item> bottoms = itemService.findByClassificationAndSeason("BOTTOM", season);
+
+        // 5. AI 프롬프트용 DTO 변환
+        List<ItemBrief> outerBriefs   = toBriefs(outers);
+        List<ItemBrief> topsBriefs    = toBriefs(tops);
+        List<ItemBrief> bottomsBriefs = toBriefs(bottoms);
+
+        // 6. AI 요청 DTO 생성 (오늘/내일과 동일한 구조)
+        AiRecommendRequest request = AiRecommendRequest.builder()
+                .outers(outerBriefs)
+                .tops(topsBriefs)
+                .bottoms(bottomsBriefs)
+                .weather(weeklySummary)   // 단지 weather만 이번주 요약을 넣는 것
+                .build();
+
+        // 7. AI 호출
+        return aiPort.recommendWeekly(request);
+    }
 
     /**
      * 날씨 정보를 이용해서 DB에서 1차 분류를 받고 AI에게 전달할 DTO를 반환하는 메서드
@@ -144,6 +180,49 @@ public class RecommendationService {
     private double distanceFromTarget(Item item, double targetTemp) {
         double itemCenter = (item.getMinTemperature() + item.getMaxTemperature()) / 2.0;
         return Math.abs(itemCenter - targetTemp); // 이 옷이 오늘/내일 기온과 얼마나 차이 나는지
+    }
+
+    /**
+     * 이번주 날씨 리스트를 하나의 이번주 요약 정보로 변환하는 메서드
+     * @param weeklyList 이번주 날씨 정보 리스트
+     * @return 이번주를 대표하는 하나의 날씨 정보
+     */
+    private WeatherResponse summarizeWeekly(List<WeatherResponse> weeklyList) {
+        if (weeklyList == null || weeklyList.isEmpty()) {
+            throw new IllegalArgumentException("이번주 날씨 정보가 비어있습니다.");
+        }
+
+        // 1. 평균 최저/최고 기온 계산
+        // 각 날짜의 minTemperature를 꺼내서 평균값을 구한다
+        double avgMin = weeklyList.stream()
+                .mapToDouble(WeatherResponse::getMinTemperature)
+                .average()
+                .orElseThrow(); // weeklyList가 비어있지 않으니 안전
+
+        // 각 날짜의 maxTemperature를 꺼내서 평균값을 구한다
+        double avgMax = weeklyList.stream()
+                .mapToDouble(WeatherResponse::getMaxTemperature)
+                .average()
+                .orElseThrow();
+
+        // 2. 가장 많이 등장한 날씨 상태(Mode) 계산
+        String commonCondition = weeklyList.stream()
+                .collect(Collectors.groupingBy(WeatherResponse::getCondition, Collectors.counting()))
+                .entrySet().stream()
+                .max(Map.Entry.comparingByValue()) // count가 가장 큰 condition 선택
+                .map(Map.Entry::getKey)            // condition 문자열만 꺼낸다.
+                .orElse(weeklyList.get(0).getCondition());
+
+        // 3. 대표 날짜는 자유롭게 선택 -> 마지막 날
+        LocalDate representativeDate = weeklyList.get(weeklyList.size() - 1).getDate();
+
+        // 4. WeatherResponse 생성
+        return WeatherResponse.builder()
+                .date(representativeDate)
+                .minTemperature(avgMin)
+                .maxTemperature(avgMax)
+                .condition(commonCondition)
+                .build();
     }
 
     /**

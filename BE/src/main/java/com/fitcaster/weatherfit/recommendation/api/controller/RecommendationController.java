@@ -3,6 +3,7 @@ package com.fitcaster.weatherfit.recommendation.api.controller;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiAllRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiTodayRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiTomorrowRecommendResponse;
+import com.fitcaster.weatherfit.recommendation.api.dto.AiWeeklyRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.application.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +43,16 @@ public class RecommendationController {
     public ResponseEntity<AiTomorrowRecommendResponse> getTomorrowRecommendation(@RequestParam String address) {
         AiTomorrowRecommendResponse todayRecommendation = recommendationService.getTomorrowRecommendation(address);
         return ResponseEntity.ok(todayRecommendation);
+    }
+
+    /**
+     * 내일 날씨에 맞는 옷 추천
+     * @param address 지역
+     * @return 내일 날씨 기반 추천 받은 옷
+     */
+    @GetMapping("/weekly")
+    public ResponseEntity<AiWeeklyRecommendResponse> getWeeklyRecommendation(@RequestParam String address) {
+        AiWeeklyRecommendResponse weeklyRecommendation = recommendationService.getWeeklyRecommendation(address);
+        return ResponseEntity.ok(weeklyRecommendation);
     }
 }

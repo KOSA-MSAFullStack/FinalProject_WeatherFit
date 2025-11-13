@@ -1,8 +1,6 @@
 package com.fitcaster.weatherfit.recommendation.infra;
 
-import com.fitcaster.weatherfit.recommendation.api.dto.AiRecommendRequest;
-import com.fitcaster.weatherfit.recommendation.api.dto.AiTodayRecommendResponse;
-import com.fitcaster.weatherfit.recommendation.api.dto.AiTomorrowRecommendResponse;
+import com.fitcaster.weatherfit.recommendation.api.dto.*;
 import com.fitcaster.weatherfit.recommendation.application.port.AiPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -55,6 +53,22 @@ public class OpenAiAdapter implements AiPort {
 
         // 2. AI에게 요청 보내서 응답 받기
         AiTomorrowRecommendResponse response = callAi(0.7, userPrompt, AiTomorrowRecommendResponse.class);
+
+        return response;
+    }
+
+    /**
+     * 이번주 날씨에 대한 옷 추천을 받는 메서드
+     * @param request AI에게 넘겨줄 정보를 담은 Dto
+     * @return 이번주 날씨 기반 추천 옷(아우터, 상의, 하의 중 3개)
+     */
+    @Override
+    public AiWeeklyRecommendResponse recommendWeekly(AiRecommendRequest request) {
+        // 1. 프롬프트 문자열 생성
+        String userPrompt = promptTemplate.buildWeeklyRecommendPrompt(request);
+
+        // 2. AI에게 요청 보내서 응답 받기
+        AiWeeklyRecommendResponse response = callAi(0.3, userPrompt, AiWeeklyRecommendResponse.class);
 
         return response;
     }
