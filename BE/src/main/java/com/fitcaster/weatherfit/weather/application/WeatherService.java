@@ -30,6 +30,8 @@ public class WeatherService {
     public WeatherResponse getTodayWeather(String address) {
         // 1. 검색한 지역의 위도, 경도를 반환
         double[] latLng = kakaoLocationClient.getLatLng(address);
+
+        // 2. 위도, 경도 기준으로 오늘의 날씨를 가져온다
         return openWeatherClient.getTodayWeather(latLng[0], latLng[1]);
     }
 
@@ -53,7 +55,7 @@ public class WeatherService {
         // 1. 검색한 지역의 위도, 경도를 반환
         double[] latLng = kakaoLocationClient.getLatLng(address);
 
-        // 2. 위도, 경도 기준으로 내일의 날씨를 가져온다
+        // 2. 위도, 경도 기준으로 이번주의 날씨를 가져온다
         return openWeatherClient.getWeeklyWeather(latLng[0], latLng[1]);
     }
 

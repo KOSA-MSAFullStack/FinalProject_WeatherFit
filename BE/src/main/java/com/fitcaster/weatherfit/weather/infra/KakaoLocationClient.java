@@ -28,10 +28,10 @@ public class KakaoLocationClient {
      * @return 위도(lat), 경도(lng)
      */
     public double[] getLatLng(String address) {
+        // 1. 카카오 API 호출 -> 주소 기반 검색 시도
         String url = String.format("/v2/local/search/address.json?query=%s",
                 address);
 
-        // 카카오 API 호출
         Map<String, Object> response = kakaoWebClient.get()
                 .uri(url)
                 .retrieve() // 응답을 Map 구조(JSON → Map)로 받음
@@ -40,6 +40,21 @@ public class KakaoLocationClient {
 
         // 응답에서 주소 결과 목록 추출
         List<Map<String, Object>> documents = (List<Map<String, Object>>) response.get("documents");
+
+        // 2. 주소 검색 결과가 없으면 키워드 검색으로 대체
+        url = String.format("/v2/local/search/keyword.json?query=%s",
+                address);
+
+        if (documents == null || documents.isEmpty()) {
+            response = kakaoWebClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            documents = (List<Map<String, Object>>) response.get("documents");
+        }
+
         if (documents.isEmpty()) {
             // 검색된 주소가 없을 경우 예외 발생
             throw new IllegalArgumentException("해당 주소를 찾을 수 없습니다: " + address);

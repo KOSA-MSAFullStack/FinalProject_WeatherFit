@@ -118,7 +118,6 @@ public class OpenWeatherClient {
     public List<WeatherResponse> getWeeklyWeather(double lat, double lon) {
         Map<String, Object> data = requestWeatherData(lat, lon);
         List<Map<String, Object>> dailyList = (List<Map<String, Object>>) data.get("daily");
-        int timezoneOffset = ((Number) data.get("timezone_offset")).intValue();
 
         List<WeatherResponse> result = new ArrayList<>();
         for (int i = 0; i < dailyList.size(); i++) {
