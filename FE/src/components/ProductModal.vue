@@ -66,7 +66,7 @@
           <label for="itemImage">상품 이미지</label>
           <div class="custom-file-input-box">
             <input type="file" id="itemImage" accept="image/*" @change="handleImageUpload" class="hidden-file-input">
-            <label for="itemImage" class="file-select-button">파일 선택</label>
+            <label for="itemImage" class="file-select-button">업로드</label>
             <span class="selected-file-name">{{ selectedFileName }}</span>
           </div>
           <div id="imgPreview" class="img-preview" :style="{ backgroundImage: `url(${imagePreview})` }"></div>
@@ -185,6 +185,7 @@ export default {
       immediate: true,
     },
   },
+
   methods: {
     updateCategoryOptions() {
       this.categories = this.categoryData[this.product.classification] || [];
@@ -192,6 +193,25 @@ export default {
         this.product.category = this.categories[0];
       }
     },
+
+    // 이미지 업로드시 미리보기
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      this.product.image = file;
+      this.selectedFileName = file.name;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+
+    // AI 설명 생성
     async generateAIDescription() {
       if (!this.product.image) {
         alert('AI 설명을 생성하려면 상품 이미지를 먼저 등록해주세요.');
@@ -227,6 +247,7 @@ export default {
       // 다시 생성 버튼 클릭 시 generateAIDescription 로직 재사용
       this.generateAIDescription();
     },
+
     handleSubmit() {
       // 제출 전에 성별 데이터를 백엔드 형식으로 변환 (단일 문자열 코드)
       const submittedProduct = { ...this.product };
@@ -243,6 +264,7 @@ export default {
 
       this.$emit('submit', submittedProduct);
     },
+
     handleDelete() {
       if (confirm('정말로 이 상품을 삭제하시겠습니까?')) {
         this.$emit('delete', this.product.itemId);
