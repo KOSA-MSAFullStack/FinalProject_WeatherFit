@@ -8,6 +8,7 @@ import com.fitcaster.weatherfit.catalog.domain.entity.Category;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
 import com.fitcaster.weatherfit.catalog.domain.repository.CategoryRepository;
 import com.fitcaster.weatherfit.catalog.domain.repository.ItemRepository;
+import com.fitcaster.weatherfit.catalog.domain.repository.ItemSeasonRepository;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,6 +26,7 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
+    private final ItemSeasonRepository itemSeasonRepository; // 상품 계절 중개 테이블 레포지토리
 
     // [모든 상품 목록 조회]
     public List<Item> getAllItems() {
@@ -129,5 +131,10 @@ public class ItemService {
             // DB 제약 조건 위반 시 (예: 외래 키 참조)
             throw new IllegalArgumentException("⚠️ 해당 상품을 참조하는 데이터(예: 주문 내역)가 존재하여 삭제할 수 없음");
         }
+    }
+
+    public List<Item> findByClassificationAndSeason(String classification, String season) {
+        List<Item> items = itemSeasonRepository.findByClassificationAndSeason(classification, season);
+        return items;
     }
 }

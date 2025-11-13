@@ -4,7 +4,6 @@ import com.fitcaster.weatherfit.catalog.domain.entity.Classification;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
 import com.fitcaster.weatherfit.catalog.domain.entity.ItemSeason;
 import com.fitcaster.weatherfit.catalog.domain.entity.ItemSeasonId;
-import com.fitcaster.weatherfit.recommendation.domain.entity.ClassificationEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
