@@ -47,14 +47,9 @@ public class AuthService {
      */
     public LoginResponse login(LoginRequest request, HttpServletResponse response) {
 
-        Authentication authentication;
-        try {
-            authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
-        } catch (AuthenticationException e) {
-            throw new RuntimeException("로그인 정보가 유효하지 않습니다.", e);
-        }
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
 
         User user = (User) authentication.getPrincipal();
 
@@ -104,13 +99,14 @@ public class AuthService {
         // 쿠키에서 Refresh Token 추출
         String refreshTokenValue = extractRefreshTokenFromCookie(request);
         if (refreshTokenValue == null) {
-            throw new RuntimeException("Refresh Token 쿠키를 찾을 수 없습니다. (재로그인 필요)");
+            // 토큰이 없으면 401 처리
+            throw new AuthenticationException("Refresh Token 쿠키를 찾을 수 없습니다. (재로그인 필요)") {};
         }
 
         // Refresh Token 유효성 검증 (JWT 서명, 만료 시간)
         if (!jwtTokenProvider.validateToken(refreshTokenValue)) {
-            // validateToken이 만료 시 false를 반환한다고 가정
-            throw new RuntimeException("만료되었거나 유효하지 않은 Refresh Token입니다. (재로그인 필요)");
+            // 토큰이 유효하지 않으면 401 처리
+            throw new AuthenticationException("만료되었거나 유효하지 않은 Refresh Token입니다. (재로그인 필요)") {};
         }
 
         // 토큰에서 userId 추출 (JwtTokenProvider에 getUserIdFromToken이 구현되어 있어야 함)
@@ -118,19 +114,21 @@ public class AuthService {
 
         // DB에서 userId로 Refresh Token 엔티티 조회
         RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("DB에 Refresh Token이 존재하지 않습니다. (로그아웃된 사용자)"));
+                .orElseThrow(() -> new AuthenticationException("DB에 Refresh Token이 존재하지 않습니다. (로그아웃되었거나 탈취된 토큰)") {});
 
         // (보안 강화) DB에 저장된 토큰과 쿠키의 토큰이 일치하는지 확인
         if (!refreshToken.getToken().equals(refreshTokenValue)) {
             // 토큰이 일치하지 않으면, 탈취 시도로 간주하고 DB 토큰 삭제 (로그아웃 처리)
             refreshTokenRepository.delete(refreshToken);
-            throw new RuntimeException("토큰이 일치하지 않습니다. (비정상 접근)");
+            // 비정상 접근으로 401 처리
+            throw new AuthenticationException("토큰이 일치하지 않습니다. (비정상 접근)") {};
         }
 
         // User 엔티티 가져오기
         User user = refreshToken.getUser();
         if (user == null) {
-            throw new RuntimeException("Refresh Token에 연결된 사용자를 찾을 수 없습니다.");
+            // 사용자 정보가 없으면 401 처리
+            throw new AuthenticationException("Refresh Token에 연결된 사용자를 찾을 수 없습니다.") {};
         }
 
         // 새로운 Access Token 생성을 위한 Authentication 객체 생성
