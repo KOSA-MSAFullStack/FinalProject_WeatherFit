@@ -169,15 +169,17 @@ if (!isInterceptorsSetup) {
             const originalRequest = error.config;
             const store = useAuthStore();
             
-            // --- 로그인 요청(401)은 재발급 시도를 건너뛴다. ---
+            // 로그인/로그아웃 요청(401)은 재발급 시도를 건너뛴다.
             const isLoginAttempt = originalRequest.url === '/users/login';
+            const isLogoutAttempt = originalRequest.url === '/users/logout';
 
             // 1. 401 에러이고, 2. 토큰 재발급 요청이 아니며, 3. 재시도 플래그가 없으며,
-            // 4. 로그인 시도 요청이 아닌 경우에만 재발급 로직 실행
+            // 4. 로그인/로그아웃 시도 요청이 아닌 경우에만 재발급 로직 실행
             if (error.response?.status === 401 
                 && originalRequest.url !== '/users/refresh' 
                 && !originalRequest._retry
-                && !isLoginAttempt) {
+                && !isLoginAttempt
+                && !isLogoutAttempt) {
                 
                 originalRequest._retry = true; // 재시도 플래그 설정
                 console.log("401 감지: Access Token 재발급 시도...");

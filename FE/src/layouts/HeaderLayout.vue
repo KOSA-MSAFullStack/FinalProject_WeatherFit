@@ -95,9 +95,7 @@ const handleWeatherUpdate = () => {
  * 백엔드의 POST /users/logout 엔드포인트에 요청을 보내고, 
  * 서버가 쿠키와 DB의 리프레시 토큰을 무효화하도록 합니다.
  */
-const handleLogout = async () => {
-  console.log('로그아웃 요청 시작...');
-  
+const handleLogout = async () => {  
   // 백엔드 API 엔드포인트 URL
   const logoutUrl = '/users/logout'; 
   
@@ -110,8 +108,7 @@ const handleLogout = async () => {
 
     // 백엔드가 200 OK와 메시지("로그아웃 되었습니다.")를 반환한다고 가정
     if (response.status === 200) {
-      console.log("✅ 로그아웃 성공 응답:", response.data);
-      alert('로그아웃되었습니다.');
+      // console.log("로그아웃 성공 응답:", response.data);
       
       // 로그아웃 성공 시 로그인 페이지로 리디렉션
       router.push('/login'); 
