@@ -5,6 +5,7 @@ package com.fitcaster.weatherfit.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
@@ -13,6 +14,16 @@ import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // [인증 실패 예외 처리] - HTTP Status 401 Unauthorized
+    // 로그인 정보 불일치, 토큰 만료/유효성 등 인증 관련 문제 처리
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleAuthenticationException(AuthenticationException e) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", e.getMessage());
+        // 401: 권한이 없음 (인증 실패)
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
 
     // [상품 코드 중복과 같은 잘못된 인자 예외 처리]
     @ExceptionHandler

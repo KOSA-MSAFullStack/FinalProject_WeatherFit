@@ -59,18 +59,35 @@ export const useAuthStore = defineStore('auth', {
                 const response = await axios.post('/users/login', { email, password }); 
                 
                 const accessToken = response.data.accessToken;
-
-                if (accessToken) {
-                    this.setAccessToken(accessToken); // 인메모리 저장 및 axios 헤더 설정
-                    return { success: true, message: '로그인 성공!' };
-                } else {
-                     throw new Error("서버 응답에 Access Token이 없습니다.");
-                }
+                this.setAccessToken(accessToken); // 인메모리 저장 및 axios 헤더 설정
+                return { success: true, message: '로그인 성공!' };
 
             } catch (error) {
-                console.error('로그인 실패:', error);
-                // 에러 메시지 반환
-                throw error; 
+                // console.error("로그인 중 오류 발생:", error);
+
+                let errorMessage = null;
+
+                // 401 (Unauthorized - 비밀번호 불일치)
+                if (error.response) {
+                    // 백엔드에서 에러 메시지를 포함하여 보냈다면 사용
+                    if (error.response.data && error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } 
+                    // 401이 발생한 경우 (예: 인증 실패)
+                    else if (error.response.status === 401) {
+                         errorMessage = "이메일 또는 비밀번호가 일치하지 않습니다.";
+                    }
+                    // 500 (Internal Server Error)은 백엔드 로직 오류이므로 일반적인 오류 메시지 사용
+                    else if (error.response.status === 500) {
+                        errorMessage = "로그인에 실패했습니다. 서버 오류가 발생했습니다 (500).";
+                    }
+                    else {
+                        errorMessage = `로그인에 실패했습니다. 오류 코드: ${error.response.status}`;
+                    }
+                }
+                this.loginError = errorMessage; // 오류 상태에 저장
+                this.setAccessToken(null);      // 토큰 확실히 제거
+                return { success: false, message: errorMessage }; // 로그인 실패 반환
             }
         },
         
@@ -129,7 +146,7 @@ export const useAuthStore = defineStore('auth', {
     },
 });
 
-// --- axios 인터셉터 설정 (가장 중요) ---
+// --- axios 인터셉터 설정 ---
 // 이 로직은 AuthStore.js가 로드될 때 한 번만 실행되어야 합니다.
 let isInterceptorsSetup = false;
 
@@ -152,8 +169,15 @@ if (!isInterceptorsSetup) {
             const originalRequest = error.config;
             const store = useAuthStore();
             
-            // 1. 401 에러이고, 2. 토큰 재발급 요청이 아니며, 3. 재시도 플래그가 없는 경우
-            if (error.response?.status === 401 && originalRequest.url !== '/users/refresh' && !originalRequest._retry) {
+            // --- 로그인 요청(401)은 재발급 시도를 건너뛴다. ---
+            const isLoginAttempt = originalRequest.url === '/users/login';
+
+            // 1. 401 에러이고, 2. 토큰 재발급 요청이 아니며, 3. 재시도 플래그가 없으며,
+            // 4. 로그인 시도 요청이 아닌 경우에만 재발급 로직 실행
+            if (error.response?.status === 401 
+                && originalRequest.url !== '/users/refresh' 
+                && !originalRequest._retry
+                && !isLoginAttempt) {
                 
                 originalRequest._retry = true; // 재시도 플래그 설정
                 console.log("401 감지: Access Token 재발급 시도...");

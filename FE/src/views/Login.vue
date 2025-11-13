@@ -49,6 +49,10 @@
               </button>
             </div>
 
+            <div v-if="loginErrorMessage" class="text-sm text-red-500 text-center font-medium">
+              {{ loginErrorMessage }}
+            </div>
+
             <!-- 로그인 버튼 -->
             <button
               type="submit"
@@ -82,24 +86,30 @@ const imageUrl = new URL('../assets/login-image.jpg', import.meta.url).href;
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
+const loginErrorMessage = ref('');
 
 const handleLogin = async () => {
-  console.log('Login attempt:', { email: email.value, password: password.value });
+  //console.log('Login attempt:', { email: email.value, password: password.value });
+  loginErrorMessage.value = '';
   
   if (!email.value || !password.value) {
-    alert('이메일과 비밀번호를 모두 입력해주세요.');
+    loginErrorMessage.value = '이메일과 비밀번호를 모두 입력해주세요.';
     return;
   }
 
   try {
     // API 호출, Access Token 저장, axios 헤더 설정을 모두 여기서 처리
-    await authStore.login(email.value, password.value); 
+    const result = await authStore.login(email.value, password.value); 
 
-    alert('로그인 성공! 환영합니다.');
-    router.push('/main');
+    if (result.success) {
+      router.push('/main');
+    } else {
+      loginErrorMessage.value = result.message;
+    }
+    
 
   } catch (error) {
-    console.error('로그인 실패:', error);
+    //console.error('로그인 실패:', error);
     let errorMessage = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
 
     // Axios 에러 처리 (스토어 내부의 axios 요청에서 발생한 에러를 catch)
@@ -114,7 +124,7 @@ const handleLogin = async () => {
          errorMessage = error.message;
     }
     
-    alert(errorMessage);
+    loginErrorMessage.value = errorMessage;
   }
 };
 
