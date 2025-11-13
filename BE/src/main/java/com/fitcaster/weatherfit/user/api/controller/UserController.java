@@ -67,7 +67,7 @@ public class UserController {
 
     /**
      * POST /users/logout (로그아웃)
-     * 클라이언트의 쿠키에 저장된 액세스/리프레시 토큰을 삭제합니다.
+     * 클라이언트의 쿠키에 저장된 리프레시 토큰을 만료합니다.
      */
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletResponse response, @AuthenticationPrincipal User user) {
