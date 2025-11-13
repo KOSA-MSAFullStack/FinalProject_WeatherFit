@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * 오늘/내일/이번주 날씨 정보를 이용해서 AI에게 옷을 추천받는 비즈니스 로직
+ * @author 김경아
+ */
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
@@ -22,8 +26,8 @@ public class RecommendationService {
     private final AiPort aiPort; // AI 관련 어댑터
     
     /**
-     *
-     * @param address
+     * 오늘 날씨 정보를 이용해서 DB에서 1차 분류를 받고 AI에게 옷을 추천 받는 메서드
+     * @param address 지역
      */
     public AiRecommendResponse getTodayRecommendation(String address) {
         // 1. 지역에 따른 오늘의 날씨 정보 조회

@@ -7,6 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
+/**
+ * AI Port를 실제 구현한 부분
+ * Open AI 모델을 이용해서 AI 요청을 보내는 부분
+ * @author 김경아
+ */
 @Component
 @RequiredArgsConstructor
 public class OpenAiAdapter implements AiPort {

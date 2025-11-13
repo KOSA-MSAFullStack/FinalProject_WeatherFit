@@ -7,6 +7,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * AI 요청으로 보낼 user prompt를 생성하는 클래스
+ * @author 김경아
+ */
 @Component
 public class PromptTemplate {
 

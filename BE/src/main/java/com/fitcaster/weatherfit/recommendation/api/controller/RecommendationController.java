@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * AI를 이용해 옷을 추천해주는 컨트롤러
+ * @author 김경아
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/recommendations")

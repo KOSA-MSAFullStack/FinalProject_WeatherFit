@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.util.List;
 
+/**
+ * AI에게 추천받기 위해 보내는 DTO
+ * @author 김경아
+ */
 @Getter
 @Setter
 @Builder
