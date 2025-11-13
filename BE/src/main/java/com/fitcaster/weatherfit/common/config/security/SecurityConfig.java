@@ -59,6 +59,8 @@ public class SecurityConfig {
 
                 // 요청별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        // 상품 목록 조회는 인증 없이 누구나 접근 허용 (임시!-개발 테스트 후 나중에 삭제 예정!!!)
+                        .requestMatchers(HttpMethod.GET, "/api/items").permitAll()
                         // 회원가입 및 로그인은 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.POST, "/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()

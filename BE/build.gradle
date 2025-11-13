@@ -25,7 +25,7 @@ repositories {
 }
 
 ext {
-	set('springAiVersion', "1.0.3")
+	set('springAiVersion', "1.1.0-M2")
 }
 
 dependencies {
@@ -46,6 +46,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testRuntimeOnly 'com.h2database:h2'
 }
 
 dependencyManagement {
