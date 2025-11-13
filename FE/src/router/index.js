@@ -1,5 +1,6 @@
 
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/store/authStore';
 
 import DefaultLayout from '@/layouts/DefaultLayout.vue'; 
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -41,9 +42,12 @@ const routes = [
         path: 'main', // '/main' 경로
         name: 'Main',
         component: () => import("@/views/Main.vue"),
-        meta: { title: '메인 페이지' },
+        meta: { 
+          title: '메인 페이지',
+          requiresAuth: true // 로그인이 필요한 페이지에 메타 필드 추가
+        },
       },
-      // 향후 추가될 마이페이지, 장바구니 등 다른 경로들을 여기에 추가
+      // 예: 마이페이지, 장바구니 등 다른 경로에도 필요 시 추가
       // { path: 'mypage', name: 'MyPage', component: MyPageComp, meta: { requiresAuth: true } },
     ]
   },
@@ -52,6 +56,28 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// 전역 네비게이션 가드 설정
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+
+  // 아직 인증 초기화(새로고침 시 토큰 재발급 시도)가 안됐다면, 여기서 완료될 때까지 기다립니다.
+  if (!authStore.isAuthReady) {
+    await authStore.initializeAuth();
+  }
+  
+  // 라우트 메타 필드를 확인하여 인증이 필요한 페이지인지 확인합니다.
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  
+  // 로그인이 필요한 페이지인데, 로그인이 되어있지 않다면 로그인 페이지로 보냅니다.
+  if (requiresAuth && !authStore.isAuthenticated) {
+    console.log('인증이 필요하여 로그인 페이지로 이동합니다.');
+    next({ name: 'Login' });
+  } else {
+    // 그 외의 모든 경우는 정상적으로 페이지 이동을 허용합니다.
+    next();
+  }
 });
 
 export default router;

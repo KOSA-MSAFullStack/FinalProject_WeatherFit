@@ -1,4 +1,3 @@
-// store/authStore.js: Pinia를 사용한 인메모리 인증 상태 관리
 import { defineStore } from 'pinia';
 import axios from '@/utils/axios'; // 기존 axios 인스턴스 사용
 
@@ -9,8 +8,8 @@ export const useAuthStore = defineStore('auth', {
         accessToken: null, // Access Token (인메모리)
         isAuthenticated: false, // 인증 여부
         isAuthReady: false, // 앱 초기화 준비 완료 여부 (새로고침 후 AT 복구 시도 완료)
-        // 토큰 재발급 로직 중복 실행 방지 플래그
-        isRefreshing: false, 
+        isRefreshing: false, // 토큰 재발급 로직 중복 실행 방지 플래그
+        loginError: null, // 로그인 오류 메시지 저장
     }),
 
     // 게터 (Getters): 계산된 속성
@@ -18,6 +17,7 @@ export const useAuthStore = defineStore('auth', {
         getAccessToken: (state) => state.accessToken,
         getIsAuthenticated: (state) => state.isAuthenticated,
         getIsAuthReady: (state) => state.isAuthReady,
+        getLoginError: (state) => state.loginError,
     },
 
     // 액션 (Actions): 상태 변경 및 비동기 로직
@@ -26,86 +26,84 @@ export const useAuthStore = defineStore('auth', {
         setAccessToken(token) {
             this.accessToken = token;
             this.isAuthenticated = !!token;
-            
-            // axios 기본 헤더 설정 (모든 요청에 AT 자동 포함)
-            if (token) {
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            } else {
-                delete axios.defaults.headers.common['Authorization'];
-            }
+            this.loginError = null; // 토큰 설정 시 오류 메시지 초기화
             
             console.log(`[AuthStore] Access Token 설정 완료. 인증 상태: ${this.isAuthenticated}`);
         },
 
         // --- 초기화: 앱 시작 시 AT 복구 시도 ---
         async initializeAuth() {
+            if(this.isAuthReady) return;
+
             if (this.accessToken) {
                 this.isAuthReady = true;
-                return; // 이미 토큰이 메모리에 있다면 재시도 불필요 (SPA 라우팅 시)
+                return; 
             }
             
             console.log("인메모리 AT 없음. Refresh Token으로 AT 복구 시도 중...");
             const success = await this.refreshAccessToken();
             
-            // 재발급 성공 여부에 관계없이 인증 초기화는 완료됨
             this.isAuthReady = true;
             console.log(`[AuthStore] 인증 초기화 완료. Ready: ${this.isAuthReady}, Success: ${success}`);
         },
         
         // --- 로그인: AT/RT 획득 ---
         async login(email, password) {
+            this.loginError = null; // 시도 전 오류 초기화
             try {
-                // 백엔드 로그인 API 호출
                 const response = await axios.post('/users/login', { email, password }); 
                 
                 const accessToken = response.data.accessToken;
-                this.setAccessToken(accessToken); // 인메모리 저장 및 axios 헤더 설정
+                this.setAccessToken(accessToken); 
                 return { success: true, message: '로그인 성공!' };
 
             } catch (error) {
-                // console.error("로그인 중 오류 발생:", error);
+                let errorMessage = "알 수 없는 오류로 로그인에 실패했습니다.";
 
-                let errorMessage = null;
-
-                // 401 (Unauthorized - 비밀번호 불일치)
                 if (error.response) {
-                    // 백엔드에서 에러 메시지를 포함하여 보냈다면 사용
                     if (error.response.data && error.response.data.message) {
                         errorMessage = error.response.data.message;
                     } 
-                    // 401이 발생한 경우 (예: 인증 실패)
                     else if (error.response.status === 401) {
-                         errorMessage = "이메일 또는 비밀번호가 일치하지 않습니다.";
+                        errorMessage = "이메일 또는 비밀번호가 일치하지 않습니다.";
                     }
-                    // 500 (Internal Server Error)은 백엔드 로직 오류이므로 일반적인 오류 메시지 사용
                     else if (error.response.status === 500) {
                         errorMessage = "로그인에 실패했습니다. 서버 오류가 발생했습니다 (500).";
                     }
                     else {
                         errorMessage = `로그인에 실패했습니다. 오류 코드: ${error.response.status}`;
                     }
+                } else if (error.request) {
+                    errorMessage = "서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.";
                 }
-                this.loginError = errorMessage; // 오류 상태에 저장
-                this.setAccessToken(null);      // 토큰 확실히 제거
-                return { success: false, message: errorMessage }; // 로그인 실패 반환
+                
+                this.loginError = errorMessage; 
+                this.setAccessToken(null);
+                return { success: false, message: errorMessage };
             }
         },
         
-        // --- 로그아웃: AT 삭제 및 RT 무효화 ---
-        async logout() {
-            // 인메모리 AT 삭제
-            this.setAccessToken(null);
-            
-            // 백엔드 로그아웃 API 호출 (HttpOnly RT 쿠키 제거 및 DB 무효화)
+        // --- 로그아웃: AT 삭제, RT 무효화, 페이지 이동까지 담당 ---
+        async logout(router) { // router 인스턴스를 인자로 받도록 수정
             try {
-                // 이 요청은 AT가 필요하므로, 로그아웃 전에 현재 AT로 요청을 시도합니다.
-                // AT가 만료되어도 RT 제거가 중요하므로 실패를 무시할 수 있습니다.
                 await axios.post('/users/logout');
             } catch (error) {
-                 console.warn('백엔드 로그아웃 처리 실패 (RT 이미 만료 가능성):', error);
+                // 401 에러는 토큰이 이미 만료된 것이므로 무시하고 로그아웃 처리 계속
+                if(error.response?.status !== 401) {
+                    console.warn('백엔드 로그아웃 처리 실패:', error);
+                    // 여기서 사용자에게 "로그아웃에 실패했습니다" 같은 알림을 띄울 수도 있습니다.
+                }
+            } finally {
+                // API 성공/실패 여부와 관계없이 클라이언트의 상태를 확실히 초기화합니다.
+                this.setAccessToken(null);
+
+                // 로그아웃 후 로그인 페이지로 이동합니다.
+                // 현재 페이지가 이미 /login이 아닐 경우에만 이동하도록 방어 코드를 추가합니다.
+                if (router && router.currentRoute.value.path !== '/login') {
+                    console.log('로그아웃 완료. 로그인 페이지로 이동합니다.');
+                    router.push('/login');
+                }
             }
-            
-            // 기타 정리 작업 (예: 사용자 데이터 초기화)
         },
 
         // --- 토큰 재발급: 새로고침 후 AT 복구 및 401 에러 핸들링 ---
@@ -116,7 +114,8 @@ export const useAuthStore = defineStore('auth', {
                     const check = setInterval(() => {
                         if (!this.isRefreshing) {
                             clearInterval(check);
-                            resolve(this.isAuthenticated);
+                            // Promise가 종료된 시점의 최종 인증 상태를 반환
+                            resolve(this.isAuthenticated); 
                         }
                     }, 50);
                 });
@@ -124,7 +123,6 @@ export const useAuthStore = defineStore('auth', {
             
             this.isRefreshing = true;
             try {
-                // /refresh 엔드포인트는 HttpOnly 쿠키의 RT를 자동으로 사용합니다.
                 const response = await axios.post('/users/refresh'); 
                 
                 const newAccessToken = response.data.accessToken;
@@ -147,14 +145,15 @@ export const useAuthStore = defineStore('auth', {
 });
 
 // --- axios 인터셉터 설정 ---
-// 이 로직은 AuthStore.js가 로드될 때 한 번만 실행되어야 합니다.
 let isInterceptorsSetup = false;
 
 if (!isInterceptorsSetup) {
-    // 요청 인터셉터: 요청이 나가기 전에 AT가 있는지 확인 (선택 사항)
+    // 요청 인터셉터: 요청이 나가기 전에 AT를 Authorization 헤더에 추가 (Refresh 요청 제외)
     axios.interceptors.request.use(config => {
         const store = useAuthStore();
-        if (config.url !== '/users/login' && config.url !== '/users/refresh' && store.getAccessToken && !config.headers['Authorization']) {
+        const isAuthRequest = config.url === '/users/login' || config.url === '/users/refresh';
+        
+        if (!isAuthRequest && store.getAccessToken && !config.headers['Authorization']) {
             config.headers['Authorization'] = `Bearer ${store.getAccessToken}`;
         }
         return config;
@@ -169,17 +168,15 @@ if (!isInterceptorsSetup) {
             const originalRequest = error.config;
             const store = useAuthStore();
             
-            // 로그인/로그아웃 요청(401)은 재발급 시도를 건너뛴다.
-            const isLoginAttempt = originalRequest.url === '/users/login';
-            const isLogoutAttempt = originalRequest.url === '/users/logout';
+            // 로그인, 로그아웃, 재발급 요청은 401 처리 로직을 건너뛴다.
+            const isAuthAttempt = originalRequest.url === '/users/login' 
+                               || originalRequest.url === '/users/logout'
+                               || originalRequest.url === '/users/refresh';
 
-            // 1. 401 에러이고, 2. 토큰 재발급 요청이 아니며, 3. 재시도 플래그가 없으며,
-            // 4. 로그인/로그아웃 시도 요청이 아닌 경우에만 재발급 로직 실행
+            // 1. 401 에러이고, 2. 인증 요청이 아니며, 3. 재시도 플래그가 없는 경우에만 재발급 로직 실행
             if (error.response?.status === 401 
-                && originalRequest.url !== '/users/refresh' 
-                && !originalRequest._retry
-                && !isLoginAttempt
-                && !isLogoutAttempt) {
+                && !isAuthAttempt
+                && !originalRequest._retry) {
                 
                 originalRequest._retry = true; // 재시도 플래그 설정
                 console.log("401 감지: Access Token 재발급 시도...");
@@ -194,17 +191,20 @@ if (!isInterceptorsSetup) {
                         return axios(originalRequest); 
                     }
                 } catch (e) {
-                    // 재발급 실패 (Refresh Token 만료 등)
-                    store.logout(); // 강제 로그아웃
-                    // 사용자에게 로그인 페이지로 이동하도록 안내
-                    // ** 실제 환경에서는 Vue Router를 사용하여 로그인 페이지로 리다이렉트 필요
-                    // 예: router.push('/login'); 
-                    return Promise.reject(error);
+                    // refreshAccessToken 내부에서 실패 시 setAccessToken(null)이 호출됨
+                    // store.logout(); // 이전에 실패했기 때문에 추가적인 강제 로그아웃은 불필요할 수 있음
+                    
+                    // --- 실제 Vue Router 사용 시:
+                    // router.push('/login'); 
+                    // ---
                 }
             }
             
+            // 재발급 실패, 또는 401이 아닌 다른 에러는 Promise.reject로 반환
             return Promise.reject(error);
         }
     );
     isInterceptorsSetup = true;
 }
+
+// Interceptor 설정은 스토어 파일이 로드될 때 한 번만 실행됩니다.
