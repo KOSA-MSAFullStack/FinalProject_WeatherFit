@@ -192,28 +192,40 @@ export default {
         this.product.category = this.categories[0];
       }
     },
-    handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.product.image = file;
-        this.selectedFileName = file.name; // 파일 이름 업데이트
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imagePreview = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        this.selectedFileName = '선택된 파일 없음'; // 파일 선택 취소 시
-        this.imagePreview = '';
+    async generateAIDescription() {
+      if (!this.product.image) {
+        alert('AI 설명을 생성하려면 상품 이미지를 먼저 등록해주세요.');
+        return;
+      }
+
+      this.aiBoxVisible = true;
+      this.product.aiDescription = 'AI 설명 생성 중... 잠시만 기다려 주세요.'; // 로딩 메시지
+
+      const formData = new FormData();
+      formData.append('itemName', this.product.itemName);
+      formData.append('category', this.product.category);
+      formData.append('gender', this.genderMap[this.product.selectedGender] || '');
+      this.product.selectedSeasons.forEach(season => {
+        formData.append('seasons', season);
+      });
+      formData.append('image', this.product.image);
+
+      try {
+        const response = await axios.post('/api/admin/items/generate-description', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        this.product.aiDescription = response.data.content;
+      } catch (error) {
+        console.error('AI 설명 생성 실패:', error);
+        this.product.aiDescription = 'AI 설명 생성에 실패했습니다. 다시 시도해주세요.';
+        alert('AI 설명 생성 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
       }
     },
-    generateAIDescription() {
-      this.aiBoxVisible = true;
-      this.product.aiDescription = '이 상품은 가볍고 따뜻한 소재로 제작되어 일상 및 출퇴근용으로 적합합니다. 10~18°C 구간에서 활용도가 높으며, 간절기 착용 시 쾌적함을 유지합니다.';
-    },
     regenerateAIDescription() {
-      this.aiBoxVisible = true;
-      this.product.aiDescription = '재생성된 예시: 통기성이 좋아 실내 활동에도 쾌적하며, 약한 바람이나 간헐적 비 날씨에도 무난하게 착용 가능합니다.';
+      // 다시 생성 버튼 클릭 시 generateAIDescription 로직 재사용
+      this.generateAIDescription();
     },
     handleSubmit() {
       // 제출 전에 성별 데이터를 백엔드 형식으로 변환 (단일 문자열 코드)

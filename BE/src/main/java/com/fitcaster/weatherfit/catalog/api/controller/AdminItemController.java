@@ -3,6 +3,9 @@
 
 package com.fitcaster.weatherfit.catalog.api.controller;
 
+import com.fitcaster.weatherfit.catalog.ai.api.dto.AIRequestDTO;
+import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
+import com.fitcaster.weatherfit.catalog.ai.application.AIService;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.application.ItemService;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.http.MediaType;
 
 // * author: 김기성
 @RestController
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminItemController {
 
     private final ItemService itemService;
+    private final AIService aiService;
 
     // [상품 등록]
     @PostMapping
@@ -32,6 +38,13 @@ public class AdminItemController {
         ItemResponseDTO itemResponse = itemService.createItem(request);
         // 등록된 상품 정보와 함께 201 Created 응답 반환
         return ResponseEntity.status(HttpStatus.CREATED).body(itemResponse);
+    }
+
+    // [AI 설명 생성]
+    @PostMapping(value = "/generate-description", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AIResponseDTO> generateAIDescription(@ModelAttribute AIRequestDTO request) {
+        String aiDescription = aiService.generateDescription(request);
+        return ResponseEntity.ok(new AIResponseDTO(aiDescription));
     }
 
     // [상품 수정]
