@@ -73,9 +73,10 @@
 import { ref } from 'vue';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
-import api from '@/utils/axios';
+import { useAuthStore } from '@/store/authStore';
 
 const router = useRouter();
+const authStore = useAuthStore(); 
 
 const imageUrl = new URL('../assets/login-image.jpg', import.meta.url).href;
 const email = ref('');
@@ -90,31 +91,31 @@ const handleLogin = async () => {
     return;
   }
 
-  const loginDTO = {
-    email: email.value,
-    password: password.value,
-  };
-
   try {
-  // 백엔드 로그인 API 호출
-  const response = await api.post('/users/login', loginDTO); 
-  console.log('로그인 성공 응답:', response.data);
-  alert('로그인 성공! 환영합니다.');
-  router.push('/main'); 
+    // API 호출, Access Token 저장, axios 헤더 설정을 모두 여기서 처리
+    await authStore.login(email.value, password.value); 
+
+    alert('로그인 성공! 환영합니다.');
+    router.push('/main');
 
   } catch (error) {
     console.error('로그인 실패:', error);
     let errorMessage = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
 
+    // Axios 에러 처리 (스토어 내부의 axios 요청에서 발생한 에러를 catch)
     if (error.response) {
         if (error.response.status === 401) {
-            errorMessage = error.response.data.message || '이메일 또는 비밀번호가 일치하지 않습니다.';
+            errorMessage = '이메일 또는 비밀번호가 일치하지 않습니다.';
         } else if (error.response.data && error.response.data.message) {
             errorMessage = error.response.data.message;
         }
+    } else if (error.message) {
+         // 네트워크 오류 또는 스토어 내에서 발생한 일반 오류 메시지
+         errorMessage = error.message;
     }
     
     alert(errorMessage);
   }
 };
+
 </script>

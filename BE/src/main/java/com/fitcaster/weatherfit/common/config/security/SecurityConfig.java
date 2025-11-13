@@ -37,26 +37,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // JWT를 사용할 예정이므로 CSRF와 세션 비활성화
-                .csrf(csrf -> csrf.disable())
-                // CORS 설정을 적용하도록 추가
+                // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic.disable()) // Basic 인증 비활성화
-                .formLogin(formLogin -> formLogin.disable()) // 폼 로그인 비활성화
+
+                // CSRF 비활성화 (JWT를 사용하므로)
+                .csrf(csrf -> csrf.disable())
 
                 // 예외 처리 등록: 인증 과정 중 발생하는 예외를 처리
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationEntryPoint)
                 )
 
+                // 세션 관리 상태 설정 (Stateless)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .httpBasic(httpBasic -> httpBasic.disable()) // Basic 인증 비활성화
+                .formLogin(formLogin -> formLogin.disable()) // 폼 로그인 비활성화
+
+
+
                 // 요청별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 회원가입 및 로그인은 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.POST, "/users/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
+                        // Access Token 재발급 경로는 인증 없이 누구나 접근 허용 (Refresh Token은 쿠키로 처리됨)
+                        .requestMatchers(HttpMethod.POST, "/users/refresh").permitAll()
                         // 이메일 중복 확인 경로는 GET 요청으로 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
+
+                        // 관리자 경로: 'ROLE_ADMIN' 권한 필요
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()
 

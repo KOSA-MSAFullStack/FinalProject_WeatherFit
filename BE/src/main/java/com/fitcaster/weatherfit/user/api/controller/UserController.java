@@ -2,6 +2,7 @@ package com.fitcaster.weatherfit.user.api.controller;
 
 import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.AccessTokenResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.EmailCheckResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.AuthService;
@@ -76,5 +77,16 @@ public class UserController {
         authService.logout(response, userId);
 
         return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    /**
+     * POST /users/refresh (Access Token 재발급)
+     * HttpOnly 쿠키의 Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AccessTokenResponse> refreshAccessToken(HttpServletRequest request) {
+        // 서비스 레이어에 요청 객체를 전달하여 쿠키 추출 및 처리를 위임
+        AccessTokenResponse response = authService.refreshAccessToken(request);
+        return ResponseEntity.ok(response);
     }
 }

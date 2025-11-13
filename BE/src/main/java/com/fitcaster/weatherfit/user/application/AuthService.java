@@ -2,11 +2,13 @@ package com.fitcaster.weatherfit.user.application;
 
 import com.fitcaster.weatherfit.common.util.JwtTokenProvider;
 import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.AccessTokenResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.domain.entity.RefreshToken;
 import com.fitcaster.weatherfit.user.domain.repository.RefreshTokenRepository;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * author: 이상우
@@ -34,36 +37,34 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+
     /**
      * 사용자 로그인을 처리하고 JWT Access Token을 발급
      * @param request 로그인 요청 DTO (이메일, 비밀번호)
      * @param response HttpOnly 쿠키 설정을 위해 사용되는 응답 객체
-     * @return Access Token의 만료 시간 정보를 포함하는 응답 DTO
+     * @return Access Token, 만료 시간 정보를 포함하는 응답 DTO
      */
     public LoginResponse login(LoginRequest request, HttpServletResponse response) {
 
-        // 사용자 인증 시도
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                request.getEmail(),
-                request.getPassword()
-        );
-
         Authentication authentication;
         try {
-            authentication = authenticationManager.authenticate(authenticationToken);
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
         } catch (AuthenticationException e) {
             throw new RuntimeException("로그인 정보가 유효하지 않습니다.", e);
         }
 
         User user = (User) authentication.getPrincipal();
 
-        // JWT Access Token 생성
+        // Access Token 생성
         String accessToken = jwtTokenProvider.createAccessToken(authentication);
 
-        // 기존 Refresh Token이 있다면 무조건 삭제
-        refreshTokenRepository.deleteByUserId(user.getId());
+        // Refresh Token 생성 및 DB 저장 (토큰 회전: 기존 토큰 삭제)
+        Optional<RefreshToken> existingTokenOpt = refreshTokenRepository.findByUser(user);
+        existingTokenOpt.ifPresent(refreshTokenRepository::delete);
 
-        // Refresh Token을 항상 새로 생성 및 DB에 저장
         String refreshTokenValue = jwtTokenProvider.createRefreshToken(authentication);
         LocalDateTime expiryDate = jwtTokenProvider.getExpirationDate(refreshTokenValue);
 
@@ -95,7 +96,63 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃 처리: 쿠키에 저장된 토큰(Access/Refresh)을 삭제
+     * Access Token 재발급 로직
+     * HttpOnly 쿠키의 Refresh Token을 검증하여 새 Access Token을 발급합니다.
+     */
+    @Transactional
+    public AccessTokenResponse refreshAccessToken(HttpServletRequest request) {
+        // 쿠키에서 Refresh Token 추출
+        String refreshTokenValue = extractRefreshTokenFromCookie(request);
+        if (refreshTokenValue == null) {
+            throw new RuntimeException("Refresh Token 쿠키를 찾을 수 없습니다. (재로그인 필요)");
+        }
+
+        // Refresh Token 유효성 검증 (JWT 서명, 만료 시간)
+        if (!jwtTokenProvider.validateToken(refreshTokenValue)) {
+            // validateToken이 만료 시 false를 반환한다고 가정
+            throw new RuntimeException("만료되었거나 유효하지 않은 Refresh Token입니다. (재로그인 필요)");
+        }
+
+        // 토큰에서 userId 추출 (JwtTokenProvider에 getUserIdFromToken이 구현되어 있어야 함)
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshTokenValue);
+
+        // DB에서 userId로 Refresh Token 엔티티 조회
+        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("DB에 Refresh Token이 존재하지 않습니다. (로그아웃된 사용자)"));
+
+        // (보안 강화) DB에 저장된 토큰과 쿠키의 토큰이 일치하는지 확인
+        if (!refreshToken.getToken().equals(refreshTokenValue)) {
+            // 토큰이 일치하지 않으면, 탈취 시도로 간주하고 DB 토큰 삭제 (로그아웃 처리)
+            refreshTokenRepository.delete(refreshToken);
+            throw new RuntimeException("토큰이 일치하지 않습니다. (비정상 접근)");
+        }
+
+        // User 엔티티 가져오기
+        User user = refreshToken.getUser();
+        if (user == null) {
+            throw new RuntimeException("Refresh Token에 연결된 사용자를 찾을 수 없습니다.");
+        }
+
+        // 새로운 Access Token 생성을 위한 Authentication 객체 생성
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user, // User 객체 (UserDetails 구현체)
+                null, // Credentials (비밀번호 필요 없음)
+                user.getAuthorities() // 권한
+        );
+
+        // 새로운 Access Token 발급
+        String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
+        long expiresIn = jwtTokenProvider.getAccessTokenExpiresIn();
+
+        // 응답 DTO 반환
+        return AccessTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .expiresIn(expiresIn)
+                .build();
+    }
+
+    /**
+     * 로그아웃 처리: 쿠키에 저장된 리프레시 토큰을 삭제
      */
     @Transactional
     public void logout(HttpServletResponse response, Long userId) {
@@ -103,16 +160,38 @@ public class AuthService {
         refreshTokenRepository.deleteByUserId(userId);
 
         // 클라이언트 측 로직: 쿠키 만료시키기
-        expireCookie(response);
+        expireCookie(response, REFRESH_TOKEN_COOKIE_NAME);
     }
 
-    private void expireCookie(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refreshToken", null); // value는 null로 설정
-        cookie.setMaxAge(0); // 만료 시간을 0으로 설정하여 즉시 만료
-        cookie.setPath("/"); // 쿠키가 생성된 경로와 동일하게 설정
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        response.addCookie(cookie);
+    // --- 헬퍼 메서드 ---
+
+    /**
+     *  HttpServletRequest에서 Refresh Token 쿠키를 추출합니다.
+     */
+    private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 쿠키를 만료(삭제)시키는 헬퍼 메소드
+     */
+    private void expireCookie(HttpServletResponse response, String cookieName) {
+        ResponseCookie cookie = ResponseCookie.from(cookieName, "")
+                .maxAge(0)
+                .path("/")
+                .httpOnly(true)
+                .secure(true) // HTTPS 환경이라고 가정
+                .sameSite("Strict") // CSRF 방어
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
 }
