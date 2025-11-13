@@ -2,19 +2,23 @@ package com.fitcaster.weatherfit.user.api.controller;
 
 import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
+import com.fitcaster.weatherfit.user.api.dto.response.AccessTokenResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.EmailCheckResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
 import com.fitcaster.weatherfit.user.application.AuthService;
 import com.fitcaster.weatherfit.user.application.UserService;
+import com.fitcaster.weatherfit.user.domain.entity.User;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users") // 또는 /auth
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -60,5 +64,29 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse loginResponse = authService.login(request, response);
         return ResponseEntity.ok(loginResponse);
+    }
+
+    /**
+     * POST /users/logout (로그아웃)
+     * 클라이언트의 쿠키에 저장된 리프레시 토큰을 만료합니다.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response, @AuthenticationPrincipal User user) {
+        System.out.println(user);
+        Long userId = user.getId();
+        authService.logout(response, userId);
+
+        return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    /**
+     * POST /users/refresh (Access Token 재발급)
+     * HttpOnly 쿠키의 Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AccessTokenResponse> refreshAccessToken(HttpServletRequest request) {
+        // 서비스 레이어에 요청 객체를 전달하여 쿠키 추출 및 처리를 위임
+        AccessTokenResponse response = authService.refreshAccessToken(request);
+        return ResponseEntity.ok(response);
     }
 }

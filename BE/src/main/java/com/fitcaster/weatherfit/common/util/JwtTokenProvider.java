@@ -1,5 +1,6 @@
 package com.fitcaster.weatherfit.common.util;
 
+import com.fitcaster.weatherfit.user.domain.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -16,7 +17,6 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,9 +72,20 @@ public class JwtTokenProvider {
     private String createToken(Authentication authentication, long expirationMs, boolean isRefreshToken) {
         String userEmail = authentication.getName();
 
+        Long userId = null;
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof User userEntity) {
+            userId = userEntity.getId();
+        } else {
+            log.error("Principal이 User 엔티티가 아닙니다. 토큰 생성 실패.");
+            throw new RuntimeException("Principal must be an instance of User entity.");
+        }
+
         // Claims를 Map으로 대체하여 초기화 (subject를 Map에 직접 추가)
         Map<String, Object> claims = new HashMap<>();
         claims.put(Claims.SUBJECT, userEmail);
+        claims.put("userId", userId);
 
         if (isRefreshToken) {
             // Refresh Token 클레임 설정: 'roles' 제외, 'token_type' 명시
@@ -155,6 +166,33 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    /**
+     * JWT에서 사용자 ID(Long)를 추출
+     * @param token JWT
+     * @return 사용자 ID (Long)
+     */
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaims(token);
+
+        Object userIdObject = claims.get("userId");
+
+        // 1. 클레임 누락 처리 (Null Check)
+        if (userIdObject == null) {
+            throw new JwtException("JWT에 'userId' 클레임이 누락되었습니다.");
+        }
+
+        // 2. 타입 변환 및 반환
+        // JWT 표준에 따라 숫자는 Integer로 파싱되므로 Long으로 변환
+        if (userIdObject instanceof Integer integerId) {
+            return integerId.longValue();
+        } else if (userIdObject instanceof Long longId) {
+            return longId;
+        }
+
+        // 3. 타입 불일치 처리 (모든 타입 검사 통과 실패)
+        throw new JwtException("JWT의 'userId' 클레임이 Long 또는 Integer 형식이 아닙니다: " + userIdObject.getClass().getSimpleName());
     }
 
     /**
