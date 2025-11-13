@@ -25,7 +25,7 @@ public class ItemResponseDTO {
     private String reviewAiSummary; // AI가 요약한 리뷰
     private String category;        // 카테고리명
     private String classification;  // 분류명
-    private List<String> seasons;   // 계절명 리스트
+    private List<String> seasonName;   // 계절명 리스트
 
     // Item 엔티티로부터 DTO를 생성하는 메서드
     public static ItemResponseDTO from(Item item) {
@@ -47,7 +47,7 @@ public class ItemResponseDTO {
                 .reviewAiSummary(item.getReviewAiSummary())
                 .category(item.getCategory().getCategory())
                 .classification(item.getCategory().getClassification().getClassification())
-                .seasons(seasonNames)
+                .seasonName(seasonNames)
                 .build();
     }
 }
