@@ -46,9 +46,9 @@ public class RecommendationController {
     }
 
     /**
-     * 내일 날씨에 맞는 옷 추천
+     * 이번주 날씨에 맞는 옷 추천
      * @param address 지역
-     * @return 내일 날씨 기반 추천 받은 옷
+     * @return 이번주 날씨 기반 추천 받은 옷
      */
     @GetMapping("/weekly")
     public ResponseEntity<AiWeeklyRecommendResponse> getWeeklyRecommendation(@RequestParam String address) {
