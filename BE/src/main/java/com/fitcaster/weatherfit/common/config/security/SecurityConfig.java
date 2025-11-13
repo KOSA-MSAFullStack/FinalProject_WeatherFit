@@ -70,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
 
                         // 관리자 경로: 'ROLE_ADMIN' 권한 필요
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()
 

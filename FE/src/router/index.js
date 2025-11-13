@@ -25,6 +25,12 @@ const routes = [
         component: () => import("@/views/Signup.vue"),
         meta: { title: '회원가입' },
       },
+      { 
+        path: 'admin/mypage',
+        name: 'AdminMyPage',
+        component: () => import("@/views/AdminMyPage.vue"),
+        meta: { title: '관리자 페이지' },
+      },
     ]
   },
   {
