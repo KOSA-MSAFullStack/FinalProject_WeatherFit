@@ -1,7 +1,7 @@
 package com.fitcaster.weatherfit.recommendation.api.dto;
 
 /**
- * 1차 분류한 옷 정보에서 AI에게 넘겨줄 정보만 저장한 DTO
+ * 1차 분류한 옷 정보에서 AI에게 넘겨줄 정보
  * @author 김경아
  */
 public record ItemBrief(
@@ -10,7 +10,6 @@ public record ItemBrief(
         String itemName,             // 상품 이름
         int minTemperature,          // 최저 기온
         int maxTemperature,          // 최고 기온
-        String gender,               // 성별
-        String imgUrl                // 이미지 url
+        String gender               // 성별
 ) {
 }
