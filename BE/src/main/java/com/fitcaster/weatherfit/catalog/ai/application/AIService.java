@@ -5,18 +5,10 @@ package com.fitcaster.weatherfit.catalog.ai.application;
 
 import com.fitcaster.weatherfit.catalog.ai.api.dto.AIRequestDTO;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
-
-
-
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.content.Media;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
-
-import java.io.IOException;
 import java.util.List;
 
 // * author: 김기성
@@ -53,33 +45,20 @@ public class AIService {
                     request.getItemName(),
                     request.getCategory(),
                     request.getGender(),
-                    String.join(", ", request.getSeasons() == null ? List.of() : request.getSeasons())
+                    String.join(", ", request.getSeasonName() == null ? List.of() : request.getSeasonName())
             );
 
-            // 이미지 리소스 추출
-            // List<Resource> mediaList = null;
-            // if (request.getImage() != null) {
-            //     Resource resource = request.getImage().getResource();
-            //     mediaList = Media.;
-            // }
-            
-            Resource image = null;
-            if (request.getImage() != null) {
-                image = request.getImage().getResource();
-            }
-
-            final Resource imageResource = 
-            request.getImage() != null ? request.getImage().getResource() : null;
-    
+            // 이미지 리소스 추출 (람다)
+            final Resource image =
+                    request.getImage() != null ? request.getImage().getResource() : null;
 
             // ChatClient 호출  
             String result = chatClient.prompt()
                     .system(systemPrompt)
                     .user(u -> {
                         u.text("이 상품에 대한 설명을 생성해줘. 상품 정보: " + productInfo);
-                        if (imageResource != null) {
-                            //MimeType.valueOf("image/wepp"); 
-                            u.media(new MimeType("image","webp"), imageResource); // List<Media> → Media...
+                        if (image != null) {
+                            u.media(new MimeType("image","webp"), image);
                         }
                     })
                     .call()
@@ -87,24 +66,8 @@ public class AIService {
 
             return result;
 
-            // // ChatClient 호출
-            // String result = chatClient.prompt()
-            //         .system(systemPrompt)
-            //         .user(u -> {
-            //             // 사용자 메시지 텍스트 설정
-            //             u.text("이 상품에 대한 설명을 생성해줘. 상품 정보: " + productInfo);
-            //             // 이미지가 있을 때만 미디어 추가
-            //             if (imageResources != null) {
-            //                 u.media(List.of(imageResources));
-            //             }
-            //         })
-            //         .call()
-            //         .content(); // 문자열 바로 반환
-
-            // return result;
-
         } catch (Exception e) {
-            throw new InternalServerException("AI 설명 생성 중 오류 발생", e);
+            throw new InternalServerException("⚠️ AI 설명 생성 중 오류 발생", e);
         }
     }
 }

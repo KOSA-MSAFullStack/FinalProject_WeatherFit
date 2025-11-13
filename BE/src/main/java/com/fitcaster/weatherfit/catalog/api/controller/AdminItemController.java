@@ -24,7 +24,7 @@ import org.springframework.http.MediaType;
 
 // * author: 김기성
 @RestController
-@RequestMapping("/api/admin/items")
+@RequestMapping("/admin/items")
 @RequiredArgsConstructor
 public class AdminItemController {
 
@@ -33,7 +33,7 @@ public class AdminItemController {
 
     // [상품 등록]
     @PostMapping
-    public ResponseEntity<ItemResponseDTO> createItem(@RequestBody ItemRequestDTO.Create request) {
+    public ResponseEntity<ItemResponseDTO> createItem(@ModelAttribute ItemRequestDTO.Create request) {
         // ItemService를 통해 상품 등록
         ItemResponseDTO itemResponse = itemService.createItem(request);
         // 등록된 상품 정보와 함께 201 Created 응답 반환

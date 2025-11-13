@@ -144,7 +144,7 @@
 
 <script>
 import ProductModal from '../components/ProductModal.vue';
-import axios from 'axios'; // axios import
+import api from '@/utils/axios'; // axios import
 
 export default {
   name: 'AdminMyPage',
@@ -199,10 +199,33 @@ export default {
     async handleProductSubmit(productData) {
       try {
         if (this.selectedProduct) { // 수정 모드
-          await axios.patch(`/api/admin/items/${this.selectedProduct.itemId}`, productData);
+          // TODO: 상품 수정 시 이미지 파일 처리가 필요하다면 여기도 FormData를 사용해야 합니다.
+          await api.patch(`/admin/items/${this.selectedProduct.itemId}`, productData);
           alert('상품이 성공적으로 수정되었습니다.');
         } else { // 등록 모드
-          await axios.post('/api/admin/items', productData);
+          const formData = new FormData();
+          formData.append('itemName', productData.itemName);
+          formData.append('price', productData.price);
+          formData.append('quantity', productData.quantity);
+          formData.append('gender', productData.gender);
+          formData.append('category', productData.category);
+          formData.append('aiDescription', productData.aiDescription);
+          
+          if (productData.seasonName) {
+            productData.seasonName.forEach(season => {
+              formData.append('seasonName', season);
+            });
+          }
+
+          if (productData.image) {
+            formData.append('image', productData.image);
+          }
+
+          await api.post('/admin/items', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
           alert('상품이 성공적으로 등록되었습니다.');
         }
         this.isProductModalVisible = false;
@@ -214,7 +237,7 @@ export default {
     },
     async handleProductDelete(itemId) {
       try {
-        await axios.delete(`/api/admin/items/${itemId}`);
+        await api.delete(`/admin/items/${itemId}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         this.isProductModalVisible = false;
         // this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
@@ -226,7 +249,7 @@ export default {
     },
     async fetchProducts() {
       try {
-        const response = await axios.get('/api/items');
+        const response = await api.get('/items');
         this.products = response.data;
       } catch (error) {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);

@@ -55,3 +55,7 @@ jwt:
 
   # Refresh Token: 길게 설정 (7일)
   refresh-token-expiration-ms: 604800000
+
+# 파일 업로드 경로 설정
+upload:
+  path: uploads/

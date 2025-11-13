@@ -100,6 +100,8 @@
 </template>
 
 <script>
+import api from '@/utils/axios';
+
 export default {
   name: 'ProductModal',
   props: {
@@ -231,7 +233,7 @@ export default {
       formData.append('image', this.product.image);
 
       try {
-        const response = await axios.post('/api/admin/items/generate-description', formData, {
+        const response = await api.post('/admin/items/generate-description', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
@@ -259,7 +261,7 @@ export default {
       delete submittedProduct.selectedGender; // 임시 필드 삭제
 
       // 계절 데이터는 이미 배열이므로 그대로 사용
-      submittedProduct.seasons = submittedProduct.selectedSeasons;
+      submittedProduct.seasonName = submittedProduct.selectedSeasons;
       delete submittedProduct.selectedSeasons; // 임시 필드 삭제
 
       this.$emit('submit', submittedProduct);
