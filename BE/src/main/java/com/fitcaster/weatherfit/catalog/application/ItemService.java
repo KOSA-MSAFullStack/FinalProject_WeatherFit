@@ -39,10 +39,10 @@ public class ItemService {
         return ItemResponseDTO.from(item);
     }
 
-    // [상품명 검색]
-    public List<Item> searchItemsByName(String name) {
-        return itemRepository.findByNameContainingIgnoreCase(name);
-    }
+//    // [상품명 검색]
+//    public List<Item> searchItemsByName(String name) {
+//        //return itemRepository.findByNameContainingIgnoreCase(name);
+//    }
 
     
     // [상품 등록]

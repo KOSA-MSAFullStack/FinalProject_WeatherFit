@@ -10,5 +10,5 @@ import java.util.List;
 // * author: 김기성
 public interface ItemRepository extends JpaRepository<Item, Long> {
     // [상품명 검색]
-    List<Item> findByNameContainingIgnoreCase(String name);
+//    List<Item> findByNameContainingIgnoreCase(String name);
 }
