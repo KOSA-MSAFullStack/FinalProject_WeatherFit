@@ -58,4 +58,4 @@ jwt:
 
 # 파일 업로드 경로 설정
 upload:
-  path: uploads/
+  path: ../uploads/
