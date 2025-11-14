@@ -167,12 +167,13 @@ export default {
         { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
       ],
       products: [
-        { itemId: 1, itemName: '베이직 라운드 티셔츠', itemCode: 'TOP-001', price: 29000, gender: 'M', imageURL: 'https://picsum.photos/id/10/200/300', aiDescription: '데일리로 착용하기 좋은 베이직 라운드 티셔츠입니다. 부드러운 면 소재로 편안함을 제공합니다.', createdAt: '2025-11-12', reviewAiSummary: '편안하고 기본템으로 좋아요.', category: '반소매 티셔츠', classification: '상의', quantity: 10, seasons: ['봄', '여름'] },
-        { itemId: 2, itemName: '슬림핏 데님 팬츠', itemCode: 'BOT-002', price: 49000, gender: 'F', imageURL: 'https://picsum.photos/id/20/200/300', aiDescription: '활동성이 좋은 슬림핏 데님 팬츠입니다. 어떤 상의와도 잘 어울려 활용도가 높습니다.', createdAt: '2025-11-11', reviewAiSummary: '핏이 예쁘고 착용감이 편해요.', category: '데님 팬츠', classification: '하의', quantity: 0, seasons: ['가을'] },
-        { itemId: 3, itemName: '오버핏 후드티', itemCode: 'TOP-003', price: 39000, gender: 'C', imageURL: 'https://picsum.photos/id/30/200/300', aiDescription: '트렌디한 오버핏 후드티입니다. 캐주얼한 스타일을 연출하기에 좋습니다.', createdAt: '2025-11-10', reviewAiSummary: '색상이 예쁘고 따뜻해요.', category: '후드 티셔츠', classification: '상의', quantity: 5, seasons: ['가을', '겨울'] },
-        { itemId: 4, itemName: '경량 패딩 조끼', itemCode: 'OUT-004', price: 59000, gender: 'C', imageURL: 'https://picsum.photos/id/40/200/300', aiDescription: '가볍고 따뜻하여 간절기에 활용하기 좋은 패딩 조끼입니다.', createdAt: '2025-11-09', reviewAiSummary: '가성비 좋은 패딩 조끼.', category: '패딩', classification: '아우터', quantity: 12, seasons: ['봄', '가을'] },
-        { itemId: 5, itemName: '스트라이프 셔츠', itemCode: 'TOP-005', price: 35000, gender: 'M', imageURL: 'https://picsum.photos/id/50/200/300', aiDescription: '클래식한 스트라이프 패턴의 셔츠입니다. 다양한 스타일에 매치하기 좋습니다.', createdAt: '2025-11-08', reviewAiSummary: '깔끔하고 예뻐요.', category: '셔츠/블라우스', classification: '상의', quantity: 0, seasons: ['봄', '여름'] },
-        { itemId: 6, itemName: '와이드 슬랙스', itemCode: 'BOT-006', price: 45000, gender: 'F', imageURL: 'https://picsum.photos/id/60/200/300', aiDescription: '편안하면서도 스타일리시한 와이드 슬랙스입니다. 데일리룩으로 추천합니다.', createdAt: '2025-11-07', reviewAiSummary: '편하고 핏이 좋아요.', category: '슬랙스', classification: '하의', quantity: 8, seasons: ['가을', '겨울'] }
+        // 더미 데이터
+        //{ itemId: 1, itemName: '베이직 라운드 티셔츠', itemCode: 'TOP-001', price: 29000, gender: 'M', imageURL: 'https://picsum.photos/id/10/200/300', aiDescription: '데일리로 착용하기 좋은 베이직 라운드 티셔츠입니다. 부드러운 면 소재로 편안함을 제공합니다.', createdAt: '2025-11-12', reviewAiSummary: '편안하고 기본템으로 좋아요.', category: '반소매 티셔츠', classification: '상의', quantity: 10, seasons: ['봄', '여름'] },
+        //{ itemId: 2, itemName: '슬림핏 데님 팬츠', itemCode: 'BOT-002', price: 49000, gender: 'F', imageURL: 'https://picsum.photos/id/20/200/300', aiDescription: '활동성이 좋은 슬림핏 데님 팬츠입니다. 어떤 상의와도 잘 어울려 활용도가 높습니다.', createdAt: '2025-11-11', reviewAiSummary: '핏이 예쁘고 착용감이 편해요.', category: '데님 팬츠', classification: '하의', quantity: 0, seasons: ['가을'] },
+        //{ itemId: 3, itemName: '오버핏 후드티', itemCode: 'TOP-003', price: 39000, gender: 'C', imageURL: 'https://picsum.photos/id/30/200/300', aiDescription: '트렌디한 오버핏 후드티입니다. 캐주얼한 스타일을 연출하기에 좋습니다.', createdAt: '2025-11-10', reviewAiSummary: '색상이 예쁘고 따뜻해요.', category: '후드 티셔츠', classification: '상의', quantity: 5, seasons: ['가을', '겨울'] },
+        //{ itemId: 4, itemName: '경량 패딩 조끼', itemCode: 'OUT-004', price: 59000, gender: 'C', imageURL: 'https://picsum.photos/id/40/200/300', aiDescription: '가볍고 따뜻하여 간절기에 활용하기 좋은 패딩 조끼입니다.', createdAt: '2025-11-09', reviewAiSummary: '가성비 좋은 패딩 조끼.', category: '패딩', classification: '아우터', quantity: 12, seasons: ['봄', '가을'] },
+        //{ itemId: 5, itemName: '스트라이프 셔츠', itemCode: 'TOP-005', price: 35000, gender: 'M', imageURL: 'https://picsum.photos/id/50/200/300', aiDescription: '클래식한 스트라이프 패턴의 셔츠입니다. 다양한 스타일에 매치하기 좋습니다.', createdAt: '2025-11-08', reviewAiSummary: '깔끔하고 예뻐요.', category: '셔츠/블라우스', classification: '상의', quantity: 0, seasons: ['봄', '여름'] },
+        //{ itemId: 6, itemName: '와이드 슬랙스', itemCode: 'BOT-006', price: 45000, gender: 'F', imageURL: 'https://picsum.photos/id/60/200/300', aiDescription: '편안하면서도 스타일리시한 와이드 슬랙스입니다. 데일리룩으로 추천합니다.', createdAt: '2025-11-07', reviewAiSummary: '편하고 핏이 좋아요.', category: '슬랙스', classification: '하의', quantity: 8, seasons: ['가을', '겨울'] }
       ]
     };
   },
@@ -200,7 +201,7 @@ export default {
       try {
         if (this.selectedProduct) { // 수정 모드
           // TODO: 상품 수정 시 이미지 파일 처리가 필요하다면 여기도 FormData를 사용해야 합니다.
-          await api.patch(`/admin/items/${this.selectedProduct.itemId}`, productData);
+          await api.patch(`/api/admin/items/${this.selectedProduct.itemId}`, productData);
           alert('상품이 성공적으로 수정되었습니다.');
         } else { // 등록 모드
           const formData = new FormData();
@@ -230,7 +231,7 @@ export default {
             formData.append('image', productData.image);
           }
 
-          await api.post('/admin/items', formData, {
+          await api.post('/api/admin/items', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -238,7 +239,7 @@ export default {
           alert('상품이 성공적으로 등록되었습니다.');
         }
         this.isProductModalVisible = false;
-        // this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
+        this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
       } catch (error) {
         console.error('상품 처리 실패:', error);
         alert('상품 처리 중 오류가 발생했습니다: ' + (error.response?.data?.error || error.message));
@@ -246,11 +247,10 @@ export default {
     },
     async handleProductDelete(itemId) {
       try {
-        await api.delete(`/admin/items/${itemId}`);
+        await api.delete(`/api/admin/items/${itemId}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         this.isProductModalVisible = false;
-        // this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
-        this.products = this.products.filter(product => product.itemId !== itemId); // 더미 데이터에서 삭제
+        this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
       } catch (error) {
         console.error('상품 삭제 실패:', error);
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
@@ -258,7 +258,7 @@ export default {
     },
     async fetchProducts() {
       try {
-        const response = await api.get('/items');
+        const response = await api.get('/api/items');
         this.products = response.data;
       } catch (error) {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);
@@ -267,7 +267,7 @@ export default {
     }
   },
   mounted() {
-    // this.fetchProducts(); // 더미 데이터 사용 시 주석 처리
+    this.fetchProducts(); // 상품 목록 불러오기 (더미 데이터 사용 시 주석 처리)
   }
 };
 </script>
