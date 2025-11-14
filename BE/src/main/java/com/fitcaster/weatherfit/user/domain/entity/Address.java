@@ -1,5 +1,6 @@
 package com.fitcaster.weatherfit.user.domain.entity;
 
+import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -40,5 +41,12 @@ public class Address {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void update(AddressRequest dto) {
+        this.zipCode = dto.getZipCode();
+        // DTO의 getter 이름과 일치시킵니다.
+        this.baseAddress = dto.getBase();
+        this.detailAddress = dto.getDetail();
     }
 }

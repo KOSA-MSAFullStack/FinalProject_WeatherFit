@@ -1,5 +1,7 @@
 package com.fitcaster.weatherfit.user.domain.entity;
 
+import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
+import com.fitcaster.weatherfit.user.api.dto.request.ProfileUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -87,6 +89,30 @@ public class User implements UserDetails {
 
         if (refreshToken.getUser() != this) {
             refreshToken.setUser(this);
+        }
+    }
+
+    /**
+     * 프로필 정보 업데이트 로직을 캡슐화한 메소드
+     * @param request DTO로부터 받은 수정 정보
+     */
+    public void updateProfile(ProfileUpdateRequest request) {
+        this.name = request.getName();
+        this.birth = request.getBirth();
+        this.phone = request.getPhone();
+
+        // DTO의 String gender("M", "F")를 Gender Enum으로 변환
+        this.gender = Gender.fromValue(request.getGender());
+
+        // DTO의 TemperatureSensitivity Enum 값을 직접 할당
+        this.temperatureSensitivity = request.getTemperatureSensitivity();
+
+        // 사용자의 주소 정보 업데이트
+        if (this.addresses != null && !this.addresses.isEmpty()) {
+            Address primaryAddress = this.addresses.get(0);
+            AddressRequest addressDto = request.getAddress();
+
+            primaryAddress.update(addressDto);
         }
     }
 
