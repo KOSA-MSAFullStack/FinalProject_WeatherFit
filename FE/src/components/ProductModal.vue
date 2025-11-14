@@ -9,9 +9,15 @@
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label for="itemName">상품명</label>
-          <input type="text" id="itemName" v-model="product.itemName">
+        <div class="grid2">
+          <div class="form-group">
+            <label for="itemName">상품명</label>
+            <input type="text" id="itemName" v-model="product.itemName">
+          </div>
+          <div class="form-group">
+            <label for="itemCode">상품 코드</label>
+            <input type="text" id="itemCode" v-model="product.itemCode">
+          </div>
         </div>
 
         <div class="grid2">
@@ -115,6 +121,7 @@ export default {
     return {
       product: {
         itemName: '',
+        itemCode: '', // 상품 코드 추가
         price: null,
         quantity: null,
         classification: '상의',

@@ -209,6 +209,7 @@ export default {
           formData.append('quantity', productData.quantity);
           formData.append('gender', productData.gender);
           formData.append('category', productData.category);
+          formData.append('itemCode', productData.itemCode); // 상품 코드 추가
           formData.append('aiDescription', productData.aiDescription);
           
           if (productData.seasonName) {
