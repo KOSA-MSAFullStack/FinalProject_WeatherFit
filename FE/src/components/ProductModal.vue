@@ -375,7 +375,7 @@ textarea {
 
 textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 200px;
 }
 
 input[type="file"] {
