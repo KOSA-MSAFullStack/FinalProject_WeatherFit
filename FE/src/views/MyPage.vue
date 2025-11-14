@@ -131,23 +131,23 @@
                 <div class="space-y-1">
                   <label class="block font-semibold text-sm text-gray-700">성별</label>
                   <div class="flex gap-2">
-                    <input type="radio" id="male" value="male" v-model="user.gender" class="hidden" />
+                    <input type="radio" id="MALE" value="MALE" v-model="user.gender" class="hidden" />
                     <label 
-                      for="male" 
+                      for="MALE" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.gender === 'male' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.gender === 'MALE' }
                       ]"
                     >
                       남성
                     </label>
                     
-                    <input type="radio" id="female" value="female" v-model="user.gender" class="hidden" />
+                    <input type="radio" id="FEMALE" value="FEMALE" v-model="user.gender" class="hidden" />
                     <label 
-                      for="female" 
+                      for="FEMALE" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.gender === 'female' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.gender === 'FEMALE' }
                       ]"
                     >
                       여성
@@ -162,7 +162,9 @@
                     id="phone" 
                     type="tel" 
                     v-model="user.phone" 
-                    placeholder="010-0000-0000"
+                    @input="formatPhoneNumber"
+                    placeholder="010-0000-0000" 
+                    maxlength="13"
                     class="w-full bg-white border border-gray-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
@@ -205,34 +207,34 @@
                 <div class="space-y-1">
                   <label class="block font-semibold text-sm text-gray-700">날씨 민감도</label>
                   <div class="flex gap-2 flex-wrap">
-                    <input type="radio" id="sens_cold" value="cold" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="COLD" value="COLD" v-model="user.weatherSensitivity" class="hidden">
                     <label 
-                      for="sens_cold" 
+                      for="COLD" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'cold' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'COLD' }
                       ]"
                     >
                       추위 민감
                     </label>
                     
-                    <input type="radio" id="sens_normal" value="normal" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="NORMAL" value="NORMAL" v-model="user.weatherSensitivity" class="hidden">
                     <label 
-                      for="sens_normal" 
+                      for="NORMAL" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'normal' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'NORMAL' }
                       ]"
                     >
                       보통
                     </label>
                     
-                    <input type="radio" id="sens_hot" value="hot" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="HOT" value="HOT" v-model="user.weatherSensitivity" class="hidden">
                     <label 
-                      for="sens_hot" 
+                      for="HOT" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'hot' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'HOT' }
                       ]"
                     >
                       더위 민감
@@ -283,41 +285,50 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
+import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
 
+const router = useRouter();
+const authStore = useAuthStore();
 // 현재 활성화된 탭을 관리하는 상태
 const activeTab = ref('orders');
 
-// 실제로는 API로부터 받아올 사용자 데이터 (임시 데이터)
+// API를 통해 받아올 사용자 정보 (초기값은 비워둠)
 const user = ref({
-  name: '김철수', // 예시 데이터
-  email: 'chulsoo@example.com', // 예시 데이터
-  birthdate: '1995-05-15', // 예시 데이터
-  gender: 'male', // 예시 데이터
-  phone: '010-1234-5678', // 예시 데이터
-  postcode: '06234', // 예시 데이터
-  address: '서울특별시 강남구 테헤란로 123', // 예시 데이터
-  detailAddress: '4층', // 예시 데이터
-  weatherSensitivity: 'normal', // 예시 데이터
+  name: '',
+  email: '',
+  birthdate: '',
+  gender: '',
+  phone: '',
+  postcode: '',
+  address: '',
+  detailAddress: '',
+  weatherSensitivity: '',
 });
 
-// Daum 우편번호 찾기 함수 (회원가입 코드에서 복사)
-const findAddress = () => {
-  // Daum Postcode 스크립트가 로드되었는지 확인
-  if (typeof daum === 'undefined' || !daum.Postcode) {
-    console.error('Daum Postcode Script가 로드되지 않았습니다.');
-    alert('주소 찾기 서비스를 이용할 수 없습니다.');
-    return;
+// 전화번호 형식 자동 변환 함수 (@input 이벤트에 연결)
+const formatPhoneNumber = () => {
+  let raw = user.value.phone.replace(/[^0-9]/g, '');
+  let formatted = '';
+
+  // 11자리 초과 입력 방지
+  if (raw.length > 11) {
+    raw = raw.substring(0, 11);
   }
 
-  new daum.Postcode({
-    oncomplete: function (data) {
-      user.value.postcode = data.zonecode;
-      user.value.address = data.roadAddress;
-      // 상세 주소 입력 필드에 자동으로 포커스
-      document.querySelector('input[v-model="user.detailAddress"]')?.focus();
-    }
-  }).open();
+  // 길이에 따라 하이픈 추가
+  if (raw.length > 3 && raw.length <= 7) {
+    formatted = `${raw.slice(0, 3)}-${raw.slice(3)}`;
+  } else if (raw.length > 7) {
+    formatted = `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
+  } else {
+    formatted = raw;
+  }
+
+  // 포매팅된 값을 다시 user.phone에 할당
+  user.value.phone = formatted;
 };
 
 // 임시 주문 내역 데이터
@@ -345,10 +356,51 @@ const reviews = ref([
   }
 ]);
 
+// 백엔드로부터 사용자 프로필 정보를 가져오는 함수
+const fetchUserProfile = async () => {
+  try {
+    const response = await api.get('/users/profile');
+    user.value = response.data;
+    formatPhoneNumber();
+  } catch (error) {
+    console.error('프로필 정보를 가져오는 데 실패했습니다:', error);
+    if (error.response?.status === 401) {
+      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+      authStore.logout(router);
+    } else {
+      alert('사용자 정보를 불러오는 중 문제가 발생했습니다.');
+    }
+  }
+};
+
+// Daum 우편번호 찾기 함수
+const findAddress = () => {
+  // Daum Postcode 스크립트가 로드되었는지 확인
+  if (typeof daum === 'undefined' || !daum.Postcode) {
+    console.error('Daum Postcode Script가 로드되지 않았습니다.');
+    alert('주소 찾기 서비스를 이용할 수 없습니다.');
+    return;
+  }
+
+  new daum.Postcode({
+    oncomplete: function (data) {
+      user.value.postcode = data.zonecode;
+      user.value.address = data.roadAddress;
+      // 상세 주소 입력 필드에 자동으로 포커스
+      document.querySelector('input[v-model="user.detailAddress"]')?.focus();
+    }
+  }).open();
+};
+
 // 프로필 저장 함수 (임시)
 const saveProfile = () => {
   console.log('저장될 사용자 정보:', user.value);
   alert('프로필이 저장되었습니다!');
   activeTab.value = 'orders'; // 저장 후 주문 내역 탭으로 이동
 };
+
+// 컴포넌트가 마운트될 때 사용자 정보를 자동으로 가져옵니다.
+onMounted(() => {
+  fetchUserProfile();
+});
 </script>
