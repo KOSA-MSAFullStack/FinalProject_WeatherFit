@@ -58,7 +58,7 @@ public class ItemService {
     public ItemResponseDTO createItem(ItemRequestDTO.Create request) {
         // 카테고리 조회
         Category category = categoryRepository.findByCategory(request.getCategory())
-                .orElseThrow(() -> new InternalServerException("Category not found with name: " + request.getCategory()));
+                .orElseThrow(() -> new IllegalArgumentException("⚠️ 카테고리를 찾을 수 없습니다: " + request.getCategory()));
 
         String imageUrl = null;
         if (request.getImage() != null && !request.getImage().isEmpty()) {
@@ -66,7 +66,7 @@ public class ItemService {
                 // itemCode를 ImageUploadService로 전달
                 imageUrl = imageUploadService.uploadImage(request.getImage(), request.getItemCode());
             } catch (IOException e) {
-                throw new InternalServerException("Failed to upload image", e);
+                throw new IllegalArgumentException("⚠️ 이미지 업로드에 실패했습니다.", e);
             }
         }
 
@@ -80,6 +80,8 @@ public class ItemService {
                 .gender(request.getGender())
                 .imageURL(imageUrl)
                 .aiDescription(request.getAiDescription())
+                .maxTemperature(request.getMaxTemperature() != null ? request.getMaxTemperature() : 0) // 추가
+                .minTemperature(request.getMinTemperature() != null ? request.getMinTemperature() : 0) // 추가
                 .createdAt(LocalDate.now()) // 현재 날짜로 등록일 설정
                 .build();
 
@@ -91,7 +93,7 @@ public class ItemService {
             if (request.getSeasonName() != null && !request.getSeasonName().isEmpty()) {
                 for (String seasonStr : request.getSeasonName()) {
                     Season season = seasonRepository.findBySeasonName(seasonStr)
-                            .orElseThrow(() -> new InternalServerException("Season not found with name: " + seasonStr));
+                            .orElseThrow(() -> new IllegalArgumentException("⚠️ 계절 정보를 찾을 수 없습니다: " + seasonStr));
                     ItemSeason itemSeason = ItemSeason.builder()
                             .item(savedItem)
                             .season(season)

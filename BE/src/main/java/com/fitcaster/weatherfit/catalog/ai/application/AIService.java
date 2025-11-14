@@ -4,12 +4,15 @@
 package com.fitcaster.weatherfit.catalog.ai.application;
 
 import com.fitcaster.weatherfit.catalog.ai.api.dto.AIRequestDTO;
+import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 // * author: 김기성
 @Service
@@ -23,7 +26,7 @@ public class AIService {
     }
 
     // 상품 정보/이미지 기반으로 AI 설명 생성
-    public String generateDescription(AIRequestDTO request) {
+    public AIResponseDTO generateDescription(AIRequestDTO request) {
         try {
             // 시스템 프롬프트 (AI 역할&출력 형식 정의)
             String systemPrompt = """
@@ -74,7 +77,7 @@ public class AIService {
                     - 각 구간마다 단독 착용 / 이너 추가 / 아우터 레이어링 등 구체적인 착용 방법을 안내합니다.
                     - 기온 수치는 상품의 두께감과 계절 정보를 참고해 현실적인 범위로 설정합니다.
                     - 마지막 리스트 항목에는 반드시 다음 문장을 포함합니다.
-                      "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다."
+                      "- 이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다."
                     
                     3) ✨ 상황별 보완 팁
                     - 날씨/환경 상황별로 최소 3개 이상 작성합니다.
@@ -163,7 +166,23 @@ public class AIService {
                     .call()
                     .content();
 
-            return result;
+            Integer minTemperature = null;
+            Integer maxTemperature = null;
+
+            // "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다." 형식에서 기온 파싱
+            Pattern pattern = Pattern.compile("최고/최저 기온은 (\\d+)°C / (\\d+)°C입니다.");
+            Matcher matcher = pattern.matcher(result);
+            if (matcher.find()) {
+                try {
+                    maxTemperature = Integer.parseInt(matcher.group(1));
+                    minTemperature = Integer.parseInt(matcher.group(2));
+                } catch (NumberFormatException e) {
+                    // 파싱 실패 시 로그 기록 또는 기본값 설정
+                    System.err.println("Failed to parse temperatures: " + e.getMessage());
+                }
+            }
+
+            return new AIResponseDTO(result, minTemperature, maxTemperature);
 
         } catch (Exception e) {
             throw new InternalServerException("⚠️ AI 설명 생성 중 오류 발생", e);

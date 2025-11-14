@@ -43,8 +43,8 @@ public class AdminItemController {
     // [AI 설명 생성]
     @PostMapping(value = "/generate-description", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AIResponseDTO> generateAIDescription(@ModelAttribute AIRequestDTO request) {
-        String aiDescription = aiService.generateDescription(request);
-        return ResponseEntity.ok(new AIResponseDTO(aiDescription));
+        AIResponseDTO aiResponse = aiService.generateDescription(request);
+        return ResponseEntity.ok(aiResponse);
     }
 
     // [상품 수정]
