@@ -365,7 +365,6 @@ const reviews = ref([
 const fetchUserProfile = async () => {
   try {
     const response = await api.get('/users/profile');
-    console.log(response.data);
     originalUser.value = response.data;
     resetProfileForm();
   } catch (error) {
@@ -398,11 +397,31 @@ const findAddress = () => {
   }).open();
 };
 
-// 프로필 저장 함수 (임시)
-const saveProfile = () => {
-  console.log('저장될 사용자 정보:', user.value);
-  alert('프로필이 저장되었습니다!');
-  activeTab.value = 'orders'; // 저장 후 주문 내역 탭으로 이동
+// 프로필 저장 함수
+const saveProfile = async () => {
+  const payload = {
+    name: user.value.name,
+    birth: user.value.birth,
+    gender: user.value.gender?.substring(0, 1),
+    phone: user.value.phone.replace(/[^0-9]/g, ''), // 전화번호는 숫자만
+    temperatureSensitivity: user.value.temperatureSensitivity,
+    address: {
+      zipCode: user.value.zipCode,
+      base: user.value.baseAddress,
+      detail: user.value.detailAddress
+    }
+  };
+  console.log('Saving profile with payload:', payload);
+  try {
+    await api.put('/users/profile', payload);
+    // 저장이 성공하면 originalUser를 업데이트
+    originalUser.value = { ...user.value };
+    alert('프로필이 성공적으로 저장되었습니다!');
+    activeTab.value = 'orders'; // 저장 후 주문 내역 탭으로 이동
+  } catch (error) {
+    console.error('프로필 저장에 실패했습니다:', error);
+    alert('프로필 저장 중 문제가 발생했습니다. 다시 시도해주세요.');
+  }
 };
 
 const handleCancel = () => {
