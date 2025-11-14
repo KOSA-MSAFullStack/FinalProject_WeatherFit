@@ -49,9 +49,7 @@ jwt:
 
   # 토큰 만료 시간 설정 (단위: 밀리초)
   # Access Token: 짧게 설정 (30분)
-  # access-token-expiration-ms: 1800000
-  # Test 용
-  access-token-expiration-ms: 10000
+  access-token-expiration-ms: 1800000
 
   # Refresh Token: 길게 설정 (7일)
   refresh-token-expiration-ms: 604800000
