@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID; // For generating unique item codes
 
 // * author: 김기성
 @Service
