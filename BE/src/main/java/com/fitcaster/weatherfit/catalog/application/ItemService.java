@@ -130,7 +130,6 @@ public class ItemService {
         // 3) 나머지 필드 업데이트
         item.updateDetails(
                 request.getItemName(),
-                request.getItemCode(), // TODO: ItemCode는 수정되지 않도록 변경 필요
                 request.getPrice(),
                 request.getQuantity(),
                 request.getGender(),
