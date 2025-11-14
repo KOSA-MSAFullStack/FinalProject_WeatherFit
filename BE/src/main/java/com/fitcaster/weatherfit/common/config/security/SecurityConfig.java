@@ -73,6 +73,7 @@ public class SecurityConfig {
 //                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()
 
                         // 그 외 모든 요청은 인증 필요 (로그인이 필요함)
