@@ -118,11 +118,11 @@
                 
                 <!-- 생년월일 -->
                 <div class="space-y-1">
-                  <label for="birthdate" class="block font-semibold text-sm text-gray-700">생년월일</label>
+                  <label for="birth" class="block font-semibold text-sm text-gray-700">생년월일</label>
                   <input 
-                    id="birthdate" 
+                    id="birth" 
                     type="date" 
-                    v-model="user.birthdate" 
+                    v-model="user.birth" 
                     class="w-full bg-white border border-gray-300 rounded-xl p-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
@@ -175,7 +175,7 @@
                   <div class="grid grid-cols-3 gap-2">
                     <input 
                       type="text" 
-                      v-model="user.postcode"
+                      v-model="user.zipCode"
                       placeholder="우편번호" 
                       readonly 
                       class="col-span-2 bg-gray-100 border border-gray-300 rounded-xl p-3 text-base outline-none" 
@@ -190,7 +190,7 @@
                   </div>
                   <input 
                     type="text" 
-                    v-model="user.address"
+                    v-model="user.baseAddress"
                     placeholder="기본 주소" 
                     readonly 
                     class="w-full bg-gray-100 border border-gray-300 rounded-xl p-3 text-base mt-2 outline-none" 
@@ -207,34 +207,34 @@
                 <div class="space-y-1">
                   <label class="block font-semibold text-sm text-gray-700">날씨 민감도</label>
                   <div class="flex gap-2 flex-wrap">
-                    <input type="radio" id="COLD" value="COLD" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="COLD" value="COLD" v-model="user.temperatureSensitivity" class="hidden">
                     <label 
                       for="COLD" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'COLD' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.temperatureSensitivity === 'COLD' }
                       ]"
                     >
                       추위 민감
                     </label>
                     
-                    <input type="radio" id="NORMAL" value="NORMAL" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="NORMAL" value="NORMAL" v-model="user.temperatureSensitivity" class="hidden">
                     <label 
                       for="NORMAL" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'NORMAL' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.temperatureSensitivity === 'NORMAL' }
                       ]"
                     >
                       보통
                     </label>
                     
-                    <input type="radio" id="HOT" value="HOT" v-model="user.weatherSensitivity" class="hidden">
+                    <input type="radio" id="HOT" value="HOT" v-model="user.temperatureSensitivity" class="hidden">
                     <label 
                       for="HOT" 
                       :class="[
                         'flex-1 text-center p-3 border border-gray-300 rounded-xl text-sm cursor-pointer transition-all',
-                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.weatherSensitivity === 'HOT' }
+                        { 'bg-blue-100 border-blue-500 text-blue-700 font-semibold': user.temperatureSensitivity === 'HOT' }
                       ]"
                     >
                       더위 민감
@@ -244,7 +244,7 @@
                 
                 <!-- 버튼 영역 (기존 스타일 유지) -->
                 <div class="flex justify-end space-x-2 pt-4">
-                  <button type="button" @click="activeTab = 'orders'" class="px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">취소</button>
+                  <button type="button" @click="handleCancel" class="px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">취소</button>
                   <button type="submit" class="px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">저장</button>
                 </div>
               </form>
@@ -285,28 +285,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
 import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
 
 const router = useRouter();
 const authStore = useAuthStore();
-// 현재 활성화된 탭을 관리하는 상태
 const activeTab = ref('orders');
 
-// API를 통해 받아올 사용자 정보 (초기값은 비워둠)
-const user = ref({
-  name: '',
-  email: '',
-  birthdate: '',
-  gender: '',
-  phone: '',
-  postcode: '',
-  address: '',
-  detailAddress: '',
-  weatherSensitivity: '',
+// originalUser: DB에서 가져온 원본. '저장' 시에만 업데이트됩니다.
+const originalUser = ref({
+  name: '', email: '', birth: '', gender: '', phone: '',
+  zipCode: '', baseAddress: '', detailAddress: '', temperatureSensitivity: '',
 });
+
+// user: v-model과 연결되어 사용자가 수정하는 데이터.
+const user = ref({
+  name: '', email: '', birth: '', gender: '', phone: '',
+  zipCode: '', baseAddress: '', detailAddress: '', temperatureSensitivity: '',
+});
+
+const resetProfileForm = () => {
+  // 원본 객체를 복사하여 수정용 객체에 할당합니다.
+  user.value = { ...originalUser.value };
+  // 전화번호 포매팅도 다시 적용합니다.
+  formatPhoneNumber();
+};
 
 // 전화번호 형식 자동 변환 함수 (@input 이벤트에 연결)
 const formatPhoneNumber = () => {
@@ -360,8 +365,9 @@ const reviews = ref([
 const fetchUserProfile = async () => {
   try {
     const response = await api.get('/users/profile');
-    user.value = response.data;
-    formatPhoneNumber();
+    console.log(response.data);
+    originalUser.value = response.data;
+    resetProfileForm();
   } catch (error) {
     console.error('프로필 정보를 가져오는 데 실패했습니다:', error);
     if (error.response?.status === 401) {
@@ -384,8 +390,8 @@ const findAddress = () => {
 
   new daum.Postcode({
     oncomplete: function (data) {
-      user.value.postcode = data.zonecode;
-      user.value.address = data.roadAddress;
+      user.value.zipCode = data.zonecode;
+      user.value.baseAddress = data.roadAddress;
       // 상세 주소 입력 필드에 자동으로 포커스
       document.querySelector('input[v-model="user.detailAddress"]')?.focus();
     }
@@ -398,6 +404,17 @@ const saveProfile = () => {
   alert('프로필이 저장되었습니다!');
   activeTab.value = 'orders'; // 저장 후 주문 내역 탭으로 이동
 };
+
+const handleCancel = () => {
+  resetProfileForm(); // 폼을 원본 상태로 되돌립니다.
+  activeTab.value = 'orders'; // 주문 내역 탭으로 이동합니다.
+};
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'profile') {
+    resetProfileForm();
+  }
+});
 
 // 컴포넌트가 마운트될 때 사용자 정보를 자동으로 가져옵니다.
 onMounted(() => {

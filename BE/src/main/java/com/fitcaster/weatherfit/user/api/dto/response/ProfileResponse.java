@@ -17,13 +17,13 @@ public class ProfileResponse {
 
     private final String name;
     private final String email;
-    private final String birthdate; // LocalDate -> String
+    private final String birth; // LocalDate -> String
     private final String gender; // Gender Enum -> String
     private final String phone;
-    private final String postcode; // Address 객체에서 추출
-    private final String address; // Address 객체에서 추출
+    private final String zipCode; // Address 객체에서 추출
+    private final String baseAddress; // Address 객체에서 추출
     private final String detailAddress; // Address 객체에서 추출
-    private final String weatherSensitivity; // TemperatureSensitivity Enum -> String
+    private final String temperatureSensitivity; // TemperatureSensitivity Enum -> String
 
     /**
      * User 엔티티를 ProfileResponse DTO로 변환하는 정적 팩토리 메소드.
@@ -37,13 +37,13 @@ public class ProfileResponse {
         return ProfileResponse.builder()
                 .name(user.getName())
                 .email(user.getUsername())
-                .birthdate(user.getBirth().toString())
+                .birth(user.getBirth().toString())
                 .gender(user.getGender().name())
                 .phone(user.getPhone())
-                .weatherSensitivity(user.getTemperatureSensitivity().name())
+                .temperatureSensitivity(user.getTemperatureSensitivity().name())
                 // Address 객체에서 직접 정보를 추출
-                .postcode(primaryAddress.getZipCode())
-                .address(primaryAddress.getBaseAddress())
+                .zipCode(primaryAddress.getZipCode())
+                .baseAddress(primaryAddress.getBaseAddress())
                 .detailAddress(primaryAddress.getDetailAddress())
                 .build();
     }
