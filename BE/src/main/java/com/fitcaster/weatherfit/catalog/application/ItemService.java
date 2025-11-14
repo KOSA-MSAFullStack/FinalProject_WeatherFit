@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -65,7 +64,8 @@ public class ItemService {
         String imageUrl = null;
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
-                imageUrl = imageUploadService.uploadImage(request.getImage());
+                // itemCode를 ImageUploadService로 전달
+                imageUrl = imageUploadService.uploadImage(request.getImage(), request.getItemCode());
             } catch (IOException e) {
                 throw new InternalServerException("Failed to upload image", e);
             }
@@ -75,7 +75,7 @@ public class ItemService {
         Item item = Item.builder()
                 .category(category)
                 .itemName(request.getItemName())
-                .itemCode(UUID.randomUUID().toString()) // Unique item code generation
+                .itemCode(request.getItemCode()) // 요청에서 받은 itemCode 사용
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .gender(request.getGender())
