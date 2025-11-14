@@ -1,11 +1,9 @@
-package com.fitcaster.weatherfit.user.api.dto.response;
+package com.fitcaster.weatherfit.mypage.api.dto.response;
 
 import com.fitcaster.weatherfit.user.domain.entity.Address;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.Optional;
 
 /**
  * author: 이상우

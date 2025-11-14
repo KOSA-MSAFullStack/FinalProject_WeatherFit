@@ -1,5 +1,6 @@
-package com.fitcaster.weatherfit.user.api.dto.request;
+package com.fitcaster.weatherfit.mypage.api.dto.request;
 
+import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
 import com.fitcaster.weatherfit.user.domain.entity.TemperatureSensitivity;
 import lombok.Data;
 

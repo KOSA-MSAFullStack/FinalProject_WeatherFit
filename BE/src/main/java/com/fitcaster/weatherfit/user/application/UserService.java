@@ -3,9 +3,7 @@ package com.fitcaster.weatherfit.user.application;
 import com.fitcaster.weatherfit.common.exception.DuplicateUserException;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
-import com.fitcaster.weatherfit.user.api.dto.request.ProfileUpdateRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
-import com.fitcaster.weatherfit.user.api.dto.response.ProfileResponse;
 import com.fitcaster.weatherfit.user.domain.entity.Address;
 import com.fitcaster.weatherfit.user.domain.entity.Gender;
 import com.fitcaster.weatherfit.user.domain.entity.TemperatureSensitivity;
@@ -93,19 +91,4 @@ public class UserService {
         addressRepository.save(newAddress);
     }
 
-    // 사용자 프로필 정보 조회
-    @Transactional
-    public ProfileResponse getUserProfile(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-        return ProfileResponse.from(user);
-    }
-
-    // 사용자 프로필 정보 업데이트
-    @Transactional
-    public void updateProfile(Long userId, ProfileUpdateRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
-        user.updateProfile(request);
-    }
 }
