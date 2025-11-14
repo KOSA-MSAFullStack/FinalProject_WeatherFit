@@ -428,7 +428,8 @@ h2 {
 
 table {
   width: 100%;
-  border-collapse: collapse
+  border-collapse: collapse;
+  table-layout: fixed; /* 테이블 레이아웃 고정 */
 }
 
 th {
@@ -437,12 +438,31 @@ th {
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--line);
-  font-size: 14px
+  font-size: 14px;
 }
+
+/* 각 컬럼의 너비 지정 */
+th:nth-child(1) { width: 15%; } /* 상품코드 */
+th:nth-child(2) { width: 25%; } /* 상품명 */
+th:nth-child(3) { width: 15%; } /* 카테고리 */
+th:nth-child(4) { width: 13%; } /* 판매가 */
+th:nth-child(5) { width: 9%; } /* 재고 수량 */
+th:nth-child(6) { width: 12%; } /* 등록일 */
+th:nth-child(7) { width: 8%; } /* 관리 */
+
 
 td {
   padding: 12px;
-  border-bottom: 1px solid var(--line)
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle; /* 세로 중앙 정렬 */
+}
+
+/* 내용이 길어질 수 있는 셀에 말줄임표 적용 */
+td:nth-child(1), /* 상품코드 */
+td:nth-child(3) { /* 카테고리 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tr:hover {
@@ -467,7 +487,11 @@ tr:hover {
 
 .product-name {
   font-weight: 600;
-  font-size: 14px
+  font-size: 14px;
+  /* 말줄임표 스타일 적용 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page {
