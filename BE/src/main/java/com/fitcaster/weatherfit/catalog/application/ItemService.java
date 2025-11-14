@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 // * author: 김기성
 @Service
@@ -35,8 +36,10 @@ public class ItemService {
     private final SeasonRepository seasonRepository; // 계절 레포지토리
 
     // [모든 상품 목록 조회]
-    public List<Item> getAllItems() {
-        return itemRepository.findAll();
+    public List<ItemResponseDTO> getAllItems() {
+        return itemRepository.findAll().stream()
+                .map(ItemResponseDTO::from)
+                .collect(Collectors.toList());
     }
 
     // [상품 단건 조회]
