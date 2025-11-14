@@ -1,4 +1,8 @@
 package com.fitcaster.weatherfit.review.domain.repository;
 
-public interface ReviewRepository {
+import com.fitcaster.weatherfit.review.domain.entity.Review;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ReviewRepository extends JpaRepository<Review, Long> {
+
 }
