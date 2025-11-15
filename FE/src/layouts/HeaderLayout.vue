@@ -14,11 +14,15 @@
         </RouterLink>
       </div>
 
+      <!-- 가운데: 오늘 날씨 표시 -->
       <div class="hidden sm:block">
         <h2 class="text-base font-semibold text-gray-700">
-          {{ weatherData.city }} 
-          <span class="ml-1 text-cyan-600">{{ weatherData.icon }}</span> 
-          <span class="ml-1 font-normal">{{ weatherData.status }}, {{ weatherData.minTemp }}°C / {{ weatherData.maxTemp }}°C</span>
+          <span v-if="isLoading">날씨 정보를 불러오는 중입니다...</span>
+          <span v-else-if="isError" class="text-red-500">날씨 정보를 불러오지 못했어요</span>
+          <span v-else class="font-normal">
+            {{ weatherData.condition }} 
+            {{ weatherData.minTemperature }}°C / {{ weatherData.maxTemperature }}°C
+          </span>
         </h2>
       </div>
 
@@ -47,7 +51,7 @@
           <input
             v-model="cityInput"
             id="city"
-            placeholder="도시: Seoul"
+            placeholder="예시: 대전시 도룡동"
             class="p-1.5 border border-gray-300 rounded-lg text-sm w-28 focus:ring-cyan-500 focus:border-cyan-500"
           />
           <button 
@@ -65,24 +69,48 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { inject } from 'vue'
 import { RouterLink, useRouter } from 'vue-router';
 import { Heart, UserCircle, ShoppingCart, LogOut, MoveUpRight } from 'lucide-vue-next';
 import { useAuthStore } from '@/store/authStore'
+import { getTodayWeather } from '@/api/weatherApi.js'
+import { useQuery } from '@tanstack/vue-query';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
+// 날씨 정보
+const region = inject('region')  // App.vue에서 받은 전역 상태 (ref)
+const cityInput = ref(''); // NavBar에서만 쓰는 로컬 입력 상태
 
-const weatherData = ref({
-  city: '대전',
-  icon: '☀️',
-  status: '맑음',
-  minTemp: 10,
-  maxTemp: 17
-});
+// TanStack Query로 오늘 날씨 조회
+const { data, isLoading, isError } = useQuery({
+  // 주소가 바뀔 때마다 다른 캐시/요청이 되도록 queryKey에 region 반영
+  queryKey: computed(() => ['todayWeather', region.value]),
+  
+  // 실제 API 호출
+  queryFn: async () => {
+    const res = await getTodayWeather(region.value)
+    return res
+  },
+})
 
-const cityInput = ref('');
+// 템플릿에서 쓰기 편하게 가공
+const weatherData = computed(() => {
+  // 아직 데이터가 없을 때 기본값
+  if (!data.value) {
+    return {
+      status: '',
+      minTemp: '-',
+      maxTemp: '-',
+      icon: '',
+    }
+  }
+  // 백엔드에서 내려주는 today weather DTO 구조에 맞게 사용
+  // 예: { status, minTemp, maxTemp, icon }
+  return data.value
+})
 
 const handleWeatherUpdate = () => {
   if (cityInput.value) {
@@ -90,6 +118,9 @@ const handleWeatherUpdate = () => {
   } else {
     alert('도시를 입력해주세요.');
   }
+
+  // 주소값 입력 시 전역 region 변경
+  region.value = cityInput.value;
 };
 
 /**

@@ -7,6 +7,6 @@ package com.fitcaster.weatherfit.recommendation.api.dto;
 public record ItemCard(
         Long itemId,                 // 상품 ID
         String itemName,             // 상품 이름
-        String imgUrl                // 이미지 url
+        String imageURL                // 이미지 url
 ) {
 }
