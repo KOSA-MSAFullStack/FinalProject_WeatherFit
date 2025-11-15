@@ -1,12 +1,10 @@
 package com.fitcaster.weatherfit.user.api.controller;
 
 import com.fitcaster.weatherfit.user.api.dto.request.LoginRequest;
-import com.fitcaster.weatherfit.user.api.dto.request.ProfileUpdateRequest;
 import com.fitcaster.weatherfit.user.api.dto.request.SignupRequest;
 import com.fitcaster.weatherfit.user.api.dto.response.AccessTokenResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.EmailCheckResponse;
 import com.fitcaster.weatherfit.user.api.dto.response.LoginResponse;
-import com.fitcaster.weatherfit.user.api.dto.response.ProfileResponse;
 import com.fitcaster.weatherfit.user.application.AuthService;
 import com.fitcaster.weatherfit.user.application.UserService;
 import com.fitcaster.weatherfit.user.domain.entity.User;
@@ -95,23 +93,4 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /users/profile (user profile 조회)
-     */
-    @GetMapping("/profile")
-    public ResponseEntity<ProfileResponse> getMyProfile(@AuthenticationPrincipal User user) {
-        Long userId = user.getId();
-        ProfileResponse profile = userService.getUserProfile(userId);
-        return ResponseEntity.ok(profile);
-    }
-
-    /**
-     * PUT /users/profile (user profile 수정)
-     */
-    @PutMapping("/profile")
-    public ResponseEntity<Void> updateUserProfile(@AuthenticationPrincipal User user, @RequestBody ProfileUpdateRequest request) {
-        Long userId = user.getId();
-        userService.updateProfile(userId, request);
-        return ResponseEntity.ok().build();
-    }
 }
