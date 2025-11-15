@@ -364,7 +364,7 @@ const reviews = ref([
 // 백엔드로부터 사용자 프로필 정보를 가져오는 함수
 const fetchUserProfile = async () => {
   try {
-    const response = await api.get('/users/profile');
+    const response = await api.get('/mypage/profile');
     originalUser.value = response.data;
     resetProfileForm();
   } catch (error) {
@@ -413,7 +413,7 @@ const saveProfile = async () => {
   };
   console.log('Saving profile with payload:', payload);
   try {
-    await api.put('/users/profile', payload);
+    await api.put('/mypage/profile', payload);
     // 저장이 성공하면 originalUser를 업데이트
     originalUser.value = { ...user.value };
     alert('프로필이 성공적으로 저장되었습니다!');
