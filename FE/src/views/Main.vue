@@ -1,3 +1,4 @@
+<!-- author: 김경아 -->
 <template>
   <div style="font-family: 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
     <!-- Header -->

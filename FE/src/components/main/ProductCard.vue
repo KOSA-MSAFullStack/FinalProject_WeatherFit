@@ -1,4 +1,4 @@
-<!-- src/components/main/ProductCard.vue -->
+<!-- author: 김경아 -->
 <template>
   <div 
     class="flex-shrink-0 bg-white border border-gray-200 overflow-hidden shadow-sm"

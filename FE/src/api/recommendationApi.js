@@ -1,3 +1,4 @@
+// author : 김경아
 import axios from "axios";
 
 // 오늘 날씨 기반 옷 추천 받는 API

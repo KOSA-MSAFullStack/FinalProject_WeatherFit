@@ -1,4 +1,4 @@
-<!-- src/components/main/MainProductCard.vue -->
+<!-- author: 김경아 -->
 <template>
   <section class="hero3">
     <!-- 오늘 날씨 추천 아우터 -->

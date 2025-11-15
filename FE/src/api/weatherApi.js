@@ -1,3 +1,4 @@
+// author : 김경아
 import axios from "axios";
 
 // 오늘 날씨 정보를 불러오는 API

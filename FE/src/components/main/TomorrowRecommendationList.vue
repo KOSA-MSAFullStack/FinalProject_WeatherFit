@@ -1,4 +1,4 @@
-<!-- src/components/main/TodayRecommendationList.vue -->
+<!-- author: 김경아 -->
 <template>
   <section
     class="bg-white border border-gray-200"
