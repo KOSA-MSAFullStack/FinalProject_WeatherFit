@@ -1,7 +1,7 @@
 package com.fitcaster.weatherfit.user.domain.entity;
 
 import com.fitcaster.weatherfit.user.api.dto.request.AddressRequest;
-import com.fitcaster.weatherfit.user.api.dto.request.ProfileUpdateRequest;
+import com.fitcaster.weatherfit.mypage.api.dto.request.ProfileUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
