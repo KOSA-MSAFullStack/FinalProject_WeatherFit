@@ -1,5 +1,5 @@
 // author : 김경아
-import axios from "axios";
+import axios from "@/utils/axios";
 
 // 오늘 날씨 기반 옷 추천 받는 API
 export async function getTodayRecommendation(region) {
