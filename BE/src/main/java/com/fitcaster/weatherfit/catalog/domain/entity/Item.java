@@ -103,13 +103,10 @@ public class Item {
     }
 
     // 상품 상세 정보 업데이트 (부분 업데이트 지원)
-    public void updateDetails(String itemName, String itemCode, Integer price, Integer quantity, String gender,
+    public void updateDetails(String itemName, Integer price, Integer quantity, String gender,
                               String imageURL, String aiDescription, Integer maxTemperature, Integer minTemperature) {
         if (itemName != null && !itemName.isEmpty()) {
             this.itemName = itemName;
-        }
-        if (itemCode != null && !itemCode.isEmpty()) {
-            this.itemCode = itemCode;
         }
         if (price != null && price != 0) {
             this.price = price;

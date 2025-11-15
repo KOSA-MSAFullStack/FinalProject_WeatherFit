@@ -26,6 +26,7 @@ public class ItemResponseDTO {
     private String category;        // 카테고리명
     private String classification;  // 분류명
     private List<String> seasonName;   // 계절명 리스트
+    private int quantity;           // 재고 수량
 
     // Item 엔티티로부터 DTO를 생성하는 메서드
     public static ItemResponseDTO from(Item item) {
@@ -48,6 +49,7 @@ public class ItemResponseDTO {
                 .category(item.getCategory().getCategory())
                 .classification(item.getCategory().getClassification().getClassification())
                 .seasonName(seasonNames)
+                .quantity(item.getQuantity())
                 .build();
     }
 }
