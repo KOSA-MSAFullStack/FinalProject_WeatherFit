@@ -72,6 +72,7 @@ public class SecurityConfig {
                         // 관리자 경로: 'ROLE_ADMIN' 권한 필요
 //                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()

@@ -10,6 +10,7 @@ public record ItemBrief(
         String itemName,             // 상품 이름
         int minTemperature,          // 최저 기온
         int maxTemperature,          // 최고 기온
-        String gender               // 성별
+        String gender,               // 성별
+        String imageURL              // 이미지URL
 ) {
 }

@@ -42,7 +42,7 @@ kakao:
   api:
     key: ${KAKAO_API_KEY}
 
-# JWT (JSON Web Token) 설정
+# --- JWT (JSON Web Token) 설정 ---
 jwt:
   # 토큰을 서명할 때 사용할 Secret Key
   secret: ${JWT_SECRET_KEY}
@@ -54,6 +54,6 @@ jwt:
   # Refresh Token: 길게 설정 (7일)
   refresh-token-expiration-ms: 604800000
 
-# 파일 업로드 경로 설정
+# --- 파일 업로드 경로 설정 ---
 upload:
   path: uploads/

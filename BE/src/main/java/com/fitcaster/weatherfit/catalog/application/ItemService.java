@@ -17,13 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID; // For generating unique item codes
 
 // * author: 김기성
 @Service
@@ -61,14 +58,15 @@ public class ItemService {
     public ItemResponseDTO createItem(ItemRequestDTO.Create request) {
         // 카테고리 조회
         Category category = categoryRepository.findByCategory(request.getCategory())
-                .orElseThrow(() -> new InternalServerException("Category not found with name: " + request.getCategory()));
+                .orElseThrow(() -> new IllegalArgumentException("⚠️ 카테고리를 찾을 수 없습니다: " + request.getCategory()));
 
         String imageUrl = null;
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
-                imageUrl = imageUploadService.uploadImage(request.getImage());
+                // itemCode를 ImageUploadService로 전달
+                imageUrl = imageUploadService.uploadImage(request.getImage(), request.getItemCode());
             } catch (IOException e) {
-                throw new InternalServerException("Failed to upload image", e);
+                throw new IllegalArgumentException("⚠️ 이미지 업로드에 실패했습니다.", e);
             }
         }
 
@@ -76,12 +74,14 @@ public class ItemService {
         Item item = Item.builder()
                 .category(category)
                 .itemName(request.getItemName())
-                .itemCode(UUID.randomUUID().toString()) // Unique item code generation
+                .itemCode(request.getItemCode()) // 요청에서 받은 itemCode 사용
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .gender(request.getGender())
                 .imageURL(imageUrl)
                 .aiDescription(request.getAiDescription())
+                .maxTemperature(request.getMaxTemperature() != null ? request.getMaxTemperature() : 0) // 추가
+                .minTemperature(request.getMinTemperature() != null ? request.getMinTemperature() : 0) // 추가
                 .createdAt(LocalDate.now()) // 현재 날짜로 등록일 설정
                 .build();
 
@@ -93,7 +93,7 @@ public class ItemService {
             if (request.getSeasonName() != null && !request.getSeasonName().isEmpty()) {
                 for (String seasonStr : request.getSeasonName()) {
                     Season season = seasonRepository.findBySeasonName(seasonStr)
-                            .orElseThrow(() -> new InternalServerException("Season not found with name: " + seasonStr));
+                            .orElseThrow(() -> new IllegalArgumentException("⚠️ 계절 정보를 찾을 수 없습니다: " + seasonStr));
                     ItemSeason itemSeason = ItemSeason.builder()
                             .item(savedItem)
                             .season(season)

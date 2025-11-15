@@ -209,7 +209,16 @@ export default {
           formData.append('quantity', productData.quantity);
           formData.append('gender', productData.gender);
           formData.append('category', productData.category);
+          formData.append('itemCode', productData.itemCode); // 상품 코드 추가
           formData.append('aiDescription', productData.aiDescription);
+          
+          // 최고/최저 기온 추가
+          if (productData.maxTemperature !== null) {
+            formData.append('maxTemperature', productData.maxTemperature);
+          }
+          if (productData.minTemperature !== null) {
+            formData.append('minTemperature', productData.minTemperature);
+          }
           
           if (productData.seasonName) {
             productData.seasonName.forEach(season => {

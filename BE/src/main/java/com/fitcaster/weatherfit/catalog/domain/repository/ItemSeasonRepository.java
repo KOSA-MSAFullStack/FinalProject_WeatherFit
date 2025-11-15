@@ -1,6 +1,5 @@
 package com.fitcaster.weatherfit.catalog.domain.repository;
 
-import com.fitcaster.weatherfit.catalog.domain.entity.Classification;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
 import com.fitcaster.weatherfit.catalog.domain.entity.ItemSeason;
 import com.fitcaster.weatherfit.catalog.domain.entity.ItemSeasonId;
