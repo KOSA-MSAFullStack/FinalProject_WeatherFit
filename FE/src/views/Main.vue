@@ -14,10 +14,10 @@
       <TodayRecommendationList :region="selectedRegion" /> 
 
       <!-- 내일 날씨 기반 옷 추천-->  
-      <TomorrowRecommendationList />  
+      <TomorrowRecommendationList :region="selectedRegion" />  
 
       <!-- 이번 주 날씨 기반 옷 추천-->
-      <WeeklyRecommendationList />    
+      <WeeklyRecommendationList :region="selectedRegion" />    
     </main>
 
     <!-- Footer -->
