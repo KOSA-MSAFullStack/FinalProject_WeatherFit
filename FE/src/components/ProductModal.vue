@@ -161,10 +161,14 @@ export default {
     productToEdit: {
       handler(newVal) {
         if (newVal) {
-          // 깊은 복사를 통해 부모 컴포넌트의 데이터가 직접 수정되는 것을 방지
-          this.product = JSON.parse(JSON.stringify(newVal));
+          this.product = { ...newVal };
+          // 성별 변환 (백엔드 코드 -> 프론트엔드 표시명)
+          this.product.selectedGender = Object.keys(this.genderMap).find(key => this.genderMap[key] === newVal.gender) || '';
+          // 계절 할당
+          this.product.selectedSeasons = newVal.seasonName || [];
           this.imagePreview = newVal.imageURL || '';
-          this.product.aiDescription = !!newVal.aiDescription ? newVal.aiDescription : ''; // aiDescription이 null일 경우 빈 문자열로 초기화
+          this.product.aiDescription = newVal.aiDescription || ''; // aiDescription이 null일 경우 빈 문자열로 초기화
+          this.aiBoxVisible = !!newVal.aiDescription; // AI 설명이 있으면 aiBoxVisible을 true로 설정
           this.product.maxTemperature = newVal.maxTemperature || null; // 최고 기온 로드
           this.product.minTemperature = newVal.minTemperature || null;  // 최저 기온 로드
 
