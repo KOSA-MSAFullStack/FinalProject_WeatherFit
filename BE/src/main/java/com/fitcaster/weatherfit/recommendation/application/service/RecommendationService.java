@@ -256,7 +256,8 @@ public class RecommendationService {
                         item.getCategory().getCategory(),
                         item.getMinTemperature(),
                         item.getMaxTemperature(),
-                        item.getGender()))
+                        item.getGender(),
+                        item.getImageURL()))
                 .toList();
     }
 

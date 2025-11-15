@@ -29,9 +29,9 @@ public class PromptTemplate {
         - 상품의 최저기온과 최고기온을 파악해서 오늘의 날씨에 최적화된 옷을 추천해주세요.
         - 반드시 아래 JSON "정확한 스키마"로만 출력(코드블록 금지, 설명 금지).
         {
-            "outer": { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-            "top":   { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-            "bottom":{ "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" }
+            "outer": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+            "top":   { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+            "bottom":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
           }
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
@@ -75,9 +75,9 @@ public class PromptTemplate {
         - 최적값보다는 다양하게 선택하는 것을 우선하세요.
         - 반드시 아래 JSON "정확한 스키마"로만 출력(코드블록 금지, 설명 금지).
           {
-            "firstItem": { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-            "secondItem": { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-            "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" }
+            "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+            "secondItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+            "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
           }
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
@@ -118,9 +118,9 @@ public class PromptTemplate {
           사용자의 성별이 "MALE"인 경우 gender가 "MALE" 또는 "UNISEX"인 상품만 선택하세요.
         - 반드시 아래 JSON 스키마를 정확히 지키고, 코드블록이나 설명은 출력하지 마세요.
         {
-          "firstItem": { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-          "secondItem": { "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" },
-          "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imgUrl": "<String>" }
+          "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+          "secondItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
+          "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
         }
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사해서 채우세요.
         - 숫자는 따옴표 없이 숫자로 출력합니다.
@@ -152,9 +152,9 @@ public class PromptTemplate {
      */
     private String toLines(List<ItemBrief> items) {
         return items.stream()
-                .map(item -> "id=%d | %s | %s | %d | %d | %s"
+                .map(item -> "id=%d | %s | %s | %d | %d | %s | %s"
                         .formatted(
-                item.itemId(), item.category(), item.itemName(), item.minTemperature(), item.maxTemperature(), item.gender()))
+                item.itemId(), item.category(), item.itemName(), item.minTemperature(), item.maxTemperature(), item.gender(), item.imageURL()))
                 .collect(Collectors.joining("\n"));
     }
 }
