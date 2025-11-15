@@ -15,6 +15,17 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // CartItemExistsException 처리: 상품이 장바구니에 이미 담겨있는 경우
+    @ExceptionHandler(CartItemExistsException.class)
+    public ResponseEntity<Map<String, String>> handleCartItemExistsException(CartItemExistsException ex) {
+        Map<String, String> errorDetails = new HashMap<>();
+        errorDetails.put("code", "CART_ITEM_EXISTS");
+        errorDetails.put("message", ex.getMessage());
+        errorDetails.put("itemName", ex.getItemName()); // 상품명을 함께 전달
+
+        return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT); // HTTP 409
+    }
+
     // [인증 실패 예외 처리] - HTTP Status 401 Unauthorized
     // 로그인 정보 불일치, 토큰 만료/유효성 등 인증 관련 문제 처리
     @ExceptionHandler(AuthenticationException.class)
