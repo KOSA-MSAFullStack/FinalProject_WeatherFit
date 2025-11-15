@@ -29,6 +29,7 @@ BE/build/
 BE/src/main/resources/static/videos/
 BOOT-INF/
 META-INF/
+uploads/
 
 ### Temp File ###
 *.swp

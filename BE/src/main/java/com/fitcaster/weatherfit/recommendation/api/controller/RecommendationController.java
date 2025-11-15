@@ -1,6 +1,5 @@
 package com.fitcaster.weatherfit.recommendation.api.controller;
 
-import com.fitcaster.weatherfit.recommendation.api.dto.AiAllRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiTodayRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiTomorrowRecommendResponse;
 import com.fitcaster.weatherfit.recommendation.api.dto.AiWeeklyRecommendResponse;
@@ -25,34 +24,34 @@ public class RecommendationController {
 
     /**
      * 오늘 날씨에 맞는 옷 추천
-     * @param address 지역
+     * @param region 지역
      * @return 오늘 날씨 기반 추천 받은 옷
      */
     @GetMapping("/today")
-    public ResponseEntity<AiTodayRecommendResponse> getTodayRecommendation(@RequestParam String address) {
-        AiTodayRecommendResponse todayRecommendation = recommendationService.getTodayRecommendation(address);
+    public ResponseEntity<AiTodayRecommendResponse> getTodayRecommendation(@RequestParam String region) {
+        AiTodayRecommendResponse todayRecommendation = recommendationService.getTodayRecommendation(region);
         return ResponseEntity.ok(todayRecommendation);
     }
 
     /**
      * 내일 날씨에 맞는 옷 추천
-     * @param address 지역
+     * @param region 지역
      * @return 내일 날씨 기반 추천 받은 옷
      */
     @GetMapping("/tomorrow")
-    public ResponseEntity<AiTomorrowRecommendResponse> getTomorrowRecommendation(@RequestParam String address) {
-        AiTomorrowRecommendResponse todayRecommendation = recommendationService.getTomorrowRecommendation(address);
+    public ResponseEntity<AiTomorrowRecommendResponse> getTomorrowRecommendation(@RequestParam String region) {
+        AiTomorrowRecommendResponse todayRecommendation = recommendationService.getTomorrowRecommendation(region);
         return ResponseEntity.ok(todayRecommendation);
     }
 
     /**
      * 이번주 날씨에 맞는 옷 추천
-     * @param address 지역
+     * @param region 지역
      * @return 이번주 날씨 기반 추천 받은 옷
      */
     @GetMapping("/weekly")
-    public ResponseEntity<AiWeeklyRecommendResponse> getWeeklyRecommendation(@RequestParam String address) {
-        AiWeeklyRecommendResponse weeklyRecommendation = recommendationService.getWeeklyRecommendation(address);
+    public ResponseEntity<AiWeeklyRecommendResponse> getWeeklyRecommendation(@RequestParam String region) {
+        AiWeeklyRecommendResponse weeklyRecommendation = recommendationService.getWeeklyRecommendation(region);
         return ResponseEntity.ok(weeklyRecommendation);
     }
 }
