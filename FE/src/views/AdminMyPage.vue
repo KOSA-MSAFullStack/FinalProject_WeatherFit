@@ -231,7 +231,7 @@ export default {
             formData.append('image', productData.image);
           }
 
-          await api.post('/api/admin/items', formData, {
+          await api.post('/admin/items', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -247,7 +247,7 @@ export default {
     },
     async handleProductDelete(itemId) {
       try {
-        await api.delete(`/api/admin/items/${itemId}`);
+        await api.delete(`/admin/items/${itemId}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         this.isProductModalVisible = false;
         this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
