@@ -37,7 +37,8 @@ public class ItemService {
 
     // [모든 상품 목록 조회]
     public List<ItemResponseDTO> getAllItems() {
-        return itemRepository.findAll().stream()
+        return itemRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
                 .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
     }
@@ -46,13 +47,16 @@ public class ItemService {
     @Transactional(readOnly = true)
     public ItemResponseDTO getItemById(Long itemId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new InternalServerException("Item not found with id: " + itemId));
+                .orElseThrow(() -> new NoSuchElementException("Item not found with id: " + itemId));
         return ItemResponseDTO.from(item);
     }
 
    // [상품명 검색]
-   public List<Item> searchItemsByName(String itemName) {
-       return itemRepository.findByItemNameContainingIgnoreCase(itemName);
+   public List<ItemResponseDTO> searchItemsByName(String itemName) {
+       return itemRepository.findByItemNameContainingIgnoreCase(itemName)
+               .stream()
+               .map(ItemResponseDTO::from)
+               .collect(Collectors.toList());
    }
 
     
