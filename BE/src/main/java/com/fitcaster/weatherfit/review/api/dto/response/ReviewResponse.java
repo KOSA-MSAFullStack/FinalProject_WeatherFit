@@ -9,7 +9,6 @@ import java.time.LocalDate;
 @Getter
 public class ReviewResponse {
 
-    private final Long reviewId;
     private final String userName;
     private final BigDecimal ratingScore;
     private final String weather;
@@ -21,7 +20,6 @@ public class ReviewResponse {
     // Review 엔티티를 DTO로 변환하는 정적 팩토리 메서드
     public static ReviewResponse from(Review review) {
         return new ReviewResponse(
-            review.getId(),
             review.getUser().getName(), // User 객체에서 이름 가져오기
             review.getRatingScore(),
             review.getWeather().getDescription(), // Enum의 설명 반환
@@ -33,9 +31,8 @@ public class ReviewResponse {
     }
 
     // 생성자
-    private ReviewResponse(Long reviewId, String userName, BigDecimal ratingScore, String weather,
+    private ReviewResponse(String userName, BigDecimal ratingScore, String weather,
                            String temperature, String indoorFit, String contents, LocalDate createdAt) {
-        this.reviewId = reviewId;
         this.userName = userName;
         this.ratingScore = ratingScore;
         this.weather = weather;
