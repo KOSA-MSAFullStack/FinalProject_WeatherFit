@@ -9,9 +9,15 @@
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label for="itemName">상품명</label>
-          <input type="text" id="itemName" v-model="product.itemName">
+        <div class="grid2">
+          <div class="form-group">
+            <label for="itemName">상품명</label>
+            <input type="text" id="itemName" v-model="product.itemName">
+          </div>
+          <div class="form-group">
+            <label for="itemCode">상품 코드</label>
+            <input type="text" id="itemCode" v-model="product.itemCode">
+          </div>
         </div>
 
         <div class="grid2">
@@ -66,7 +72,7 @@
           <label for="itemImage">상품 이미지</label>
           <div class="custom-file-input-box">
             <input type="file" id="itemImage" accept="image/*" @change="handleImageUpload" class="hidden-file-input">
-            <label for="itemImage" class="file-select-button">파일 선택</label>
+            <label for="itemImage" class="file-select-button">업로드</label>
             <span class="selected-file-name">{{ selectedFileName }}</span>
           </div>
           <div id="imgPreview" class="img-preview" :style="{ backgroundImage: `url(${imagePreview})` }"></div>
@@ -100,6 +106,8 @@
 </template>
 
 <script>
+import api from '@/utils/axios';
+
 export default {
   name: 'ProductModal',
   props: {
@@ -113,6 +121,7 @@ export default {
     return {
       product: {
         itemName: '',
+        itemCode: '', // 상품 코드 추가
         price: null,
         quantity: null,
         classification: '상의',
@@ -121,6 +130,8 @@ export default {
         selectedSeasons: [], // 선택된 계절 (배열)
         image: null,
         aiDescription: '',
+        maxTemperature: null, // 최고 기온 추가
+        minTemperature: null,  // 최저 기온 추가
       },
       selectedFileName: '선택된 파일 없음', // 선택된 파일명 표시
       categoryData: {
@@ -153,13 +164,9 @@ export default {
           // 깊은 복사를 통해 부모 컴포넌트의 데이터가 직접 수정되는 것을 방지
           this.product = JSON.parse(JSON.stringify(newVal));
           this.imagePreview = newVal.imageURL || '';
-          this.aiBoxVisible = !!newVal.aiDescription;
-
-          // 성별 데이터 변환 (백엔드 코드 -> 프론트엔드 단일 문자열)
-          this.product.selectedGender = this.genderMap[newVal.gender] || '';
-
-          // 계절 데이터 할당 (백엔드 List<String> -> 프론트엔드 배열)
-          this.product.selectedSeasons = newVal.seasons || [];
+          this.product.aiDescription = !!newVal.aiDescription ? newVal.aiDescription : ''; // aiDescription이 null일 경우 빈 문자열로 초기화
+          this.product.maxTemperature = newVal.maxTemperature || null; // 최고 기온 로드
+          this.product.minTemperature = newVal.minTemperature || null;  // 최저 기온 로드
 
           // 파일 이름 초기화
           this.selectedFileName = newVal.imageURL ? newVal.imageURL.substring(newVal.imageURL.lastIndexOf('/') + 1) : '선택된 파일 없음';
@@ -175,6 +182,8 @@ export default {
             selectedSeasons: [],
             image: null,
             aiDescription: '',
+            maxTemperature: null, // 최고 기온 초기화
+            minTemperature: null,  // 최저 기온 초기화
           };
           this.imagePreview = '';
           this.aiBoxVisible = false;
@@ -185,6 +194,7 @@ export default {
       immediate: true,
     },
   },
+
   methods: {
     updateCategoryOptions() {
       this.categories = this.categoryData[this.product.classification] || [];
@@ -192,6 +202,25 @@ export default {
         this.product.category = this.categories[0];
       }
     },
+
+    // 이미지 업로드시 미리보기
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      this.product.image = file;
+      this.selectedFileName = file.name;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+
+    // AI 설명 생성
     async generateAIDescription() {
       if (!this.product.image) {
         alert('AI 설명을 생성하려면 상품 이미지를 먼저 등록해주세요.');
@@ -211,12 +240,14 @@ export default {
       formData.append('image', this.product.image);
 
       try {
-        const response = await axios.post('/api/admin/items/generate-description', formData, {
+        const response = await api.post('/admin/items/generate-description', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
         this.product.aiDescription = response.data.content;
+        this.product.maxTemperature = response.data.maxTemperature; // 최고 기온 할당
+        this.product.minTemperature = response.data.minTemperature;  // 최저 기온 할당
       } catch (error) {
         console.error('AI 설명 생성 실패:', error);
         this.product.aiDescription = 'AI 설명 생성에 실패했습니다. 다시 시도해주세요.';
@@ -227,6 +258,7 @@ export default {
       // 다시 생성 버튼 클릭 시 generateAIDescription 로직 재사용
       this.generateAIDescription();
     },
+
     handleSubmit() {
       // 제출 전에 성별 데이터를 백엔드 형식으로 변환 (단일 문자열 코드)
       const submittedProduct = { ...this.product };
@@ -238,11 +270,16 @@ export default {
       delete submittedProduct.selectedGender; // 임시 필드 삭제
 
       // 계절 데이터는 이미 배열이므로 그대로 사용
-      submittedProduct.seasons = submittedProduct.selectedSeasons;
+      submittedProduct.seasonName = submittedProduct.selectedSeasons;
       delete submittedProduct.selectedSeasons; // 임시 필드 삭제
+
+      // 최고/최저 기온 추가
+      submittedProduct.maxTemperature = this.product.maxTemperature;
+      submittedProduct.minTemperature = this.product.minTemperature;
 
       this.$emit('submit', submittedProduct);
     },
+
     handleDelete() {
       if (confirm('정말로 이 상품을 삭제하시겠습니까?')) {
         this.$emit('delete', this.product.itemId);
@@ -338,7 +375,7 @@ textarea {
 
 textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 200px;
 }
 
 input[type="file"] {

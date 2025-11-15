@@ -13,4 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AIResponseDTO {
     private String content;     // 내용
+    private Integer minTemperature; // 최저 기온
+    private Integer maxTemperature; // 최고 기온
 }

@@ -17,6 +17,6 @@ public class AIRequestDTO {
     private String itemName;        // 상품명
     private String category;        // 카테고리
     private String gender;          // 성별
-    private List<String> seasons;   // 계절
+    private List<String> seasonName;   // 계절
     private MultipartFile image;    // 상품 이미지
 }
