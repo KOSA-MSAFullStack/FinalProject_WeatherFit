@@ -84,6 +84,7 @@ public class OpenAiAdapter implements AiPort {
     private <T> T callAi(double temperature, String userPrompt, Class<T> responseType) {
         // 옵션 설정
         OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model("gpt-4o-mini")
                 .temperature(temperature)
                 .build();
 
