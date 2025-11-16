@@ -6,7 +6,7 @@
     id="wx"
   >
     <div class="flex items-center justify-between" style="margin-bottom: 8px">
-      <h2 class="text-lg font-semibold text-gray-900" style="margin: 0">이번주 날씨에 맞는 추천 상품</h2>
+       <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 10px">이번주 날씨에 맞는 추천 상품</h1>
     </div>
 
     <!-- 로딩 상태 -->
@@ -23,7 +23,7 @@
       class="slider"
       style="display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory"
     >
-    <ProductCard
+    <ItemCard
     v-for="item in items"
     :key="item.itemId"
     :item="item"
@@ -36,7 +36,7 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import ProductCard from '@/components/main/ProductCard.vue'
+import ItemCard from '@/components/main/ItemCard.vue'
 import { getWeeklyRecommendation } from '@/api/recommendationApi.js'
 
 // App.vue에서 provide한 region 주입
