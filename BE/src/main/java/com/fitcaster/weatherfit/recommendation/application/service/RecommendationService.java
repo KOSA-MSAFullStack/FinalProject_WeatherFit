@@ -37,7 +37,7 @@ public class RecommendationService {
         WeatherResponse todayWeather = weatherService.getTodayWeather(address);
 
         // 2. AI에게 보낼 DTO 생성
-        AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(todayWeather, address, true);
+        AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(todayWeather, true);
 
         // 3. AI에 요청 보내서 응답 받기
         return aiPort.recommendToday(aiRecommendRequest);
@@ -52,7 +52,7 @@ public class RecommendationService {
         WeatherResponse tomorrowWeather = weatherService.getTomorrowWeather(address);
 
         // 2. AI에게 보낼 DTO 생성
-        AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(tomorrowWeather, address, false);
+        AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(tomorrowWeather, false);
 
         // 3. AI에 요청 보내서 응답 받기
         return aiPort.recommendTomorrow(aiRecommendRequest);
@@ -73,9 +73,9 @@ public class RecommendationService {
         String season = getSeason(weeklySummary);
 
         // 4. 계절 기준으로 후보 가져오기
-        List<Item> outers  = itemService.findByClassificationAndSeason("OUTER",  season);
-        List<Item> tops    = itemService.findByClassificationAndSeason("TOP",    season);
-        List<Item> bottoms = itemService.findByClassificationAndSeason("BOTTOM", season);
+        List<Item> outers  = itemService.findByClassificationAndSeason("아우터", season);
+        List<Item> tops    = itemService.findByClassificationAndSeason("상의", season);
+        List<Item> bottoms = itemService.findByClassificationAndSeason("하의", season);
 
         // 5. AI 프롬프트용 DTO 변환
         List<ItemBrief> outerBriefs   = toBriefs(outers);
@@ -96,18 +96,17 @@ public class RecommendationService {
 
     /**
      * 날씨 정보를 이용해서 DB에서 1차 분류를 받고 AI에게 전달할 DTO를 반환하는 메서드
-     * @param address 지역
-     * @param primary Tier1(true: 기온에 가장 잘 맞는 상위 N개), Tier2(false: 여전히 맞지만 상위 N개 만큼은 아닌 나머지)
+     * @param primary Tier1(true: 기온에 가장 잘 맞는 상위 N개 -> 오늘용), Tier2(false: 여전히 맞지만 상위 N개 만큼은 아닌 나머지 -> 내일용)
      * @return AI에게 전달할 DTO
      */
-    private AiRecommendRequest getAiRecommendRequest(WeatherResponse weather, String address, Boolean primary) {
+    private AiRecommendRequest getAiRecommendRequest(WeatherResponse weather, Boolean primary) {
         // 1. month → 계절 결정
         String season = getSeason(weather);
 
         // 2. 분류와 계절로 옷 1차 분류 + Tier1/Tier2 분리
-        List<Item> outers  = findCandidates("OUTER",  season, weather, primary);
-        List<Item> tops    = findCandidates("TOP",    season, weather, primary);
-        List<Item> bottoms = findCandidates("BOTTOM", season, weather, primary);
+        List<Item> outers  = findCandidates("아우터",  season, weather, primary);
+        List<Item> tops    = findCandidates("상의",    season, weather, primary);
+        List<Item> bottoms = findCandidates("하의", season, weather, primary);
 
         // 3.. AI 프롬프트용 ItemBrief로 변환(AI가 참고할 필드만으로 생성)
         List<ItemBrief> outerBriefs = toBriefs(outers);
@@ -136,8 +135,8 @@ public class RecommendationService {
 
         // 3. 아이템별 "적정 온도" 계산 후, target과 얼마나 가까운지로 정렬
         List<Item> valid = items.stream()
-                // 1. 우선, 기온 범위가 너무 안 맞는 건 걸러내기
-                .filter(item -> isTemperatureInRange(item, weather))
+                // todo: 1. 우선, 기온 범위가 너무 안 맞는 건 걸러내기(보류)
+//                .filter(item -> isTemperatureInRange(item, weather))
                 // 2. targetTemp와의 거리 기준으로 정렬
                 .sorted((a, b) -> Double.compare(
                         distanceFromTarget(a, targetTemp),

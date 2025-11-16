@@ -48,11 +48,11 @@
               <h2 class="text-2xl font-bold mb-4">안녕하세요, {{ user.name }}님! 👋</h2>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-2xl font-bold text-gray-900">12</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ totalElements }}</div>
                   <div class="text-xs text-gray-500 mt-1">총 주문</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-2xl font-bold text-gray-900">8</div>
+                  <div class="text-2xl font-bold text-gray-900">{{userReviews.length}}</div>
                   <div class="text-xs text-gray-500 mt-1">작성 리뷰</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
@@ -65,21 +65,108 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
-              <h2 class="text-xl font-bold mb-4">주문 내역</h2>
-              <div class="space-y-3">
-                <div v-for="order in orders" :key="order.id" class="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
-                  <div class="w-20 h-20 rounded-md bg-gray-100 shrink-0"></div>
-                  <div class="grow">
-                    <p class="font-bold text-gray-800">{{ order.name }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ order.date }} · 주문번호: {{ order.id }} · {{ order.price.toLocaleString() }}원</p>
-                    <div class="mt-2 space-x-2">
-                      <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">상세보기</button>
-                      <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">리뷰 쓰기</button>
+              <h2 class="text-xl font-bold mb-4">주문 내역 (총 {{ totalElements }}건)</h2>
+              
+              <!-- 로딩/에러 상태 표시 -->
+              <div v-if="isLoading" class="text-center py-10 text-gray-500">
+                <svg class="animate-spin h-5 w-5 text-blue-500 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                주문 내역을 불러오는 중...
+              </div>
+              <div v-else-if="error" class="text-center py-10 text-red-500 border border-red-300 bg-red-50 rounded-lg p-4">
+                주문 내역을 불러오는 데 실패했습니다. 다시 시도해주세요.
+              </div>
+              <div v-else-if="totalElements === 0" class="text-center py-10 text-gray-500 border border-gray-300 bg-gray-50 rounded-lg p-4">
+                최근 6개월 동안 주문 내역이 없습니다.
+              </div>
+
+              <!-- 주문 목록 렌더링 (Order 기준으로 그룹화) -->
+              <div v-else class="space-y-6">
+                <div v-for="order in orders" :key="order.orderId" class="border border-gray-300 rounded-xl overflow-hidden">
+                  
+                  <!-- 주문 헤더 (날짜 및 주문 번호) -->
+                  <div class="bg-gray-100 p-3 flex justify-between items-center text-sm font-semibold text-gray-700 border-b border-gray-300">
+                    <div class="flex items-center gap-4">
+                      <span>{{ formatDate(order.orderDate) }} 주문</span>
+                      <span class="text-xs text-gray-500 font-normal">| 주문번호: {{ order.orderNo }}</span>
+                    </div>
+                  </div>
+
+                  <!-- 주문 상품 항목 목록 (OrderItem) -->
+                  <div class="divide-y divide-gray-200">
+                    <div v-for="item in order.orderItems" :key="item.orderItemId" class="p-4 flex gap-4 transition-colors hover:bg-gray-50">
+                      
+                      <!-- 상품 이미지 -->
+                      <div class="w-20 h-20 rounded-md bg-gray-100 shrink-0 border border-gray-200 overflow-hidden">
+                        <!-- 실제 이미지 경로를 사용합니다. -->
+                        <img 
+                          :src="getFullImageUrl(item.itemImage)" 
+                          :alt="item.itemName" 
+                          class="w-full h-full object-cover"
+                        >
+                      </div>
+                      
+                      <!-- 상품 정보 -->
+                      <div class="grow">
+                        <p class="font-bold text-gray-800 line-clamp-1">{{ item.itemName }}</p>
+                        <p class="text-xs text-gray-500 mt-1">수량: {{ item.quantity }}개 | 금액: {{ (item.itemPrice * item.quantity).toLocaleString() }}원</p>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">주문 완료</p>
+                        
+                        <!-- 버튼 영역 -->
+                        <div class="mt-2 space-x-2">
+                          <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
+                          <!-- 'review' 객체가 있으면 '수정', 없으면 '작성' 버튼 표시 -->
+                          <button v-if="item.review" @click="openReviewModal(item, item.review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                            리뷰 수정
+                          </button>
+                          <button v-else @click="openReviewModal(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                            리뷰 쓰기
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- 페이지네이션 UI -->
+              <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-2">
+                <!-- 이전 페이지 버튼 -->
+                <button 
+                  @click="changePage(currentPage - 1)" 
+                  :disabled="currentPage === 0"
+                  class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                
+                <!-- 페이지 번호 버튼 -->
+                <button 
+                  v-for="page in totalPages" 
+                  :key="page" 
+                  @click="changePage(page - 1)"
+                  :class="[
+                    'px-4 py-2 leading-tight border rounded-lg',
+                    (page - 1) === currentPage 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+                
+                <!-- 다음 페이지 버튼 -->
+                <button 
+                  @click="changePage(currentPage + 1)" 
+                  :disabled="currentPage >= totalPages - 1"
+                  class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
               </div>
             </div>
           </div>
@@ -255,18 +342,26 @@
           <div v-if="activeTab === 'reviews'">
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
               <h2 class="text-xl font-bold mb-4">리뷰 관리</h2>
-              <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ reviews.length }})</h3>
+              <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ userReviews.length }}건)</h3>
+              <!-- <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ reviews.length }})</h3> -->
+               <!-- 로딩/에러 처리 추가 -->
+              <div v-if="isReviewLoading" class="text-center py-10">... 로딩 중 ...</div>
+              <div v-else-if="userReviews.length === 0" class="text-center py-10 text-gray-500">작성한 리뷰가 없습니다.</div>
               <div class="space-y-4">
-                <div v-for="review in reviews" :key="review.id" class="border border-gray-200 bg-white rounded-lg p-4">
+                <div v-for="review in userReviews" :key="review.id" class="border border-gray-200 bg-white rounded-lg p-4">
                   <div class="flex justify-between items-center mb-2">
-                    <p class="font-semibold text-sm">{{ review.productName }}</p>
-                    <p class="text-xs text-gray-500">{{ review.date }}</p>
+                    <p class="font-semibold text-sm">{{ review.itemName }}</p>
+                    <p class="text-xs text-gray-500">{{ review.createdAt }}</p>
                   </div>
-                  <div class="text-yellow-400 mb-2">★★★★★</div>
-                  <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.text }}</p>
+                  <!-- 별점 표시 로직 추가 -->
+                  <div class="text-yellow-400 mb-2 flex items-center">
+                    <Star v-for="i in 5" :key="i" :size="16" class="fill-current" :class="i <= review.ratingScore ? 'text-yellow-400' : 'text-gray-300'" />
+                    <span class="ml-2 text-xs text-gray-600 font-semibold">{{ review.ratingScore }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.contents }}</p>
                   <div class="flex space-x-2">
-                    <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">수정</button>
-                    <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600">삭제</button>
+                    <button @click="openReviewModalForEdit(review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">수정</button>
+                    <button @click="handleReviewDelete(review.reviewId)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600">삭제</button>
                   </div>
                 </div>
               </div>
@@ -282,6 +377,15 @@
       © WeatherFit Shop · 마이페이지
     </footer> -->
   </div>
+
+  <ReviewModal 
+    :is-open="isReviewModalOpen"
+    :order-item="selectedOrderItem"
+    :existing-review="selectedReview"
+    @close="closeReviewModal"
+    @submit="handleReviewSubmit"
+    @delete="handleReviewDelete"
+  />
 </template>
 
 <script setup>
@@ -289,10 +393,126 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
 import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
+import ReviewModal from '@/components/ReviewModal.vue';
+import { Star } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const activeTab = ref('orders');
+
+// --- 리뷰 관련 상태 ---
+const isReviewModalOpen = ref(false);
+const selectedOrderItem = ref({});
+const selectedReview = ref(null);
+const userReviews = ref([]); // 리뷰 관리 탭을 위한 리뷰 목록
+const isReviewLoading = ref(false); // 리뷰 목록 로딩 상태
+
+// 데이터 매핑 객체 (프론트 <-> 백엔드)
+const weatherMap = { '맑음': 'SUNNY', '흐림': 'CLOUDY', '강풍': 'WINDY', '비': 'RAINY', '눈': 'SNOWY' };
+const tempMap = { '추워요': 'COLD', '시원해요': 'COOL', '보통이에요': 'NORMAL', '따뜻해요': 'WARM', '더워요': 'HOT' };
+const fitMap = { '편해요': 'COMFORTABLE', '보통이에요': 'NORMAL', '답답해요': 'TIGHT' };
+
+// (역방향 매핑) 백엔드 -> 프론트. 수정 모드 시 필요
+const reverseWeatherMap = Object.fromEntries(Object.entries(weatherMap).map(([k, v]) => [v, k]));
+const reverseTempMap = Object.fromEntries(Object.entries(tempMap).map(([k, v]) => [v, k]));
+const reverseFitMap = Object.fromEntries(Object.entries(fitMap).map(([k, v]) => [v, k]));
+
+// --- 리뷰 모달 이벤트 핸들러 ---
+const openReviewModal = (item, review = null) => {
+  selectedOrderItem.value = item;
+  if (review) {
+    // 수정 모드: 백엔드 데이터를 프론트 폼 데이터로 변환
+    selectedReview.value = {
+      id: review.reviewId,
+      score: review.ratingScore,
+      weather: reverseWeatherMap[review.weather],
+      weatherSuitability: reverseTempMap[review.temperature],
+      breathability: reverseFitMap[review.indoorFit],
+      content: review.contents
+    };
+  } else {
+    selectedReview.value = null;
+  }
+  isReviewModalOpen.value = true;
+};
+
+// 리뷰 모달 닫기
+const closeReviewModal = () => { isReviewModalOpen.value = false; };
+
+// 리뷰 등록/수정 처리
+const handleReviewSubmit = async (formData) => {
+  const payload = {
+    itemId: selectedOrderItem.value.itemId,
+    score: formData.score,
+    weather: weatherMap[formData.weather],
+    weatherSuitability: tempMap[formData.weatherSuitability],
+    breathability: fitMap[formData.breathability],
+    content: formData.content
+  };
+
+  try {
+    if (selectedReview.value && selectedReview.value.id) {
+      await api.put(`/api/reviews/${selectedReview.value.id}`, payload);
+    } else {
+      await api.post('/api/reviews', payload);
+    }
+    closeReviewModal();
+    fetchUserReviews();
+    activeTab.value = 'reviews';
+  } catch (error) {
+    console.error('리뷰 저장 실패:', error);
+    alert(error.response?.data?.message || '리뷰 저장 중 오류가 발생했습니다.');
+  }
+};
+
+// 리뷰 삭제 처리 (수정 모드일 때만 동작)
+const handleReviewDelete = async (reviewIdToDelete = null) => {
+  const reviewId = reviewIdToDelete || selectedReview.value?.id;
+  if (!reviewId || !confirm('정말로 이 리뷰를 삭제하시겠습니까?')) return;
+
+  try {
+    await api.delete(`/api/reviews/${reviewId}`);
+    alert('리뷰가 삭제되었습니다.');
+    closeReviewModal();
+    if (activeTab.value === 'orders') fetchOrderHistory();
+    if (activeTab.value === 'reviews') fetchUserReviews();
+  } catch (error) {
+    console.error('리뷰 삭제 실패:', error);
+    alert(error.response?.data?.message || '리뷰 삭제 중 오류가 발생했습니다.');
+  }
+};
+
+// 리뷰 관리 탭에서 '수정' 버튼을 눌렀을 때 호출될 함수
+const openReviewModalForEdit = (review) => {
+  const Item = {
+    itemId: review.itemId,
+    itemName: review.itemName
+  };
+  openReviewModal(Item, review);
+};
+
+// 주문 내역 관련 상태
+const orders = ref([]); // API 응답의 content (주문 목록)
+const isLoading = ref(false);
+const error = ref(null);
+const currentPage = ref(0); // 현재 페이지 (0부터 시작)
+const pageSize = 5;       // 페이지 당 보여줄 항목 수
+const totalElements = ref(0); // 전체 주문 수
+const totalPages = ref(0);    // 전체 페이지 수
+
+// 이미지 URL 완성 로직
+// api 인스턴스에서 baseURL (예: http://localhost:8080)을 가져옵니다.
+const API_BASE_URL = api.defaults.baseURL || '';
+
+// 헬퍼 함수: 상대 경로를 완전한 이미지 URL로 변환
+const getFullImageUrl = (relativePath) => {
+    // 상대 경로가 없으면 placeholder 반환
+    if (!relativePath) {
+        return 'https://placehold.co/80x80/f1f5f9/94a3b8?text=Img'; 
+    }
+    // 기본 URL과 상대 경로를 조합 (예: http://localhost:8080/uploads/M53002APLO0.webp)
+    return `${API_BASE_URL}${relativePath}`;
+};
 
 // originalUser: DB에서 가져온 원본. '저장' 시에만 업데이트됩니다.
 const originalUser = ref({
@@ -336,30 +556,55 @@ const formatPhoneNumber = () => {
   user.value.phone = formatted;
 };
 
-// 임시 주문 내역 데이터
-const orders = ref([
-  { id: '20251028-001234', name: '울 블렌드 인타르시아 니트 탑', date: '2025.10.28', price: 435000 },
-  { id: '20251025-005678', name: '라이트 트렌치 코트', date: '2025.10.25', price: 129000 },
-  { id: '20251020-002345', name: '옥스포드 셔츠 외 2건', date: '2025.10.20', price: 187000 },
-]);
+const formatDate = (datetime) => {
+    if (!datetime) return '';
+    const date = new Date(datetime);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).replace(/\. /g, '.').replace(/\.$/, ''); // 2025. 11. 16. -> 2025.11.16
+};
 
-// 임시 리뷰 데이터
-const reviews = ref([
-  {
-    id: 1,
-    productName: '울 블렌드 인타르시아 니트 탑',
-    date: '2025.10.29',
-    rating: 5,
-    text: '날씨가 쌀쌀해지는 요즘 입기 딱 좋아요! 두께감도 적당하고 디자인도 심플해서 어떤 옷이랑도 잘 어울려요. 특히 날씨 추천 기능 덕분에 구매했는데 정말 만족스러워요 👍'
-  },
-  {
-    id: 2,
-    productName: '라이트 트렌치 코트',
-    date: '2025.10.21',
-    rating: 4,
-    text: '방수 기능이 생각보다 좋네요. 비 오는 날 입어봤는데 물이 스며들지 않았어요. 다만 사이즈가 약간 크게 나온 것 같아요. 한 치수 작게 주문하시는 걸 추천해요!'
+// --- 백엔드로부터 주문 내역을 가져오는 함수 ---
+const fetchOrderHistory = async () => {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+        const response = await api.get('/api/orders', {
+            params: {
+                page: currentPage.value,
+                size: pageSize,
+                sort: 'orderDate,desc' // 수정: Order 엔티티의 필드명으로 정렬
+            }
+        });
+
+        // API 응답(Page 객체)에 따라 상태 업데이트
+        orders.value = response.data.content;
+        totalElements.value = response.data.totalElements;
+        totalPages.value = response.data.totalPages;
+        
+    } catch (err) {
+        console.error('주문 내역 정보를 가져오는 데 실패했습니다:', err);
+        error.value = '조회 실패';
+        if (err.response?.status === 401) {
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            authStore.logout(router);
+        }
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+// --- 페이지 변경 함수 ---
+const changePage = (page) => {
+  // 요청하려는 페이지가 유효한 범위 내에 있는지 확인
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page; // 현재 페이지 상태 업데이트
+    fetchOrderHistory(); // 해당 페이지 데이터 다시 요청
   }
-]);
+};
 
 // 백엔드로부터 사용자 프로필 정보를 가져오는 함수
 const fetchUserProfile = async () => {
@@ -375,6 +620,19 @@ const fetchUserProfile = async () => {
     } else {
       alert('사용자 정보를 불러오는 중 문제가 발생했습니다.');
     }
+  }
+};
+
+// 사용자가 작성한 리뷰 목록을 가져오는 API 호출 함수
+const fetchUserReviews = async () => {
+  isReviewLoading.value = true;
+  try {
+    const response = await api.get('/api/reviews');
+    userReviews.value = response.data;
+  } catch (error) {
+    console.error("내가 쓴 리뷰 목록 조회 실패:", error);
+  } finally {
+    isReviewLoading.value = false;
   }
 };
 
@@ -411,7 +669,7 @@ const saveProfile = async () => {
       detail: user.value.detailAddress
     }
   };
-  console.log('Saving profile with payload:', payload);
+
   try {
     await api.put('/mypage/profile', payload);
     // 저장이 성공하면 originalUser를 업데이트
@@ -429,14 +687,20 @@ const handleCancel = () => {
   activeTab.value = 'orders'; // 주문 내역 탭으로 이동합니다.
 };
 
+// 탭이 변경될 때마다 특정 로직 실행
 watch(activeTab, (newTab) => {
   if (newTab === 'profile') {
     resetProfileForm();
+  } else if (newTab === 'orders') {
+    currentPage.value = 0; // 주문 탭으로 돌아올 때 항상 첫 페이지부터 보여주도록 초기화
+    fetchOrderHistory();
   }
 });
 
 // 컴포넌트가 마운트될 때 사용자 정보를 자동으로 가져옵니다.
 onMounted(() => {
+  fetchOrderHistory(); 
   fetchUserProfile();
+  fetchUserReviews();
 });
 </script>

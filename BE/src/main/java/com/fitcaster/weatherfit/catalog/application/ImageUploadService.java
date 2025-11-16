@@ -44,8 +44,9 @@ public class ImageUploadService {
             fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
         
-        // 파일명을 itemCode로 사용
-        String fileName = itemCode + fileExtension; // itemCode를 파일명으로 사용
+        // 파일명을 itemCode로 사용 (공백 제거)
+        String cleanedItemCode = itemCode != null ? itemCode.trim() : "";
+        String fileName = cleanedItemCode + fileExtension;
 
         File uploadDir = new File(uploadPath);
         logger.info("Resolved upload directory: {}", uploadDir.getAbsolutePath()); // 디버깅용 로그
@@ -71,6 +72,6 @@ public class ImageUploadService {
             throw e;
         }
 
-        return "/BE/uploads/" + fileName; // fileName 사용
+        return "/uploads/" + fileName; // fileName 사용
     }
 }
