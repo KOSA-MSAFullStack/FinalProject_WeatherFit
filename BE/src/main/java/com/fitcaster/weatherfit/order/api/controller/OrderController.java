@@ -1,19 +1,19 @@
 package com.fitcaster.weatherfit.order.api.controller;
 
-import com.fitcaster.weatherfit.order.api.dto.response.OrderHistoryItemResponse;
+import com.fitcaster.weatherfit.order.api.dto.response.OrderHistoryResponse;
 import com.fitcaster.weatherfit.order.application.OrderService;
 import com.fitcaster.weatherfit.order.api.dto.request.OrderCreateRequest;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * author: 이상우
@@ -52,11 +52,9 @@ public class OrderController {
      * @return 주문 내역 목록 DTO 리스트
      */
     @GetMapping
-    public ResponseEntity<List<OrderHistoryItemResponse>> getOrderHistory(@AuthenticationPrincipal User user, @PageableDefault(size = 10, sort = "order.orderDate,desc") Pageable pageable) {
+    public ResponseEntity<Page<OrderHistoryResponse>> getOrderHistory(@AuthenticationPrincipal User user, @PageableDefault(size = 5, sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
         Long userId = user.getId();
-
-        List<OrderHistoryItemResponse> history = orderService.getOrderHistory(userId, pageable);
-
+        Page<OrderHistoryResponse> history = orderService.getOrderHistory(userId, pageable);
         return ResponseEntity.ok(history);
     }
 }

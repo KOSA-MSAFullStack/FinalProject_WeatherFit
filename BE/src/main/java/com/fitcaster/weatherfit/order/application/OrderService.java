@@ -1,6 +1,6 @@
 package com.fitcaster.weatherfit.order.application;
 
-import com.fitcaster.weatherfit.order.api.dto.response.OrderHistoryItemResponse;
+import com.fitcaster.weatherfit.order.api.dto.response.OrderHistoryResponse;
 import com.fitcaster.weatherfit.order.domain.entity.Order;
 import com.fitcaster.weatherfit.order.domain.entity.OrderItem;
 import com.fitcaster.weatherfit.order.domain.entity.Cart;
@@ -11,6 +11,7 @@ import com.fitcaster.weatherfit.order.api.dto.request.OrderCreateRequest;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,15 +92,13 @@ public class OrderService {
      * @return 주문 내역 조회 DTO
      */
     @Transactional(readOnly = true)
-    public List<OrderHistoryItemResponse> getOrderHistory(Long userId, Pageable pageable) {
-        // Repository를 통해 OrderItem 리스트를 조회
-        List<OrderItem> orderItems = orderItemRepository.findOrderItemsWithOrderAndItemByUserId(userId, pageable);
+    public Page<OrderHistoryResponse> getOrderHistory(Long userId, Pageable pageable) {
+        // Repository로부터 Page<OrderItem> 객체를 받음
+        Page<Order> orderPage = orderRepository.findOrdersByUserId(userId, pageable);
 
-        // 조회된 OrderItem 리스트를 DTO로 변환
-        return orderItems.stream()
-                // DTO의 from(OrderItem orderItem) 정적 팩토리 메서드를 사용하여 변환
-                .map(OrderHistoryItemResponse::from)
-                .collect(Collectors.toList());
+        // Page.map()을 사용하여 내용물(content)만 DTO로 변환
+        // 이 과정에서 페이징 정보(전체 개수, 페이지 번호 등)는 그대로 유지됨
+        return orderPage.map(OrderHistoryResponse::from);
     }
 
     /**

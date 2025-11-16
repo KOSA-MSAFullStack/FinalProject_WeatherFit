@@ -1,6 +1,7 @@
 package com.fitcaster.weatherfit.order.domain.repository;
 
 import com.fitcaster.weatherfit.order.domain.entity.OrderItem;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,5 +24,5 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             "JOIN FETCH oi.order o " +
             "JOIN FETCH oi.item i " +
             "WHERE o.user.id = :userId ")
-    List<OrderItem> findOrderItemsWithOrderAndItemByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<OrderItem> findOrderItemsWithOrderAndItemByUserId(@Param("userId") Long userId, Pageable pageable);
 }

@@ -48,7 +48,7 @@
               <h2 class="text-2xl font-bold mb-4">안녕하세요, {{ user.name }}님! 👋</h2>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-2xl font-bold text-gray-900">12</div>
+                  <div class="text-2xl font-bold text-gray-900">{{ totalElements }}</div>
                   <div class="text-xs text-gray-500 mt-1">총 주문</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
@@ -67,7 +67,7 @@
             </div>
 
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
-              <h2 class="text-xl font-bold mb-4">주문 내역 (총 {{ groupedOrders.length }}건)</h2>
+              <h2 class="text-xl font-bold mb-4">주문 내역 (총 {{ totalElements }}건)</h2>
               
               <!-- 로딩/에러 상태 표시 -->
               <div v-if="isLoading" class="text-center py-10 text-gray-500">
@@ -80,13 +80,13 @@
               <div v-else-if="error" class="text-center py-10 text-red-500 border border-red-300 bg-red-50 rounded-lg p-4">
                 주문 내역을 불러오는 데 실패했습니다. 다시 시도해주세요.
               </div>
-              <div v-else-if="groupedOrders.length === 0" class="text-center py-10 text-gray-500 border border-gray-300 bg-gray-50 rounded-lg p-4">
+              <div v-else-if="totalElements === 0" class="text-center py-10 text-gray-500 border border-gray-300 bg-gray-50 rounded-lg p-4">
                 최근 6개월 동안 주문 내역이 없습니다.
               </div>
 
               <!-- 주문 목록 렌더링 (Order 기준으로 그룹화) -->
               <div v-else class="space-y-6">
-                <div v-for="order in groupedOrders" :key="order.orderId" class="border border-gray-300 rounded-xl overflow-hidden">
+                <div v-for="order in orders" :key="order.orderId" class="border border-gray-300 rounded-xl overflow-hidden">
                   
                   <!-- 주문 헤더 (날짜 및 주문 번호) -->
                   <div class="bg-gray-100 p-3 flex justify-between items-center text-sm font-semibold text-gray-700 border-b border-gray-300">
@@ -98,7 +98,7 @@
 
                   <!-- 주문 상품 항목 목록 (OrderItem) -->
                   <div class="divide-y divide-gray-200">
-                    <div v-for="item in order.items" :key="item.orderItemId" class="p-4 flex gap-4 transition-colors hover:bg-gray-50">
+                    <div v-for="item in order.orderItems" :key="item.orderItemId" class="p-4 flex gap-4 transition-colors hover:bg-gray-50">
                       
                       <!-- 상품 이미지 -->
                       <div class="w-20 h-20 rounded-md bg-gray-100 shrink-0 border border-gray-200 overflow-hidden">
@@ -127,28 +127,42 @@
                 </div>
               </div>
 
-              <!-- 페이징은 아직 미구현 상태이므로 임시로 표시하지 않습니다. -->
-              <!-- <div class="flex justify-center mt-6">
-                <button class="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition">더 보기</button>
-              </div> -->
-            </div>
-            
-            <!-- <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
-              <h2 class="text-xl font-bold mb-4">주문 내역</h2>
-              <div class="space-y-3">
-                <div v-for="order in orders" :key="order.id" class="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
-                  <div class="w-20 h-20 rounded-md bg-gray-100 shrink-0"></div>
-                  <div class="grow">
-                    <p class="font-bold text-gray-800">{{ order.name }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ order.date }} · 주문번호: {{ order.id }} · {{ order.price.toLocaleString() }}원</p>
-                    <div class="mt-2 space-x-2">
-                      <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">상세보기</button>
-                      <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">리뷰 쓰기</button>
-                    </div>
-                  </div>
-                </div>
+              <!-- 페이지네이션 UI -->
+              <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-2">
+                <!-- 이전 페이지 버튼 -->
+                <button 
+                  @click="changePage(currentPage - 1)" 
+                  :disabled="currentPage === 0"
+                  class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                
+                <!-- 페이지 번호 버튼 -->
+                <button 
+                  v-for="page in totalPages" 
+                  :key="page" 
+                  @click="changePage(page - 1)"
+                  :class="[
+                    'px-4 py-2 leading-tight border rounded-lg',
+                    (page - 1) === currentPage 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+                
+                <!-- 다음 페이지 버튼 -->
+                <button 
+                  @click="changePage(currentPage + 1)" 
+                  :disabled="currentPage >= totalPages - 1"
+                  class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
               </div>
-            </div> -->
+            </div>
           </div>
 
           <!-- 기본 정보 페이지 -->
@@ -362,11 +376,13 @@ const authStore = useAuthStore();
 const activeTab = ref('orders');
 
 // 주문 내역 관련 상태
-const groupedOrders = ref([]); // 그룹화된 주문 목록 (Order 단위)
+const orders = ref([]); // API 응답의 content (주문 목록)
 const isLoading = ref(false);
 const error = ref(null);
-const currentPage = ref(0);
-const pageSize = 5;
+const currentPage = ref(0); // 현재 페이지 (0부터 시작)
+const pageSize = 5;       // 페이지 당 보여줄 항목 수
+const totalElements = ref(0); // 전체 주문 수
+const totalPages = ref(0);    // 전체 페이지 수
 
 // 이미지 URL 완성 로직
 // api 인스턴스에서 baseURL (예: http://localhost:8080)을 가져옵니다.
@@ -452,57 +468,24 @@ const formatDate = (datetime) => {
     }).replace(/\. /g, '.').replace(/\.$/, ''); // 2025. 11. 16. -> 2025.11.16
 };
 
-/**
- * 백엔드에서 받은 OrderItem 리스트를 Order 단위로 그룹화합니다.
- * @param {Array<Object>} items - 백엔드에서 받은 OrderHistoryItemResponse 리스트
- * @returns {Array<Object>} - Order 객체로 그룹화된 리스트
- */
-const groupOrderItems = (items) => {
-    // items: [OrderHistoryItemResponse, OrderHistoryItemResponse, ...]
-    const grouped = {};
-
-    items.forEach(item => {
-        const key = item.orderId;
-        
-        if (!grouped[key]) {
-            // 새 주문 그룹 생성
-            grouped[key] = {
-                orderId: item.orderId,
-                orderNo: item.orderNo,
-                orderDate: item.orderDate,
-                items: [], // 해당 주문에 속하는 상품 목록
-            };
-        }
-
-        // 주문 항목 추가
-        grouped[key].items.push(item);
-    });
-
-    // Object의 값들(그룹화된 Order 리스트)을 배열로 변환
-    return Object.values(grouped);
-};
-
-// 백엔드로부터 주문 내역을 가져오는 함수
+// --- 백엔드로부터 주문 내역을 가져오는 함수 ---
 const fetchOrderHistory = async () => {
     isLoading.value = true;
     error.value = null;
-    groupedOrders.value = [];
 
     try {
-        // 백엔드 API 호출: GET /api/orders?page=0&size=5&sort=orderDate,desc
-        // 백엔드에서 Order 엔티티의 orderDate로 정렬하도록 요청합니다.
         const response = await api.get('/api/orders', {
             params: {
                 page: currentPage.value,
                 size: pageSize,
-                sort: 'order.orderDate,desc' // Spring Data Pageable 정렬 파라미터
+                sort: 'orderDate,desc' // 수정: Order 엔티티의 필드명으로 정렬
             }
         });
 
-        const orderItems = response.data; // OrderHistoryItemResponse 리스트
-        
-        // OrderItem 리스트를 Order 단위로 그룹화
-        groupedOrders.value = groupOrderItems(orderItems);
+        // API 응답(Page 객체)에 따라 상태 업데이트
+        orders.value = response.data.content;
+        totalElements.value = response.data.totalElements;
+        totalPages.value = response.data.totalPages;
         
     } catch (err) {
         console.error('주문 내역 정보를 가져오는 데 실패했습니다:', err);
@@ -514,6 +497,15 @@ const fetchOrderHistory = async () => {
     } finally {
         isLoading.value = false;
     }
+};
+
+// --- 페이지 변경 함수 ---
+const changePage = (page) => {
+  // 요청하려는 페이지가 유효한 범위 내에 있는지 확인
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page; // 현재 페이지 상태 업데이트
+    fetchOrderHistory(); // 해당 페이지 데이터 다시 요청
+  }
 };
 
 // 백엔드로부터 사용자 프로필 정보를 가져오는 함수
@@ -589,7 +581,8 @@ watch(activeTab, (newTab) => {
   if (newTab === 'profile') {
     resetProfileForm();
   } else if (newTab === 'orders') {
-    fetchOrderHistory(); // 주문 내역 탭으로 이동할 때마다 새로고침
+    currentPage.value = 0; // 주문 탭으로 돌아올 때 항상 첫 페이지부터 보여주도록 초기화
+    fetchOrderHistory();
   }
 });
 
