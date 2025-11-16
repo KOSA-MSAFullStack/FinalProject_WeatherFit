@@ -43,7 +43,7 @@
           <div class="form-group">
             <label for="category">카테고리</label>
             <select id="category" v-model="product.category">
-              <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+              <option v-for="(category, index) in categories" :key="`${product.classification}-${index}`" :value="category">{{ category }}</option>
             </select>
           </div>
         </div>

@@ -17,6 +17,15 @@ import java.util.Map;
 @AllArgsConstructor
 public class CategoryResponseDTO {
     // 분류별 카테고리 목록
-    // 예: {"아우터": ["패딩", "코트"], "상의": ["티셔츠", "니트"]}
-    private Map<String, List<String>> categoryData;
+    // 예: {"아우터": [{"categoryId": 1, "category": "패딩"}, ...], "상의": [...]}
+    private Map<String, List<CategoryInfo>> categoryData;
+    
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CategoryInfo {
+        private Long categoryId;
+        private String category;
+    }
 }

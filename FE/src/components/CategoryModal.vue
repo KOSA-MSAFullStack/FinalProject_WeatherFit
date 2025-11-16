@@ -15,9 +15,9 @@
           <div class="form-group">
             <label for="classification">분류</label>
             <select id="classification" v-model="selectedClassification" @change="loadCategories">
-              <option v-for="(categories, classification) in localCategoryData" :key="classification" :value="classification">
-                {{ classification }}
-              </option>
+              <option value="아우터">아우터</option>
+              <option value="상의">상의</option>
+              <option value="하의">하의</option>
             </select>
           </div>
 
@@ -38,11 +38,11 @@
                 등록된 카테고리가 없습니다.
               </div>
               <div 
-                v-for="(category, index) in categories" 
-                :key="`${selectedClassification}-${index}`" 
+                v-for="category in categories" 
+                :key="category.categoryId" 
                 class="category-item"
               >
-                <span>{{ category }}</span>
+                <span>{{ category.category }}</span>
                 <div class="category-item-actions">
                   <button class="btn small ghost" @click="editCategory(category)">수정</button>
                   <button class="btn small danger" @click="deleteCategory(category)">삭제</button>
@@ -55,48 +55,56 @@
 
       <div class="modal-footer">
         <button class="btn ghost" @click="$emit('close')">닫기</button>
-        <button class="btn" @click="saveChanges">저장하기</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import api from '@/utils/axios';
+
 export default {
   name: 'CategoryModal',
   props: {
     categoryData: {
       type: Object,
-      required: true,
-    },
+      required: true
+    }
   },
   emits: ['close', 'save'],
   data() {
     return {
       selectedClassification: '아우터',
       newCategoryName: '',
-      localCategoryData: {},
-      categories: [],
+      categories: [], // { categoryId, category }
+      categoryMap: {}, // 전체 카테고리 맵 (CategoryInfo 배열 포함)
     };
   },
   mounted() {
-    // props의 categoryData를 localCategoryData에 복사
-    this.localCategoryData = JSON.parse(JSON.stringify(this.categoryData));
-    // 첫 분류 선택
-    const classifications = Object.keys(this.localCategoryData);
-    if (classifications.length > 0) {
-      this.selectedClassification = classifications[0];
-    }
-    this.loadCategories();
+    this.fetchAllCategories();
   },
   methods: {
+    // 전체 카테고리 데이터 가져오기
+    async fetchAllCategories() {
+      try {
+        const response = await api.get('/api/categories');
+        // categoryMap은 { "아우터": [{categoryId: 1, category: "패딩"}, ...], ... } 형태
+        this.categoryMap = response.data.categoryData || {};
+        this.loadCategories();
+      } catch (error) {
+        console.error('카테고리 목록 조회 실패:', error);
+        alert('카테고리 목록을 불러오는 데 실패했습니다.');
+      }
+    },
+
     // 선택된 분류의 카테고리 목록 로드
     loadCategories() {
-      this.categories = [...(this.localCategoryData[this.selectedClassification] || [])];
+      // categoryMap에서 CategoryInfo 배열을 그대로 사용
+      this.categories = this.categoryMap[this.selectedClassification] || [];
     },
 
     // 카테고리 추가
-    addCategory() {
+    async addCategory() {
       const trimmedName = this.newCategoryName.trim();
       
       if (!trimmedName) {
@@ -104,57 +112,82 @@ export default {
         return;
       }
 
-      if (this.categories.includes(trimmedName)) {
-        alert('이미 존재하는 카테고리입니다.');
-        return;
+      try {
+        await api.post('/api/categories', {
+          classification: this.selectedClassification,
+          category: trimmedName
+        });
+        
+        alert('카테고리가 추가되었습니다.');
+        this.newCategoryName = '';
+        await this.fetchAllCategories();
+        
+        // 부모에게 업데이트된 카테고리 데이터 전달 (문자열 배열로 변환)
+        const simplifiedCategoryData = this.convertToSimpleFormat(this.categoryMap);
+        this.$emit('save', simplifiedCategoryData);
+      } catch (error) {
+        console.error('카테고리 추가 실패:', error);
+        alert(error.response?.data?.error || '카테고리 추가에 실패했습니다.');
       }
-
-      this.categories.push(trimmedName);
-      this.localCategoryData[this.selectedClassification] = [...this.categories];
-      this.newCategoryName = '';
     },
 
     // 카테고리 수정
-    editCategory(oldName) {
-      const newName = prompt(`'${oldName}'의 새 이름을 입력하세요.`, oldName);
+    async editCategory(category) {
+      const newName = prompt(`'${category.category}'의 새 이름을 입력하세요.`, category.category);
 
       if (!newName || newName.trim() === '') {
         return;
       }
 
       const trimmedNewName = newName.trim();
-      if (trimmedNewName === oldName) {
+      if (trimmedNewName === category.category) {
         return;
       }
 
-      if (this.categories.includes(trimmedNewName)) {
-        alert('이미 존재하는 카테고리명입니다.');
-        return;
-      }
-
-      const index = this.categories.indexOf(oldName);
-      if (index > -1) {
-        this.categories[index] = trimmedNewName;
-        this.localCategoryData[this.selectedClassification] = [...this.categories];
+      try {
+        await api.put(`/api/categories/${category.categoryId}`, {
+          newCategoryName: trimmedNewName
+        });
+        
+        alert('카테고리가 수정되었습니다.');
+        await this.fetchAllCategories();
+        
+        const simplifiedCategoryData = this.convertToSimpleFormat(this.categoryMap);
+        this.$emit('save', simplifiedCategoryData);
+      } catch (error) {
+        console.error('카테고리 수정 실패:', error);
+        alert(error.response?.data?.error || '카테고리 수정에 실패했습니다.');
       }
     },
 
     // 카테고리 삭제
-    deleteCategory(categoryName) {
-      if (!confirm(`'${categoryName}' 카테고리를 정말 삭제하시겠습니까?`)) {
+    async deleteCategory(category) {
+      if (!confirm(`'${category.category}' 카테고리를 정말 삭제하시겠습니까?`)) {
         return;
       }
 
-      this.categories = this.categories.filter(cat => cat !== categoryName);
-      this.localCategoryData[this.selectedClassification] = [...this.categories];
+      try {
+        await api.delete(`/api/categories/${category.categoryId}`);
+        
+        alert('카테고리가 삭제되었습니다.');
+        await this.fetchAllCategories();
+        
+        const simplifiedCategoryData = this.convertToSimpleFormat(this.categoryMap);
+        this.$emit('save', simplifiedCategoryData);
+      } catch (error) {
+        console.error('카테고리 삭제 실패:', error);
+        alert(error.response?.data?.error || '카테고리 삭제에 실패했습니다.');
+      }
     },
 
-    // 변경사항 저장
-    saveChanges() {
-      this.$emit('save', this.localCategoryData);
-      alert('변경사항이 저장되었습니다.');
-      this.$emit('close');
-    },
+    // CategoryInfo 배열을 문자열 배열로 변환
+    convertToSimpleFormat(categoryMap) {
+      const result = {};
+      for (const [classification, categories] of Object.entries(categoryMap)) {
+        result[classification] = categories.map(cat => cat.category);
+      }
+      return result;
+    }
   },
 };
 </script>

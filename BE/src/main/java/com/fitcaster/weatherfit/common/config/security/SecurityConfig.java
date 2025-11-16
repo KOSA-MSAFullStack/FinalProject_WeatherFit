@@ -59,10 +59,15 @@ public class SecurityConfig {
 
                 // 요청별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        
+                        // 관리자 경로: 'ROLE_ADMIN' 권한 필요
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        //.requestMatchers("/admin/**").permitAll()       // 개발 테스트용
                         // 상품 목록 조회는 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.GET, "/api/items").permitAll()
-                        // 카테고리 목록 조회는 인증 없이 누구나 접근 허용
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        // 카테고리 조회는 모두 허용, 관리(추가/수정/삭제)는 관리자만
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll() // 조회는 모두 허용
+                        .requestMatchers("/api/categories/**").hasRole("ADMIN") // 나머지(POST/PUT/DELETE)는 관리자만
 
                         // 회원가입 및 로그인은 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.POST, "/users/signup").permitAll()
@@ -72,9 +77,6 @@ public class SecurityConfig {
                         // 이메일 중복 확인 경로는 GET 요청으로 인증 없이 누구나 접근 허용
                         .requestMatchers(HttpMethod.GET, "/users/checkEmail").permitAll()
 
-                        // 관리자 경로: 'ROLE_ADMIN' 권한 필요
-//                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/admin/**").permitAll()
                         // 정적 리소스 경로 인증 없이 접근 허용
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/BE/uploads/**").permitAll()

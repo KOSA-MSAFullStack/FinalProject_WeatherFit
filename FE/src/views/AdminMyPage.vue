@@ -309,7 +309,13 @@ export default {
     async fetchCategories() {
       try {
         const response = await api.get('/api/categories');
-        this.categoryData = response.data.categoryData || {};
+        const categoryDataFromAPI = response.data.categoryData || {};
+        
+        // CategoryInfo 배열을 문자열 배열로 변환
+        this.categoryData = {};
+        for (const [classification, categories] of Object.entries(categoryDataFromAPI)) {
+          this.categoryData[classification] = categories.map(cat => cat.category);
+        }
       } catch (error) {
         console.error('카테고리 목록을 불러오는 데 실패했습니다:', error);
         // 실패 시 기본값 사용

@@ -72,6 +72,6 @@ public class ImageUploadService {
             throw e;
         }
 
-        return "/BE/uploads/" + fileName; // fileName 사용
+        return "/uploads/" + fileName; // fileName 사용
     }
 }
