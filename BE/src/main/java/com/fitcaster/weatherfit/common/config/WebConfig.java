@@ -23,9 +23,13 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // /uploads/** 경로로 들어오는 요청을
-        // 현재 작업 디렉토리(프로젝트 루트) 아래의 uploadPath(uploads/) 폴더와 매핑
-        // 예: /uploads/image.jpg -> file:./uploads/image.jpg
+        // /BE/uploads/** 경로로 들어오는 요청을
+        // 현재 작업 디렉토리(프로젝트 루트) 아래의 uploadPath(BE/uploads/) 폴더와 매핑
+        // 예: /BE/uploads/image.jpg -> file:./BE/uploads/image.jpg
+        registry.addResourceHandler("/BE/uploads/**")
+                .addResourceLocations("file:./" + uploadPath);
+        
+        // 하위 호환성 유지 위해 /uploads/** 패턴도 동일하게 매핑
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./" + uploadPath);
     }

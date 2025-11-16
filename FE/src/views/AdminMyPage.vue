@@ -167,7 +167,7 @@ export default {
         { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
       ],
       products: [
-        // 더미 데이터
+        // [개발 초기 목록 조회 테스트용 더미 데이터]
         //{ itemId: 1, itemName: '베이직 라운드 티셔츠', itemCode: 'TOP-001', price: 29000, gender: 'M', imageURL: 'https://picsum.photos/id/10/200/300', aiDescription: '데일리로 착용하기 좋은 베이직 라운드 티셔츠입니다. 부드러운 면 소재로 편안함을 제공합니다.', createdAt: '2025-11-12', reviewAiSummary: '편안하고 기본템으로 좋아요.', category: '반소매 티셔츠', classification: '상의', quantity: 10, seasons: ['봄', '여름'] },
         //{ itemId: 2, itemName: '슬림핏 데님 팬츠', itemCode: 'BOT-002', price: 49000, gender: 'F', imageURL: 'https://picsum.photos/id/20/200/300', aiDescription: '활동성이 좋은 슬림핏 데님 팬츠입니다. 어떤 상의와도 잘 어울려 활용도가 높습니다.', createdAt: '2025-11-11', reviewAiSummary: '핏이 예쁘고 착용감이 편해요.', category: '데님 팬츠', classification: '하의', quantity: 0, seasons: ['가을'] },
         //{ itemId: 3, itemName: '오버핏 후드티', itemCode: 'TOP-003', price: 39000, gender: 'C', imageURL: 'https://picsum.photos/id/30/200/300', aiDescription: '트렌디한 오버핏 후드티입니다. 캐주얼한 스타일을 연출하기에 좋습니다.', createdAt: '2025-11-10', reviewAiSummary: '색상이 예쁘고 따뜻해요.', category: '후드 티셔츠', classification: '상의', quantity: 5, seasons: ['가을', '겨울'] },
@@ -177,12 +177,13 @@ export default {
       ]
     };
   },
+
   computed: {
     sellingProductsCount() {
-      return this.products.filter(product => product.quantity > 0).length;
+      return this.products.filter(product => product.quantity > 0).length;      // 재고 수량 > 0 : 판매중
     },
     soldOutProductsCount() {
-      return this.products.filter(product => product.quantity === 0).length;
+      return this.products.filter(product => product.quantity === 0).length;    // 재고 수량 == 0 : 품절
     }
   },
   methods: {
@@ -197,13 +198,49 @@ export default {
       this.selectedProduct = product;
       this.isProductModalVisible = true;
     },
+
+    // 상품 등록/수정 핸들러
     async handleProductSubmit(productData) {
       try {
-        if (this.selectedProduct) { // 수정 모드
-          // TODO: 상품 수정 시 이미지 파일 처리가 필요하다면 여기도 FormData를 사용해야 합니다.
-          await api.patch(`/api/admin/items/${this.selectedProduct.itemId}`, productData);
+        if (this.selectedProduct) { // [수정 모드]
+          // 상품 수정 시 이미지가 새로 업로드된 경우 FormData 사용
+          const formData = new FormData();
+          formData.append('itemName', productData.itemName);
+          formData.append('price', productData.price);
+          formData.append('quantity', productData.quantity);
+          formData.append('gender', productData.gender);
+          formData.append('category', productData.category);
+          formData.append('itemCode', productData.itemCode);
+          formData.append('aiDescription', productData.aiDescription || '');
+          
+          // 최고/최저 기온 추가
+          if (productData.maxTemperature !== null) {
+            formData.append('maxTemperature', productData.maxTemperature);
+          }
+          if (productData.minTemperature !== null) {
+            formData.append('minTemperature', productData.minTemperature);
+          }
+          
+          // 계절 정보 추가
+          if (productData.seasonName) {
+            productData.seasonName.forEach(season => {
+              formData.append('seasonName', season);
+            });
+          }
+
+          // 이미지가 새로 업로드된 경우에만 추가
+          if (productData.image) {
+            formData.append('image', productData.image);
+          }
+
+          await api.patch(`/admin/items/${this.selectedProduct.itemId}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
           alert('상품이 성공적으로 수정되었습니다.');
-        } else { // 등록 모드
+
+        } else { // [등록 모드]
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
@@ -245,6 +282,8 @@ export default {
         alert('상품 처리 중 오류가 발생했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
+
+    // 상품 삭제 핸들러
     async handleProductDelete(itemId) {
       try {
         await api.delete(`/admin/items/${itemId}`);
