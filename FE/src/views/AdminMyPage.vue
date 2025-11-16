@@ -87,8 +87,8 @@
               <button class="btn" @click="openRegisterProduct()">상품 등록</button>
               <button class="btn" @click="openCategoryModal()">카테고리 관리</button>
               <div style="flex:1"></div>
-              <input type="text" placeholder="상품명 검색" style="width:250px">
-              <button class="btn">검색</button>
+              <input type="text" v-model="searchKeyword" placeholder="상품명/상품 코드 검색" style="width:250px" @keyup.enter="searchProducts">
+              <button class="btn" @click="searchProducts">검색</button>
             </div>
 
             <div class="stats-grid" style="margin-bottom:20px">
@@ -296,6 +296,7 @@ export default {
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
+    // 상품 목록 불러오기
     async fetchProducts() {
       try {
         const response = await api.get('/api/items');
@@ -303,6 +304,26 @@ export default {
       } catch (error) {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);
         alert('상품 목록을 불러오는 데 실패했습니다.');
+      }
+    },
+    // 상품 검색
+    async searchProducts() {
+      const keyword = this.searchKeyword.trim();
+      
+      // 검색어가 비어있으면 전체 목록 표시
+      if (!keyword) {
+        this.fetchProducts();
+        return;
+      }
+      
+      try {
+        const response = await api.get('/api/items/search/keyword', {
+          params: { keyword }
+        });
+        this.products = response.data;
+      } catch (error) {
+        console.error('상품 검색에 실패했습니다:', error);
+        alert('상품 검색에 실패했습니다.');
       }
     },
     // 카테고리 목록 불러오기
