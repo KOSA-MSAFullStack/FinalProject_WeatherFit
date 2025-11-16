@@ -34,7 +34,6 @@
                         :src="getFullImageUrl(item.itemImage)" 
                         :alt="item.itemName" 
                         class="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                        onerror="this.onerror=null;this.src='https://placehold.co/80x80/f1f5f9/94a3b8?text=Img';"
                     >
                     <div>
                       <p class="font-semibold text-base text-gray-800">{{ item.itemName }}</p>
@@ -95,7 +94,7 @@
                 <span>{{ formatPrice(totalPrice) }}원</span>
               </div>
               
-              <button @click="checkout" 
+              <button @click="confirmCheckout" 
                 class="w-full mt-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90 py-3 rounded-lg font-bold text-base shadow-md transition-all disabled:opacity-60"
                 :disabled="selectedCart.length === 0"
               >
@@ -248,6 +247,40 @@ const removeSelectedApi = async (cartIds) => {
     }
 };
 
+/**
+ * 주문 생성 API 호출 로직
+ */
+const createOrderApi = async (cartItemIds) => {
+    isLoading.value = true;
+    try {
+        const requestBody = { cartItemIds }; // OrderCreateRequest DTO 구조에 맞춤
+        console.log("주문 생성 요청 바디:", requestBody);
+        
+        // POST /api/orders 호출
+        const response = await api.post('/api/orders', requestBody);
+        const orderId = response.data; // 생성된 주문 ID를 응답받음
+
+        // 성공 모달 표시 및 주문 완료 페이지로 리다이렉션
+        showCustomModal(
+            "주문 성공", 
+            `주문이 성공적으로 완료되었습니다. 주문번호: ${orderId}`, 
+            false, 
+            () => {
+                // 주문 내역 페이지로 이동
+                router.push('/mypage');
+            }
+        );
+        
+    } catch (error) {
+        console.error("주문 생성 실패:", error);
+        // 서버에서 던진 구체적인 예외 메시지를 표시할 수 있도록 개선 가능
+        const errorMessage = error.response?.data?.message || '주문 생성에 실패했습니다. (재고 부족 등)';
+        showCustomModal("주문 실패", errorMessage, false);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 // ----------------------------------------------------
 // 2. UI 상호작용 로직
 // ----------------------------------------------------
@@ -289,17 +322,25 @@ const removeSelected = () => {
     isModalOpen.value = true;
 };
 
-// 주문하기
-const checkout = () => {
+/**
+ * 주문하기 최종 확인 모달
+ */
+const confirmCheckout = () => {
     const itemsToOrder = selectedCart.value;
     if (itemsToOrder.length === 0) {
         showCustomModal("알림", "주문할 상품을 선택해주세요.", false);
         return;
     }
     
-    // 실제 주문 페이지로 이동 또는 주문 API 호출 로직
-    showCustomModal("주문 진행", `${itemsToOrder.length}개 상품 주문을 진행합니다. (구현 필요)`, false);
-    // router.push('/checkout'); 
+    const cartItemIds = itemsToOrder.map(item => item.cartId);
+    
+    // 주문 확인 모달 표시
+    showCustomModal(
+        "주문 확인", 
+        `선택하신 ${itemsToOrder.length}개 상품의 총 ${formatPrice(totalPrice.value)}원 결제를 진행하시겠습니까? (이후 취소/변경 불가)`, 
+        true, 
+        () => createOrderApi(cartItemIds) // 확인 시 주문 API 호출
+    );
 };
 
 // 쇼핑 계속하기
