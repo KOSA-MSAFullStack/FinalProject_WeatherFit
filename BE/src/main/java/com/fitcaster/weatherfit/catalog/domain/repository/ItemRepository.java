@@ -9,9 +9,11 @@ import java.util.List;
 
 // * author: 김기성
 public interface ItemRepository extends JpaRepository<Item, Long> {
-    // [전체 상품 최신순 조회]
+    // 전체 상품 최신순 조회
     List<Item> findAllByOrderByCreatedAtDesc();
 
-    // [상품명 검색]
-   List<Item> findByItemNameContainingIgnoreCase(String itemName);
+    // 상품명 검색
+    List<Item> findByItemNameContainingIgnoreCase(String itemName);
+    // 상품명 또는 상품 코드로 검색
+    List<Item> findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(String itemName, String itemCode);
 }
