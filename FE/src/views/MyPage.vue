@@ -65,8 +65,75 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
+              <h2 class="text-xl font-bold mb-4">주문 내역 (총 {{ groupedOrders.length }}건)</h2>
+              
+              <!-- 로딩/에러 상태 표시 -->
+              <div v-if="isLoading" class="text-center py-10 text-gray-500">
+                <svg class="animate-spin h-5 w-5 text-blue-500 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                주문 내역을 불러오는 중...
+              </div>
+              <div v-else-if="error" class="text-center py-10 text-red-500 border border-red-300 bg-red-50 rounded-lg p-4">
+                주문 내역을 불러오는 데 실패했습니다. 다시 시도해주세요.
+              </div>
+              <div v-else-if="groupedOrders.length === 0" class="text-center py-10 text-gray-500 border border-gray-300 bg-gray-50 rounded-lg p-4">
+                최근 6개월 동안 주문 내역이 없습니다.
+              </div>
+
+              <!-- 주문 목록 렌더링 (Order 기준으로 그룹화) -->
+              <div v-else class="space-y-6">
+                <div v-for="order in groupedOrders" :key="order.orderId" class="border border-gray-300 rounded-xl overflow-hidden">
+                  
+                  <!-- 주문 헤더 (날짜 및 주문 번호) -->
+                  <div class="bg-gray-100 p-3 flex justify-between items-center text-sm font-semibold text-gray-700 border-b border-gray-300">
+                    <div class="flex items-center gap-4">
+                      <span>{{ formatDate(order.orderDate) }} 주문</span>
+                      <span class="text-xs text-gray-500 font-normal">| 주문번호: {{ order.orderNo }}</span>
+                    </div>
+                  </div>
+
+                  <!-- 주문 상품 항목 목록 (OrderItem) -->
+                  <div class="divide-y divide-gray-200">
+                    <div v-for="item in order.items" :key="item.orderItemId" class="p-4 flex gap-4 transition-colors hover:bg-gray-50">
+                      
+                      <!-- 상품 이미지 -->
+                      <div class="w-20 h-20 rounded-md bg-gray-100 shrink-0 border border-gray-200 overflow-hidden">
+                        <!-- 실제 이미지 경로를 사용합니다. -->
+                        <img 
+                          :src="getFullImageUrl(item.itemImage)" 
+                          :alt="item.itemName" 
+                          class="w-full h-full object-cover"
+                        >
+                      </div>
+                      
+                      <!-- 상품 정보 -->
+                      <div class="grow">
+                        <p class="font-bold text-gray-800 line-clamp-1">{{ item.itemName }}</p>
+                        <p class="text-xs text-gray-500 mt-1">수량: {{ item.quantity }}개 | 금액: {{ (item.itemPrice * item.quantity).toLocaleString() }}원</p>
+                        <p class="text-sm font-semibold text-gray-700 mt-1">주문 완료</p>
+                        
+                        <!-- 버튼 영역 -->
+                        <div class="mt-2 space-x-2">
+                          <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
+                          <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">리뷰 쓰기</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 페이징은 아직 미구현 상태이므로 임시로 표시하지 않습니다. -->
+              <!-- <div class="flex justify-center mt-6">
+                <button class="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition">더 보기</button>
+              </div> -->
+            </div>
+            
+            <!-- <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
               <h2 class="text-xl font-bold mb-4">주문 내역</h2>
               <div class="space-y-3">
                 <div v-for="order in orders" :key="order.id" class="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-4">
@@ -81,7 +148,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
           </div>
 
           <!-- 기본 정보 페이지 -->
@@ -294,6 +361,27 @@ const router = useRouter();
 const authStore = useAuthStore();
 const activeTab = ref('orders');
 
+// 주문 내역 관련 상태
+const groupedOrders = ref([]); // 그룹화된 주문 목록 (Order 단위)
+const isLoading = ref(false);
+const error = ref(null);
+const currentPage = ref(0);
+const pageSize = 5;
+
+// 이미지 URL 완성 로직
+// api 인스턴스에서 baseURL (예: http://localhost:8080)을 가져옵니다.
+const API_BASE_URL = api.defaults.baseURL || '';
+
+// 헬퍼 함수: 상대 경로를 완전한 이미지 URL로 변환
+const getFullImageUrl = (relativePath) => {
+    // 상대 경로가 없으면 placeholder 반환
+    if (!relativePath) {
+        return 'https://placehold.co/80x80/f1f5f9/94a3b8?text=Img'; 
+    }
+    // 기본 URL과 상대 경로를 조합 (예: http://localhost:8080/uploads/M53002APLO0.webp)
+    return `${API_BASE_URL}${relativePath}`;
+};
+
 // originalUser: DB에서 가져온 원본. '저장' 시에만 업데이트됩니다.
 const originalUser = ref({
   name: '', email: '', birth: '', gender: '', phone: '',
@@ -305,6 +393,24 @@ const user = ref({
   name: '', email: '', birth: '', gender: '', phone: '',
   zipCode: '', baseAddress: '', detailAddress: '', temperatureSensitivity: '',
 });
+
+// 임시 리뷰 데이터
+const reviews = ref([
+  {
+    id: 1,
+    productName: '울 블렌드 인타르시아 니트 탑',
+    date: '2025.10.29',
+    rating: 5,
+    text: '날씨가 쌀쌀해지는 요즘 입기 딱 좋아요! 두께감도 적당하고 디자인도 심플해서 어떤 옷이랑도 잘 어울려요. 특히 날씨 추천 기능 덕분에 구매했는데 정말 만족스러워요 👍'
+  },
+  {
+    id: 2,
+    productName: '라이트 트렌치 코트',
+    date: '2025.10.21',
+    rating: 4,
+    text: '방수 기능이 생각보다 좋네요. 비 오는 날 입어봤는데 물이 스며들지 않았어요. 다만 사이즈가 약간 크게 나온 것 같아요. 한 치수 작게 주문하시는 걸 추천해요!'
+  }
+]);
 
 const resetProfileForm = () => {
   // 원본 객체를 복사하여 수정용 객체에 할당합니다.
@@ -336,30 +442,79 @@ const formatPhoneNumber = () => {
   user.value.phone = formatted;
 };
 
-// 임시 주문 내역 데이터
-const orders = ref([
-  { id: '20251028-001234', name: '울 블렌드 인타르시아 니트 탑', date: '2025.10.28', price: 435000 },
-  { id: '20251025-005678', name: '라이트 트렌치 코트', date: '2025.10.25', price: 129000 },
-  { id: '20251020-002345', name: '옥스포드 셔츠 외 2건', date: '2025.10.20', price: 187000 },
-]);
+const formatDate = (datetime) => {
+    if (!datetime) return '';
+    const date = new Date(datetime);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).replace(/\. /g, '.').replace(/\.$/, ''); // 2025. 11. 16. -> 2025.11.16
+};
 
-// 임시 리뷰 데이터
-const reviews = ref([
-  {
-    id: 1,
-    productName: '울 블렌드 인타르시아 니트 탑',
-    date: '2025.10.29',
-    rating: 5,
-    text: '날씨가 쌀쌀해지는 요즘 입기 딱 좋아요! 두께감도 적당하고 디자인도 심플해서 어떤 옷이랑도 잘 어울려요. 특히 날씨 추천 기능 덕분에 구매했는데 정말 만족스러워요 👍'
-  },
-  {
-    id: 2,
-    productName: '라이트 트렌치 코트',
-    date: '2025.10.21',
-    rating: 4,
-    text: '방수 기능이 생각보다 좋네요. 비 오는 날 입어봤는데 물이 스며들지 않았어요. 다만 사이즈가 약간 크게 나온 것 같아요. 한 치수 작게 주문하시는 걸 추천해요!'
-  }
-]);
+/**
+ * 백엔드에서 받은 OrderItem 리스트를 Order 단위로 그룹화합니다.
+ * @param {Array<Object>} items - 백엔드에서 받은 OrderHistoryItemResponse 리스트
+ * @returns {Array<Object>} - Order 객체로 그룹화된 리스트
+ */
+const groupOrderItems = (items) => {
+    // items: [OrderHistoryItemResponse, OrderHistoryItemResponse, ...]
+    const grouped = {};
+
+    items.forEach(item => {
+        const key = item.orderId;
+        
+        if (!grouped[key]) {
+            // 새 주문 그룹 생성
+            grouped[key] = {
+                orderId: item.orderId,
+                orderNo: item.orderNo,
+                orderDate: item.orderDate,
+                items: [], // 해당 주문에 속하는 상품 목록
+            };
+        }
+
+        // 주문 항목 추가
+        grouped[key].items.push(item);
+    });
+
+    // Object의 값들(그룹화된 Order 리스트)을 배열로 변환
+    return Object.values(grouped);
+};
+
+// 백엔드로부터 주문 내역을 가져오는 함수
+const fetchOrderHistory = async () => {
+    isLoading.value = true;
+    error.value = null;
+    groupedOrders.value = [];
+
+    try {
+        // 백엔드 API 호출: GET /api/orders?page=0&size=5&sort=orderDate,desc
+        // 백엔드에서 Order 엔티티의 orderDate로 정렬하도록 요청합니다.
+        const response = await api.get('/api/orders', {
+            params: {
+                page: currentPage.value,
+                size: pageSize,
+                sort: 'order.orderDate,desc' // Spring Data Pageable 정렬 파라미터
+            }
+        });
+
+        const orderItems = response.data; // OrderHistoryItemResponse 리스트
+        
+        // OrderItem 리스트를 Order 단위로 그룹화
+        groupedOrders.value = groupOrderItems(orderItems);
+        
+    } catch (err) {
+        console.error('주문 내역 정보를 가져오는 데 실패했습니다:', err);
+        error.value = '조회 실패';
+        if (err.response?.status === 401) {
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            authStore.logout(router);
+        }
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 // 백엔드로부터 사용자 프로필 정보를 가져오는 함수
 const fetchUserProfile = async () => {
@@ -429,14 +584,18 @@ const handleCancel = () => {
   activeTab.value = 'orders'; // 주문 내역 탭으로 이동합니다.
 };
 
+// 탭이 변경될 때마다 특정 로직 실행
 watch(activeTab, (newTab) => {
   if (newTab === 'profile') {
     resetProfileForm();
+  } else if (newTab === 'orders') {
+    fetchOrderHistory(); // 주문 내역 탭으로 이동할 때마다 새로고침
   }
 });
 
 // 컴포넌트가 마운트될 때 사용자 정보를 자동으로 가져옵니다.
 onMounted(() => {
+  fetchOrderHistory(); 
   fetchUserProfile();
 });
 </script>

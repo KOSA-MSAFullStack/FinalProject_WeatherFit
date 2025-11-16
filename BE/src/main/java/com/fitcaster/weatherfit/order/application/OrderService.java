@@ -1,5 +1,6 @@
 package com.fitcaster.weatherfit.order.application;
 
+import com.fitcaster.weatherfit.order.api.dto.response.OrderHistoryItemResponse;
 import com.fitcaster.weatherfit.order.domain.entity.Order;
 import com.fitcaster.weatherfit.order.domain.entity.OrderItem;
 import com.fitcaster.weatherfit.order.domain.entity.Cart;
@@ -10,6 +11,7 @@ import com.fitcaster.weatherfit.order.api.dto.request.OrderCreateRequest;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +86,24 @@ public class OrderService {
     }
 
     /**
-     * UUID 기반의 주문 번호를 생성합니다.
+     * 주문 내역을 조회하기 위한 메서드
+     * @param userId 주문하는 사용자 ID
+     * @return 주문 내역 조회 DTO
+     */
+    @Transactional(readOnly = true)
+    public List<OrderHistoryItemResponse> getOrderHistory(Long userId, Pageable pageable) {
+        // Repository를 통해 OrderItem 리스트를 조회
+        List<OrderItem> orderItems = orderItemRepository.findOrderItemsWithOrderAndItemByUserId(userId, pageable);
+
+        // 조회된 OrderItem 리스트를 DTO로 변환
+        return orderItems.stream()
+                // DTO의 from(OrderItem orderItem) 정적 팩토리 메서드를 사용하여 변환
+                .map(OrderHistoryItemResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * UUID 기반의 주문 번호를 생성
      * (예: 550e8400-e29b-41d4-a716-446655440000)
      * @return 생성된 UUID 문자열
      */

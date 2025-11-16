@@ -34,7 +34,6 @@
                         :src="getFullImageUrl(item.itemImage)" 
                         :alt="item.itemName" 
                         class="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                        onerror="this.onerror=null;this.src='https://placehold.co/80x80/f1f5f9/94a3b8?text=Img';"
                     >
                     <div>
                       <p class="font-semibold text-base text-gray-800">{{ item.itemName }}</p>
@@ -321,19 +320,6 @@ const removeSelected = () => {
     modalIsConfirm.value = true;
     modalCallback.value = () => removeSelectedApi(selectedIds);
     isModalOpen.value = true;
-};
-
-// 주문하기
-const checkout = () => {
-    const itemsToOrder = selectedCart.value;
-    if (itemsToOrder.length === 0) {
-        showCustomModal("알림", "주문할 상품을 선택해주세요.", false);
-        return;
-    }
-    
-    // 실제 주문 페이지로 이동 또는 주문 API 호출 로직
-    showCustomModal("주문 진행", `${itemsToOrder.length}개 상품 주문을 진행합니다. (구현 필요)`, false);
-    // router.push('/checkout'); 
 };
 
 /**
