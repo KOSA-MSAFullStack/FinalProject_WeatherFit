@@ -2,6 +2,8 @@
 // 상품 서비스
 package com.fitcaster.weatherfit.catalog.application;
 
+import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
+import com.fitcaster.weatherfit.catalog.ai.application.AIService;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.domain.entity.Category;
@@ -34,10 +36,12 @@ public class ItemService {
     private final ItemSeasonRepository itemSeasonRepository; // 상품 계절 중개 테이블 레포지토리
     private final ImageUploadService imageUploadService; // 이미지 업로드 서비스
     private final SeasonRepository seasonRepository; // 계절 레포지토리
+    private final AIService aiService; // AI 서비스
 
     // [모든 상품 목록 조회]
     public List<ItemResponseDTO> getAllItems() {
-        return itemRepository.findAll().stream()
+        return itemRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
                 .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
     }
@@ -46,19 +50,25 @@ public class ItemService {
     @Transactional(readOnly = true)
     public ItemResponseDTO getItemById(Long itemId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new InternalServerException("Item not found with id: " + itemId));
+                .orElseThrow(() -> new NoSuchElementException("Item not found with id: " + itemId));
         return ItemResponseDTO.from(item);
     }
 
    // [상품명 검색]
-   public List<Item> searchItemsByName(String itemName) {
-       return itemRepository.findByItemNameContainingIgnoreCase(itemName);
+   public List<ItemResponseDTO> searchItemsByName(String itemName) {
+       return itemRepository.findByItemNameContainingIgnoreCase(itemName)
+               .stream()
+               .map(ItemResponseDTO::from)
+               .collect(Collectors.toList());
    }
 
     
     // [상품 등록]
     @Transactional
     public ItemResponseDTO createItem(ItemRequestDTO.Create request) {
+        // itemCode 공백 제거
+        String cleanedItemCode = request.getItemCode() != null ? request.getItemCode().trim() : "";
+        
         // 카테고리 조회
         Category category = categoryRepository.findByCategory(request.getCategory())
                 .orElseThrow(() -> new IllegalArgumentException("⚠️ 카테고리를 찾을 수 없습니다: " + request.getCategory()));
@@ -67,7 +77,7 @@ public class ItemService {
         if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
                 // itemCode를 ImageUploadService로 전달
-                imageUrl = imageUploadService.uploadImage(request.getImage(), request.getItemCode());
+                imageUrl = imageUploadService.uploadImage(request.getImage(), cleanedItemCode);
             } catch (IOException e) {
                 throw new IllegalArgumentException("⚠️ 이미지 업로드에 실패했습니다.", e);
             }
@@ -77,15 +87,15 @@ public class ItemService {
         Item item = Item.builder()
                 .category(category)
                 .itemName(request.getItemName())
-                .itemCode(request.getItemCode()) // 요청에서 받은 itemCode 사용
+                .itemCode(cleanedItemCode)
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .gender(request.getGender())
                 .imageURL(imageUrl)
                 .aiDescription(request.getAiDescription())
-                .maxTemperature(request.getMaxTemperature() != null ? request.getMaxTemperature() : 0) // 추가
-                .minTemperature(request.getMinTemperature() != null ? request.getMinTemperature() : 0) // 추가
-                .createdAt(LocalDate.now()) // 현재 날짜로 등록일 설정
+                .maxTemperature(request.getMaxTemperature() != null ? request.getMaxTemperature() : 0)
+                .minTemperature(request.getMinTemperature() != null ? request.getMinTemperature() : 0)
+                .createdAt(LocalDate.now())
                 .build();
 
         // Item 저장
@@ -116,30 +126,79 @@ public class ItemService {
     // [상품 수정]
     @Transactional
     public ItemResponseDTO updateItem(Long itemId, ItemRequestDTO.Update request) {
+        // 상품 등록시 itemCode에 실수로 들어가는 공백 제거
+        String cleanedItemCode = request.getItemCode() != null ? request.getItemCode().trim() : "";
+        
         // 1) 상품 조회
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음"));
 
         // 2) 카테고리 업데이트
-        if (request.getCategoryId() != null) { // TODO: 카테고리 이름으로 업데이트하도록 변경 필요
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 카테고리 찾을 수 없음"));
+        if (request.getCategory() != null) {
+            Category category = categoryRepository.findByCategory(request.getCategory())
+                    .orElseThrow(() -> new IllegalArgumentException("⚠️ 카테고리를 찾을 수 없습니다: " + request.getCategory()));
             item.updateCategory(category);
         }
 
-        // 3) 나머지 필드 업데이트
+        // 3) 이미지 업로드 처리
+        String imageUrl = item.getImageURL();
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            try {
+                // 새 이미지 업로드
+                imageUrl = imageUploadService.uploadImage(request.getImage(), cleanedItemCode);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("⚠️ 이미지 업로드에 실패했습니다.", e);
+            }
+        }
+
+        // 4) AI 설명에서 기온 파싱
+        Integer maxTemperature = request.getMaxTemperature();
+        Integer minTemperature = request.getMinTemperature();
+        
+        // AI 설명이 있으면 기온 파싱 시도
+        if (request.getAiDescription() != null && !request.getAiDescription().isEmpty()) {
+            AIResponseDTO.TemperatureInfo tempInfo = aiService.parseTemperatureFromDescription(request.getAiDescription());
+            if (tempInfo != null) {
+                // 파싱된 기온이 있으면 사용, 없으면 기존 값 유지
+                if (tempInfo.getMaxTemperature() != null) {
+                    maxTemperature = tempInfo.getMaxTemperature();
+                }
+                if (tempInfo.getMinTemperature() != null) {
+                    minTemperature = tempInfo.getMinTemperature();
+                }
+            }
+        }
+
+        // 5) 나머지 필드 업데이트
         item.updateDetails(
                 request.getItemName(),
                 request.getPrice(),
                 request.getQuantity(),
                 request.getGender(),
-                request.getImageURL(), // TODO: 이미지 파일 업데이트 로직 추가 필요
+                imageUrl,
                 request.getAiDescription(),
-                request.getMaxTemperature(), // TODO: 온도 정보는 계절 기반으로 변경 필요
-                request.getMinTemperature()  // TODO: 온도 정보는 계절 기반으로 변경 필요
+                maxTemperature != null ? maxTemperature : 0,
+                minTemperature != null ? minTemperature : 0
         );
 
-        // 4) 상품 저장 및 반환
+        // 6) 계절 정보 업데이트
+        if (request.getSeasonName() != null) {
+            // 기존 계절 정보 삭제
+            itemSeasonRepository.deleteByItem(item);
+            
+            // 새로운 계절 정보 추가
+            for (String seasonStr : request.getSeasonName()) {
+                Season season = seasonRepository.findBySeasonName(seasonStr)
+                        .orElseThrow(() -> new IllegalArgumentException("⚠️ 계절 정보를 찾을 수 없습니다: " + seasonStr));
+                ItemSeason itemSeason = ItemSeason.builder()
+                        .item(item)
+                        .season(season)
+                        .build();
+                itemSeasonRepository.save(itemSeason);
+            }
+        }
+
+        // 6) 상품 저장 및 반환
         try {
             Item updatedItem = itemRepository.save(item);
             return ItemResponseDTO.from(updatedItem);
@@ -152,12 +211,14 @@ public class ItemService {
     // [상품 삭제]
     @Transactional
     public void deleteItem(Long itemId) {
-        // 상품 존재 여부 확인
-        if (!itemRepository.existsById(itemId)) {
-            throw new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음");
-        }
+        // 상품 조회
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음"));
 
         try {
+            // ITEM_SEASON 먼저 삭제
+            itemSeasonRepository.deleteByItem(item);
+            // 그 다음 ITEM 삭제
             itemRepository.deleteById(itemId);
         } catch (DataIntegrityViolationException e) {
             // DB 제약 조건 위반 시 (예: 외래 키 참조)

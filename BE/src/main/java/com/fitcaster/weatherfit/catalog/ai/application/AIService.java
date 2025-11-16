@@ -25,6 +25,31 @@ public class AIService {
         this.chatClient = chatClientBuilder.build();
     }
 
+    // AI 설명 텍스트에서 최고/최저 기온 파싱
+    public AIResponseDTO.TemperatureInfo parseTemperatureFromDescription(String aiDescription) {
+        if (aiDescription == null || aiDescription.isEmpty()) {
+            return null;
+        }
+
+        Integer minTemperature = null;
+        Integer maxTemperature = null;
+
+        // "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다." 형식에서 기온 파싱 (음수 포함)
+        Pattern pattern = Pattern.compile("최고/최저 기온은 (-?\\d+)°C / (-?\\d+)°C입니다.");
+        Matcher matcher = pattern.matcher(aiDescription);
+        if (matcher.find()) {
+            try {
+                maxTemperature = Integer.parseInt(matcher.group(1));
+                minTemperature = Integer.parseInt(matcher.group(2));
+            } catch (NumberFormatException e) {
+                // 파싱 실패 시 로그 기록
+                System.err.println("Failed to parse temperatures: " + e.getMessage());
+            }
+        }
+
+        return new AIResponseDTO.TemperatureInfo(minTemperature, maxTemperature);
+    }
+
     // 상품 정보/이미지 기반으로 AI 설명 생성
     public AIResponseDTO generateDescription(AIRequestDTO request) {
         try {
@@ -67,6 +92,7 @@ public class AIService {
                     
                     [출력 항목별 상세 지침 및 형식]
                     1) 📝 총평
+                    - 총평 항목의 설명은 1개의 리스트 아이템으로만 구성합니다.
                     - 이 옷의 전반적인 특징, 주요 착용 계절/기온대, 스타일, 전체 인상과 용도(어떤 상황에 잘 맞는지)를 2~3문장으로 간결하게 요약합니다.
                     - 구매 결정을 도와줄 핵심 강점(예: 레이어링 최적, 데일리/출근용으로 무난, 포인트 컬러 등)을 강조합니다.
                     
@@ -105,6 +131,7 @@ public class AIService {
                     - 색 조합과 소재 조합(예: 데님 + 화이트 스니커즈, 울 코트 + 가죽 로퍼 등)을 구체적으로 언급합니다.
                     
                     [작성 원칙 및 주의 사항]
+                     0. 절대 다른 설명이나 서두 없이, 오직 5가지 항목과 그 내용만 출력합니다.
                      1. 모든 기온 표시는 섭씨(°C) 사용
                      2. 실제 착용 시나리오 기반으로 작성 (출퇴근, 실내외 이동, 야외 활동 등)
                      3. 이모지는 각 항목 제목 앞에만 1개씩 사용
@@ -166,21 +193,10 @@ public class AIService {
                     .call()
                     .content();
 
-            Integer minTemperature = null;
-            Integer maxTemperature = null;
-
-            // "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다." 형식에서 기온 파싱
-            Pattern pattern = Pattern.compile("최고/최저 기온은 (\\d+)°C / (\\d+)°C입니다.");
-            Matcher matcher = pattern.matcher(result);
-            if (matcher.find()) {
-                try {
-                    maxTemperature = Integer.parseInt(matcher.group(1));
-                    minTemperature = Integer.parseInt(matcher.group(2));
-                } catch (NumberFormatException e) {
-                    // 파싱 실패 시 로그 기록 또는 기본값 설정
-                    System.err.println("Failed to parse temperatures: " + e.getMessage());
-                }
-            }
+            // 기온 파싱
+            AIResponseDTO.TemperatureInfo tempInfo = parseTemperatureFromDescription(result);
+            Integer minTemperature = tempInfo != null ? tempInfo.getMinTemperature() : null;
+            Integer maxTemperature = tempInfo != null ? tempInfo.getMaxTemperature() : null;
 
             return new AIResponseDTO(result, minTemperature, maxTemperature);
 

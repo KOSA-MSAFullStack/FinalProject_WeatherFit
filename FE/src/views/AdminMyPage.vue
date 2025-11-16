@@ -3,6 +3,7 @@
 
 <template>
   <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
+  <CategoryModal v-if="isCategoryModalVisible" @close="isCategoryModalVisible = false" @save="handleCategorySave" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -84,7 +85,7 @@
 
             <div class="filter-bar">
               <button class="btn" @click="openRegisterProduct()">상품 등록</button>
-              <button class="btn">카테고리 관리</button>
+              <button class="btn" @click="openCategoryModal()">카테고리 관리</button>
               <div style="flex:1"></div>
               <input type="text" placeholder="상품명 검색" style="width:250px">
               <button class="btn">검색</button>
@@ -144,17 +145,20 @@
 
 <script>
 import ProductModal from '../components/ProductModal.vue';
-import api from '@/utils/axios'; // axios import
+import CategoryModal from '../components/CategoryModal.vue';
+import api from '@/utils/axios';
 
 export default {
   name: 'AdminMyPage',
   components: {
     ProductModal,
+    CategoryModal,
   },
   data() {
     return {
       activePage: 'sales',
       isProductModalVisible: false,
+      isCategoryModalVisible: false,
       selectedProduct: null,
       salesData: [
         { orderId: '20251103-0125', date: '2025.11.03 14:23', product: '울 블렌드 니트', customer: '김철수', qty: 1, price: 435000 },
@@ -166,17 +170,10 @@ export default {
         { orderId: '20251101-0789', date: '2025.11.01 20:30', product: '울 코트', customer: '송하늘', qty: 1, price: 289000 },
         { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
       ],
-      products: [
-        // 더미 데이터
-        //{ itemId: 1, itemName: '베이직 라운드 티셔츠', itemCode: 'TOP-001', price: 29000, gender: 'M', imageURL: 'https://picsum.photos/id/10/200/300', aiDescription: '데일리로 착용하기 좋은 베이직 라운드 티셔츠입니다. 부드러운 면 소재로 편안함을 제공합니다.', createdAt: '2025-11-12', reviewAiSummary: '편안하고 기본템으로 좋아요.', category: '반소매 티셔츠', classification: '상의', quantity: 10, seasons: ['봄', '여름'] },
-        //{ itemId: 2, itemName: '슬림핏 데님 팬츠', itemCode: 'BOT-002', price: 49000, gender: 'F', imageURL: 'https://picsum.photos/id/20/200/300', aiDescription: '활동성이 좋은 슬림핏 데님 팬츠입니다. 어떤 상의와도 잘 어울려 활용도가 높습니다.', createdAt: '2025-11-11', reviewAiSummary: '핏이 예쁘고 착용감이 편해요.', category: '데님 팬츠', classification: '하의', quantity: 0, seasons: ['가을'] },
-        //{ itemId: 3, itemName: '오버핏 후드티', itemCode: 'TOP-003', price: 39000, gender: 'C', imageURL: 'https://picsum.photos/id/30/200/300', aiDescription: '트렌디한 오버핏 후드티입니다. 캐주얼한 스타일을 연출하기에 좋습니다.', createdAt: '2025-11-10', reviewAiSummary: '색상이 예쁘고 따뜻해요.', category: '후드 티셔츠', classification: '상의', quantity: 5, seasons: ['가을', '겨울'] },
-        //{ itemId: 4, itemName: '경량 패딩 조끼', itemCode: 'OUT-004', price: 59000, gender: 'C', imageURL: 'https://picsum.photos/id/40/200/300', aiDescription: '가볍고 따뜻하여 간절기에 활용하기 좋은 패딩 조끼입니다.', createdAt: '2025-11-09', reviewAiSummary: '가성비 좋은 패딩 조끼.', category: '패딩', classification: '아우터', quantity: 12, seasons: ['봄', '가을'] },
-        //{ itemId: 5, itemName: '스트라이프 셔츠', itemCode: 'TOP-005', price: 35000, gender: 'M', imageURL: 'https://picsum.photos/id/50/200/300', aiDescription: '클래식한 스트라이프 패턴의 셔츠입니다. 다양한 스타일에 매치하기 좋습니다.', createdAt: '2025-11-08', reviewAiSummary: '깔끔하고 예뻐요.', category: '셔츠/블라우스', classification: '상의', quantity: 0, seasons: ['봄', '여름'] },
-        //{ itemId: 6, itemName: '와이드 슬랙스', itemCode: 'BOT-006', price: 45000, gender: 'F', imageURL: 'https://picsum.photos/id/60/200/300', aiDescription: '편안하면서도 스타일리시한 와이드 슬랙스입니다. 데일리룩으로 추천합니다.', createdAt: '2025-11-07', reviewAiSummary: '편하고 핏이 좋아요.', category: '슬랙스', classification: '하의', quantity: 8, seasons: ['가을', '겨울'] }
-      ]
+      products: []
     };
   },
+
   computed: {
     sellingProductsCount() {
       return this.products.filter(product => product.quantity > 0).length;
@@ -197,23 +194,63 @@ export default {
       this.selectedProduct = product;
       this.isProductModalVisible = true;
     },
+    openCategoryModal() {
+      this.isCategoryModalVisible = true;
+    },
+    handleCategorySave(categoryData) {
+      console.log('저장된 카테고리 데이터:', categoryData);
+      // TODO: 백엔드 API 연결 시 카테고리 저장 로직 추가
+    },
+
+    // 상품 등록/수정 핸들러
     async handleProductSubmit(productData) {
       try {
-        if (this.selectedProduct) { // 수정 모드
-          // TODO: 상품 수정 시 이미지 파일 처리가 필요하다면 여기도 FormData를 사용해야 합니다.
-          await api.patch(`/api/admin/items/${this.selectedProduct.itemId}`, productData);
-          alert('상품이 성공적으로 수정되었습니다.');
-        } else { // 등록 모드
+        if (this.selectedProduct) {
+          // 상품 수정
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
           formData.append('quantity', productData.quantity);
           formData.append('gender', productData.gender);
           formData.append('category', productData.category);
-          formData.append('itemCode', productData.itemCode); // 상품 코드 추가
+          formData.append('itemCode', productData.itemCode);
+          formData.append('aiDescription', productData.aiDescription || '');
+          
+          if (productData.maxTemperature !== null) {
+            formData.append('maxTemperature', productData.maxTemperature);
+          }
+          if (productData.minTemperature !== null) {
+            formData.append('minTemperature', productData.minTemperature);
+          }
+          
+          if (productData.seasonName) {
+            productData.seasonName.forEach(season => {
+              formData.append('seasonName', season);
+            });
+          }
+
+          if (productData.image) {
+            formData.append('image', productData.image);
+          }
+
+          await api.patch(`/admin/items/${this.selectedProduct.itemId}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          alert('상품이 성공적으로 수정되었습니다.');
+
+        } else {
+          // 상품 등록
+          const formData = new FormData();
+          formData.append('itemName', productData.itemName);
+          formData.append('price', productData.price);
+          formData.append('quantity', productData.quantity);
+          formData.append('gender', productData.gender);
+          formData.append('category', productData.category);
+          formData.append('itemCode', productData.itemCode);
           formData.append('aiDescription', productData.aiDescription);
           
-          // 최고/최저 기온 추가
           if (productData.maxTemperature !== null) {
             formData.append('maxTemperature', productData.maxTemperature);
           }
@@ -239,18 +276,20 @@ export default {
           alert('상품이 성공적으로 등록되었습니다.');
         }
         this.isProductModalVisible = false;
-        this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
+        this.fetchProducts();
       } catch (error) {
         console.error('상품 처리 실패:', error);
         alert('상품 처리 중 오류가 발생했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
+
+    // 상품 삭제 핸들러
     async handleProductDelete(itemId) {
       try {
         await api.delete(`/admin/items/${itemId}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         this.isProductModalVisible = false;
-        this.fetchProducts(); // 목록 새로고침 (더미 데이터 사용 시 주석 처리)
+        this.fetchProducts();
       } catch (error) {
         console.error('상품 삭제 실패:', error);
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
@@ -267,7 +306,7 @@ export default {
     }
   },
   mounted() {
-    this.fetchProducts(); // 상품 목록 불러오기 (더미 데이터 사용 시 주석 처리)
+    this.fetchProducts();
   }
 };
 </script>
@@ -277,7 +316,7 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 16px;
-  min-height: 100vh; /* 뷰포트 높이만큼 최소 높이 설정 */
+  min-height: 100vh;
 }
 
 .grid-layout {
@@ -286,7 +325,7 @@ export default {
   gap: 20px;
   margin-top: 16px;
   align-items: start;
-  height: 100%; /* 부모의 높이를 상속받도록 설정 */
+  height: 100%;
 }
 
 @media(max-width:900px) {
@@ -429,7 +468,7 @@ h2 {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* 테이블 레이아웃 고정 */
+  table-layout: fixed;
 }
 
 th {
@@ -441,25 +480,22 @@ th {
   font-size: 14px;
 }
 
-/* 각 컬럼의 너비 지정 */
-th:nth-child(1) { width: 15%; } /* 상품코드 */
-th:nth-child(2) { width: 25%; } /* 상품명 */
-th:nth-child(3) { width: 15%; } /* 카테고리 */
-th:nth-child(4) { width: 13%; } /* 판매가 */
-th:nth-child(5) { width: 9%; } /* 재고 수량 */
-th:nth-child(6) { width: 12%; } /* 등록일 */
-th:nth-child(7) { width: 8%; } /* 관리 */
-
+th:nth-child(1) { width: 15%; }
+th:nth-child(2) { width: 25%; }
+th:nth-child(3) { width: 15%; }
+th:nth-child(4) { width: 13%; }
+th:nth-child(5) { width: 9%; }
+th:nth-child(6) { width: 12%; }
+th:nth-child(7) { width: 8%; }
 
 td {
   padding: 12px;
   border-bottom: 1px solid var(--line);
-  vertical-align: middle; /* 세로 중앙 정렬 */
+  vertical-align: middle;
 }
 
-/* 내용이 길어질 수 있는 셀에 말줄임표 적용 */
-td:nth-child(1), /* 상품코드 */
-td:nth-child(3) { /* 카테고리 */
+td:nth-child(1),
+td:nth-child(3) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -488,7 +524,6 @@ tr:hover {
 .product-name {
   font-weight: 600;
   font-size: 14px;
-  /* 말줄임표 스타일 적용 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

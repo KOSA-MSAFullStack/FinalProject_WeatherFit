@@ -39,8 +39,6 @@ public class ItemController {
    // [상품명 검색]
    @GetMapping("/search")
    public List<ItemResponseDTO> searchItems(@RequestParam String itemName) {
-       return itemService.searchItemsByName(itemName).stream()
-               .map(ItemResponseDTO::from)
-               .collect(Collectors.toList());
+       return itemService.searchItemsByName(itemName);
    }
 }
