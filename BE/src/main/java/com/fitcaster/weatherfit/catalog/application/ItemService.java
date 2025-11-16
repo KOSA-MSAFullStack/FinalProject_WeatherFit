@@ -190,12 +190,14 @@ public class ItemService {
     // [상품 삭제]
     @Transactional
     public void deleteItem(Long itemId) {
-        // 상품 존재 여부 확인
-        if (!itemRepository.existsById(itemId)) {
-            throw new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음");
-        }
+        // 상품 조회
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("⚠️ 요청하신 ID에 해당하는 상품 찾을 수 없음"));
 
         try {
+            // ITEM_SEASON 먼저 삭제
+            itemSeasonRepository.deleteByItem(item);
+            // 그 다음 ITEM 삭제
             itemRepository.deleteById(itemId);
         } catch (DataIntegrityViolationException e) {
             // DB 제약 조건 위반 시 (예: 외래 키 참조)
