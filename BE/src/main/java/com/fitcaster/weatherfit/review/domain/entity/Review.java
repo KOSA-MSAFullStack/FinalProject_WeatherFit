@@ -54,6 +54,16 @@ public class Review {
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDate createdAt;
 
+    // 수정 기능을 위한 메서드
+    public void update(BigDecimal ratingScore, Weather weather, Temperature temperature,
+                       IndoorFit indoorFit, String contents) {
+        this.ratingScore = ratingScore;
+        this.weather = weather;
+        this.temperature = temperature;
+        this.indoorFit = indoorFit;
+        this.contents = contents;
+    }
+
     @Builder
     public Review(Item item, User user, BigDecimal ratingScore, Weather weather,
                   Temperature temperature, IndoorFit indoorFit, String contents) {

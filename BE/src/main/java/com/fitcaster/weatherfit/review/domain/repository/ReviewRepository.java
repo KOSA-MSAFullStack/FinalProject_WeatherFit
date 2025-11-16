@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     /**
@@ -18,4 +20,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      */
     @Query("SELECT r FROM Review r JOIN FETCH r.user WHERE r.item.id = :itemId")
     Page<Review> findByItemId(@Param("itemId") Long itemId, Pageable pageable);
+
+    /**
+     * 특정 사용자 ID(userId)를 기준으로 해당 사용자가 작성한 모든 리뷰를 조회합니다.
+     * 결과는 생성일(createdAt)을 기준으로 내림차순(최신순)으로 정렬됩니다.
+     *
+     * @param userId 조회할 사용자의 ID
+     * @return 해당 사용자가 작성한 리뷰 목록
+     */
+    List<Review> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
