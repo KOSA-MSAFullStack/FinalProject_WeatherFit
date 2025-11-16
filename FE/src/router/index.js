@@ -57,6 +57,15 @@ const routes = [
         },
       },
       {
+        path: 'items/:itemId',
+        name: 'ItemDetail',
+        component: () => import('@/views/ItemDetail.vue'),
+        meta: { 
+          title: '상품 상세 조회 페이지',
+          requiresAuth: true // 로그인이 필요한 페이지에 메타 필드 추가
+        },
+      },
+      {
         path: 'cart', // '/cart' 경로
         name: 'Cart',
         component: () => import("@/views/Cart.vue"),
