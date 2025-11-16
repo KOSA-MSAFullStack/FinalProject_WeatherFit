@@ -15,9 +15,9 @@
           <div class="form-group">
             <label for="classification">분류</label>
             <select id="classification" v-model="selectedClassification" @change="loadCategories">
-              <option value="아우터">아우터</option>
-              <option value="상의">상의</option>
-              <option value="하의">하의</option>
+              <option v-for="(categories, classification) in localCategoryData" :key="classification" :value="classification">
+                {{ classification }}
+              </option>
             </select>
           </div>
 
@@ -38,8 +38,8 @@
                 등록된 카테고리가 없습니다.
               </div>
               <div 
-                v-for="category in categories" 
-                :key="category" 
+                v-for="(category, index) in categories" 
+                :key="`${selectedClassification}-${index}`" 
                 class="category-item"
               >
                 <span>{{ category }}</span>
@@ -64,26 +64,35 @@
 <script>
 export default {
   name: 'CategoryModal',
+  props: {
+    categoryData: {
+      type: Object,
+      required: true,
+    },
+  },
   emits: ['close', 'save'],
   data() {
     return {
       selectedClassification: '아우터',
       newCategoryName: '',
-      categoryData: {
-        '아우터': ['바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
-        '상의': ['반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
-        '하의': ['데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠컷'],
-      },
+      localCategoryData: {},
       categories: [],
     };
   },
   mounted() {
+    // props의 categoryData를 localCategoryData에 복사
+    this.localCategoryData = JSON.parse(JSON.stringify(this.categoryData));
+    // 첫 분류 선택
+    const classifications = Object.keys(this.localCategoryData);
+    if (classifications.length > 0) {
+      this.selectedClassification = classifications[0];
+    }
     this.loadCategories();
   },
   methods: {
     // 선택된 분류의 카테고리 목록 로드
     loadCategories() {
-      this.categories = [...(this.categoryData[this.selectedClassification] || [])];
+      this.categories = [...(this.localCategoryData[this.selectedClassification] || [])];
     },
 
     // 카테고리 추가
@@ -101,7 +110,7 @@ export default {
       }
 
       this.categories.push(trimmedName);
-      this.categoryData[this.selectedClassification] = [...this.categories];
+      this.localCategoryData[this.selectedClassification] = [...this.categories];
       this.newCategoryName = '';
     },
 
@@ -126,7 +135,7 @@ export default {
       const index = this.categories.indexOf(oldName);
       if (index > -1) {
         this.categories[index] = trimmedNewName;
-        this.categoryData[this.selectedClassification] = [...this.categories];
+        this.localCategoryData[this.selectedClassification] = [...this.categories];
       }
     },
 
@@ -137,12 +146,12 @@ export default {
       }
 
       this.categories = this.categories.filter(cat => cat !== categoryName);
-      this.categoryData[this.selectedClassification] = [...this.categories];
+      this.localCategoryData[this.selectedClassification] = [...this.categories];
     },
 
     // 변경사항 저장
     saveChanges() {
-      this.$emit('save', this.categoryData);
+      this.$emit('save', this.localCategoryData);
       alert('변경사항이 저장되었습니다.');
       this.$emit('close');
     },

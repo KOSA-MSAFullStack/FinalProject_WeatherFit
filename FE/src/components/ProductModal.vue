@@ -115,30 +115,29 @@ export default {
       type: Object,
       default: null,
     },
+    categoryData: {
+      type: Object,
+      required: true,
+    },
   },
   emits: ['close', 'submit', 'delete'],
   data() {
     return {
       product: {
         itemName: '',
-        itemCode: '', // 상품 코드 추가
+        itemCode: '',
         price: null,
         quantity: null,
         classification: '상의',
         category: '',
-        selectedGender: '', // 선택된 성별 (단일 문자열)
-        selectedSeasons: [], // 선택된 계절 (배열)
+        selectedGender: '',
+        selectedSeasons: [],
         image: null,
         aiDescription: '',
-        maxTemperature: null, // 최고 기온 추가
-        minTemperature: null,  // 최저 기온 추가
+        maxTemperature: null,
+        minTemperature: null,
       },
-      selectedFileName: '선택된 파일 없음', // 선택된 파일명 표시
-      categoryData: {
-        '아우터': ['바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
-        '상의': ['반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
-        '하의': ['데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠컷'],
-      },
+      selectedFileName: '선택된 파일 없음',
       genderMap: { // 백엔드 코드와 프론트엔드 표시명 매핑
         'M': '남성',
         'F': '여성',
@@ -163,7 +162,7 @@ export default {
         if (newVal) {
           //console.log('[ProductModal] 상품 데이터 로드:', newVal);     // 이미지 미리보기 디버깅용 코드
           //console.log('[ProductModal] imageURL:', newVal.imageURL);     // 이미지 미리보기 디버깅용 코드
-          
+
           this.product = { ...newVal };
           // 성별 변환 (백엔드 코드 -> 프론트엔드 표시명)
           this.product.selectedGender = Object.keys(this.genderMap).find(key => this.genderMap[key] === newVal.gender) || '';
@@ -191,6 +190,7 @@ export default {
         } else {
           this.product = {
             itemName: '',
+            itemCode: '',
             price: null,
             quantity: null,
             classification: '상의',
@@ -199,12 +199,12 @@ export default {
             selectedSeasons: [],
             image: null,
             aiDescription: '',
-            maxTemperature: null, // 최고 기온 초기화
-            minTemperature: null,  // 최저 기온 초기화
+            maxTemperature: null,
+            minTemperature: null,
           };
           this.imagePreview = '';
           this.aiBoxVisible = false;
-          this.selectedFileName = '선택된 파일 없음'; // 등록 모드일 때 파일 이름 초기화
+          this.selectedFileName = '선택된 파일 없음';
         }
         this.updateCategoryOptions();
       },
@@ -271,6 +271,7 @@ export default {
         alert('AI 설명 생성 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
       }
     },
+    
     regenerateAIDescription() {
       // 다시 생성 버튼 클릭 시 generateAIDescription 로직 재사용
       this.generateAIDescription();
@@ -284,11 +285,11 @@ export default {
       } else {
         submittedProduct.gender = null; // 선택된 성별이 없으면 null
       }
-      delete submittedProduct.selectedGender; // 임시 필드 삭제
+      delete submittedProduct.selectedGender;
 
       // 계절 데이터는 이미 배열이므로 그대로 사용
       submittedProduct.seasonName = submittedProduct.selectedSeasons;
-      delete submittedProduct.selectedSeasons; // 임시 필드 삭제
+      delete submittedProduct.selectedSeasons;
 
       // 최고/최저 기온 추가
       submittedProduct.maxTemperature = this.product.maxTemperature;
