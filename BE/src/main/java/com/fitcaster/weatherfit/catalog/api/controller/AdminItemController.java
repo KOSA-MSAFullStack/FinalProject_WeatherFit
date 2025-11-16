@@ -48,8 +48,8 @@ public class AdminItemController {
     }
 
     // [상품 수정]
-    @PatchMapping("/{itemId}")
-    public ResponseEntity<ItemResponseDTO> updateItem(@PathVariable Long itemId, @RequestBody ItemRequestDTO.Update request) {
+    @PatchMapping(value = "/{itemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ItemResponseDTO> updateItem(@PathVariable Long itemId, @ModelAttribute ItemRequestDTO.Update request) {
         ItemResponseDTO updatedItem = itemService.updateItem(itemId, request);
         return ResponseEntity.ok(updatedItem);
     }

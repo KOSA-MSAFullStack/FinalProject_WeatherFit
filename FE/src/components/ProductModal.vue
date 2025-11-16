@@ -161,6 +161,9 @@ export default {
     productToEdit: {
       handler(newVal) {
         if (newVal) {
+          //console.log('[ProductModal] 상품 데이터 로드:', newVal);     // 이미지 미리보기 디버깅용 코드
+          //console.log('[ProductModal] imageURL:', newVal.imageURL);     // 이미지 미리보기 디버깅용 코드
+          
           this.product = { ...newVal };
           // 성별 변환 (백엔드 코드 -> 프론트엔드 표시명)
           this.product.selectedGender = Object.keys(this.genderMap).find(key => this.genderMap[key] === newVal.gender) || '';
@@ -171,9 +174,11 @@ export default {
           if (newVal.imageURL) {
             // axios baseURL을 재사용하여 백엔드 서버 URL과 결합
             this.imagePreview = `${api.defaults.baseURL}${newVal.imageURL}`;
+            //console.log('[ProductModal] 이미지 미리보기 URL:', this.imagePreview);     // 이미지 미리보기 디버깅용 코드
             // 파일 이름 추출
             this.selectedFileName = newVal.imageURL.substring(newVal.imageURL.lastIndexOf('/') + 1);
           } else {
+            //console.warn('[ProductModal] imageURL이 비어있음!');     // 이미지 미리보기 디버깅용 코드
             this.imagePreview = '';
             this.selectedFileName = '선택된 파일 없음';
           }

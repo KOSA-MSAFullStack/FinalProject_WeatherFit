@@ -30,4 +30,7 @@ public interface ItemSeasonRepository extends JpaRepository<ItemSeason, ItemSeas
     )
     List<Item> findByClassificationAndSeason(@Param("classification") String classification, @Param("season") String season);
 
+    // 특정 상품의 모든 계절 정보 삭제
+    void deleteByItem(Item item);
+
 }

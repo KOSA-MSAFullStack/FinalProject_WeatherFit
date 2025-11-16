@@ -108,10 +108,10 @@ public class Item {
         if (itemName != null && !itemName.isEmpty()) {
             this.itemName = itemName;
         }
-        if (price != null && price != 0) {
+        if (price != null && price >= 0) {
             this.price = price;
         }
-        if (quantity != null && quantity != 0) {
+        if (quantity != null && quantity >= 0) {
             this.quantity = quantity;
         }
         if (gender != null && !gender.isEmpty()) {
