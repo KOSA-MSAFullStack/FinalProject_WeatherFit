@@ -14,7 +14,6 @@ import com.fitcaster.weatherfit.catalog.domain.repository.ItemRepository;
 import com.fitcaster.weatherfit.catalog.domain.repository.ItemSeasonRepository;
 import com.fitcaster.weatherfit.catalog.domain.entity.Season;
 import com.fitcaster.weatherfit.catalog.domain.repository.SeasonRepository;
-import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -57,6 +56,13 @@ public class ItemService {
    // [상품명 검색]
    public List<ItemResponseDTO> searchItemsByName(String itemName) {
        return itemRepository.findByItemNameContainingIgnoreCase(itemName)
+               .stream()
+               .map(ItemResponseDTO::from)
+               .collect(Collectors.toList());
+   }
+   // [상품명 또는 상품 코드로 검색]
+   public List<ItemResponseDTO> searchItems(String keyword) {
+       return itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword)
                .stream()
                .map(ItemResponseDTO::from)
                .collect(Collectors.toList());

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
-import java.util.stream.Collectors;
 
 // * author: 김기성
 @RestController
@@ -38,7 +37,12 @@ public class ItemController {
 
    // [상품명 검색]
    @GetMapping("/search")
-   public List<ItemResponseDTO> searchItems(@RequestParam String itemName) {
+   public List<ItemResponseDTO> searchItemsByName(@RequestParam String itemName) {
        return itemService.searchItemsByName(itemName);
+   }
+   // [상품명 또는 상품 코드로 검색]
+   @GetMapping("/search/keyword")
+   public List<ItemResponseDTO> searchItems(@RequestParam String keyword) {
+       return itemService.searchItems(keyword);
    }
 }
