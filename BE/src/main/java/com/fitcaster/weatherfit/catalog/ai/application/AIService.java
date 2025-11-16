@@ -25,6 +25,31 @@ public class AIService {
         this.chatClient = chatClientBuilder.build();
     }
 
+    // AI 설명 텍스트에서 최고/최저 기온 파싱
+    public AIResponseDTO.TemperatureInfo parseTemperatureFromDescription(String aiDescription) {
+        if (aiDescription == null || aiDescription.isEmpty()) {
+            return null;
+        }
+
+        Integer minTemperature = null;
+        Integer maxTemperature = null;
+
+        // "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다." 형식에서 기온 파싱 (음수 포함)
+        Pattern pattern = Pattern.compile("최고/최저 기온은 (-?\\d+)°C / (-?\\d+)°C입니다.");
+        Matcher matcher = pattern.matcher(aiDescription);
+        if (matcher.find()) {
+            try {
+                maxTemperature = Integer.parseInt(matcher.group(1));
+                minTemperature = Integer.parseInt(matcher.group(2));
+            } catch (NumberFormatException e) {
+                // 파싱 실패 시 로그 기록
+                System.err.println("Failed to parse temperatures: " + e.getMessage());
+            }
+        }
+
+        return new AIResponseDTO.TemperatureInfo(minTemperature, maxTemperature);
+    }
+
     // 상품 정보/이미지 기반으로 AI 설명 생성
     public AIResponseDTO generateDescription(AIRequestDTO request) {
         try {
@@ -168,21 +193,10 @@ public class AIService {
                     .call()
                     .content();
 
-            Integer minTemperature = null;
-            Integer maxTemperature = null;
-
-            // "이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다." 형식에서 기온 파싱
-            Pattern pattern = Pattern.compile("최고/최저 기온은 (\\d+)°C / (\\d+)°C입니다.");
-            Matcher matcher = pattern.matcher(result);
-            if (matcher.find()) {
-                try {
-                    maxTemperature = Integer.parseInt(matcher.group(1));
-                    minTemperature = Integer.parseInt(matcher.group(2));
-                } catch (NumberFormatException e) {
-                    // 파싱 실패 시 로그 기록 또는 기본값 설정
-                    System.err.println("Failed to parse temperatures: " + e.getMessage());
-                }
-            }
+            // 기온 파싱
+            AIResponseDTO.TemperatureInfo tempInfo = parseTemperatureFromDescription(result);
+            Integer minTemperature = tempInfo != null ? tempInfo.getMinTemperature() : null;
+            Integer maxTemperature = tempInfo != null ? tempInfo.getMaxTemperature() : null;
 
             return new AIResponseDTO(result, minTemperature, maxTemperature);
 
