@@ -74,6 +74,15 @@ const routes = [
           requiresAuth: true // 로그인이 필요한 페이지에 메타 필드 추가
         },
       },
+      {
+        path: 'store', // '/store' 경로
+        name: 'Store',
+        component: () => import("@/views/Store.vue"),
+        meta: { 
+          title: '스토어 페이지',
+          requiresAuth: true // 로그인이 필요한 페이지에 메타 필드 추가
+        },
+      },
       // 예: 장바구니 등 다른 경로에도 필요 시 추가
       // { path: 'mypage', name: 'MyPage', component: MyPageComp, meta: { requiresAuth: true } },
     ]

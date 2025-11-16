@@ -23,7 +23,7 @@
             <!-- 분류 뱃지 + 상품명 -->
             <div class="info-header">
                 <span class="badge-class">{{ item.classification }}</span>
-                <h2 class="product-name">
+                <h2 class="item-name">
                 {{ item.itemName }}
                 </h2>
             </div>
@@ -37,6 +37,10 @@
                 <div class="meta-row">
                 <span class="meta-label">카테고리</span>
                 <span class="meta-value">{{ item.category }}</span>
+                </div>
+                <div class="meta-row">
+                <span class="meta-label">성별</span>
+                <span class="meta-value">{{ item.gender }}</span>
                 </div>
                 <div class="meta-row">
                 <span class="meta-label">상품코드</span>
@@ -248,6 +252,13 @@ const toFullImageUrl = (raw) => {
   return BASE_IMAGE_URL + (raw.startsWith('/') ? raw : `/${raw}`)
 }
 
+// 성별 매핑
+const genderMap = {
+  M: '남성',
+  F: '여성',
+  C: '남여공용'
+}
+
 // 화면에서 바로 쓰기 편하게 가공된 item
 const item = computed(() => {
     const data = itemDetailData.value
@@ -275,7 +286,7 @@ const item = computed(() => {
     itemName: data.itemName,
     itemCode: data.itemCode,
     price: data.price,
-    gender: data.gender,
+    gender: genderMap[data.gender],
     imageURL: toFullImageUrl(data.imageURL),
     aiDescription: data.aiDescription || '',
     reviewAiSummary: data.reviewAiSummary,
@@ -560,7 +571,7 @@ header {
   align-self: flex-start;
   padding: 4px 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -568,7 +579,7 @@ header {
   color: #4f46e5;
 }
 
-.product-name {
+.item-name {
   font-size: 24px;
   font-weight: 800;
   color: #111827;
@@ -841,7 +852,7 @@ section {
 }
 
 /* 상품명 조금 더 강조 */
-.product-name {
+.item-name {
   font-size: 26px;     /* 기존보다 +2 정도 */
 }
 

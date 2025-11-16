@@ -6,3 +6,9 @@ export async function getItemDetail(itemId) {
     const res = await axios.get(`http://localhost:8080/api/items/${itemId}`)
     return res.data;
 }
+
+// 상품 목록 조회 API
+export async function getAllItem() {
+    const res = await axios.get(`http://localhost:8080/api/items`)
+    return res.data;
+}
