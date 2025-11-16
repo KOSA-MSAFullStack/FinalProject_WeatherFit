@@ -33,7 +33,7 @@ public class PromptTemplate {
             "top":   { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
             "bottom":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
           }
-        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요(값 생성/변경 금지).
+        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
 
         [날씨]
@@ -67,19 +67,14 @@ public class PromptTemplate {
         return """
         [요구사항]
         - 내일 날씨(최저 %.1f°C, 최고 %.1f°C, 상태: %s)에 맞춰 12개의 옷을 추리고 그 중에서 랜덤으로 3개의 옷을 추천하세요.
-        - 오늘 추천과 똑같은 조합이 나오지 않도록 "다소 다른 스타일"을 선택하세요.
-        - 최적값 1개만 고르지 말고 유사한 후보 중 다른 스타일을 우선적으로 선택하세요.
-        - minTemperature와 maxTemperature가 ‘대략적으로’ 맞는 옷 중에서
-          오늘 추천에서 선택될 가능성이 높은 아이템은 피하고,
-          다른 대안 후보를 선택하세요.
-        - 최적값보다는 다양하게 선택하는 것을 우선하세요.
+
         - 반드시 아래 JSON "정확한 스키마"로만 출력(코드블록 금지, 설명 금지).
           {
             "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
             "secondItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
             "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
           }
-        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요(값 생성/변경 금지).
+        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
 
         [날씨]
@@ -113,16 +108,16 @@ public class PromptTemplate {
         - 아우터/상의/하의 구분 없이 아래 전체 후보 목록에서 서로 다른 3개를 선택하세요.
         - 이번주 내내 무난하게 입기 좋은 상품을 우선적으로 선택하되, 서로 다른 스타일이 되도록 해주세요.
         - 사용자의 성별과 각 아이템의 성별 속성을 반드시 고려해서 실제로 착용 가능한 조합만 선택하세요.
-        - 아이템의 gender 값은 "MALE", "FEMALE", "UNISEX" 중 하나입니다.
-        - 사용자의 성별이 "FEMALE"인 경우 gender가 "FEMALE" 또는 "UNISEX"인 상품만 선택하세요.
-          사용자의 성별이 "MALE"인 경우 gender가 "MALE" 또는 "UNISEX"인 상품만 선택하세요.
+        - 아이템의 gender 값은 "M", "F", "C" 중 하나입니다.
+        - 사용자의 성별이 "1"인 경우 gender가 "F" 또는 "C"인 상품만 선택하세요.
+          사용자의 성별이 "0"인 경우 gender가 "M" 또는 "C"인 상품만 선택하세요.
         - 반드시 아래 JSON 스키마를 정확히 지키고, 코드블록이나 설명은 출력하지 마세요.
         {
           "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
           "secondItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
           "thirdItem":{ "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" }
         }
-        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사해서 채우세요.
+        - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사해서 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성, 변경 금지)
         - 숫자는 따옴표 없이 숫자로 출력합니다.
 
         [날씨]
@@ -130,18 +125,15 @@ public class PromptTemplate {
         - 최저/최고: %.1f/%.1f
         - 상태: %s
 
-        [후보: OUTER]
+        [후보]
         %s
-
-        [후보: TOP]
         %s
-
-        [후보: BOTTOM]
         %s
         """.formatted(
                 weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
                 weather.getDate(), weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
                 toLines(request.getOuters()), toLines(request.getTops()), toLines(request.getBottoms())
+//                request.getOuters(), request.getTops(), request.getBottoms()
         );
     }
 

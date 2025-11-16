@@ -86,7 +86,7 @@ const clickItemDetail = (item) => {
     return
   }
 
-  console.log('[MainProductCard] go detail itemId =', item.itemId)
+  console.log('[MainItemCard] go detail itemId =', item.itemId)
 
   // 라우터 설정에 맞게 name / path 쓰기
   router.push({
@@ -141,6 +141,7 @@ const heroStyle = (url, useGradient = false) => {
   display: flex;
   align-items: flex-end;
   background: linear-gradient(180deg, #f3f4f6, #e5e7eb);
+  cursor: pointer;
 }
 
 /* 오버레이를 아래로 갈수록 더 어둡게 */
