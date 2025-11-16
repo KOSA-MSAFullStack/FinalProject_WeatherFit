@@ -27,6 +27,8 @@ public class ItemResponseDTO {
     private String classification;  // 분류명
     private List<String> seasonName;   // 계절명 리스트
     private int quantity;           // 재고 수량
+    private int minTemperature;     // 최저기온
+    private int maxTemperature;     // 최고기온
 
     // Item 엔티티로부터 DTO를 생성하는 메서드
     public static ItemResponseDTO from(Item item) {
@@ -50,6 +52,8 @@ public class ItemResponseDTO {
                 .classification(item.getCategory().getClassification().getClassification())
                 .seasonName(seasonNames)
                 .quantity(item.getQuantity())
+                .minTemperature(item.getMinTemperature())
+                .maxTemperature(item.getMaxTemperature())
                 .build();
     }
 }
