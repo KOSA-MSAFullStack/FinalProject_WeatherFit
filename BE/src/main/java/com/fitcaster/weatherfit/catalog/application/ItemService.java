@@ -2,6 +2,8 @@
 // 상품 서비스
 package com.fitcaster.weatherfit.catalog.application;
 
+import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
+import com.fitcaster.weatherfit.catalog.ai.application.AIService;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.domain.entity.Category;
@@ -34,6 +36,7 @@ public class ItemService {
     private final ItemSeasonRepository itemSeasonRepository; // 상품 계절 중개 테이블 레포지토리
     private final ImageUploadService imageUploadService; // 이미지 업로드 서비스
     private final SeasonRepository seasonRepository; // 계절 레포지토리
+    private final AIService aiService; // AI 서비스
 
     // [모든 상품 목록 조회]
     public List<ItemResponseDTO> getAllItems() {
@@ -148,7 +151,25 @@ public class ItemService {
             }
         }
 
-        // 4) 나머지 필드 업데이트
+        // 4) AI 설명에서 기온 파싱
+        Integer maxTemperature = request.getMaxTemperature();
+        Integer minTemperature = request.getMinTemperature();
+        
+        // AI 설명이 있으면 기온 파싱 시도
+        if (request.getAiDescription() != null && !request.getAiDescription().isEmpty()) {
+            AIResponseDTO.TemperatureInfo tempInfo = aiService.parseTemperatureFromDescription(request.getAiDescription());
+            if (tempInfo != null) {
+                // 파싱된 기온이 있으면 사용, 없으면 기존 값 유지
+                if (tempInfo.getMaxTemperature() != null) {
+                    maxTemperature = tempInfo.getMaxTemperature();
+                }
+                if (tempInfo.getMinTemperature() != null) {
+                    minTemperature = tempInfo.getMinTemperature();
+                }
+            }
+        }
+
+        // 5) 나머지 필드 업데이트
         item.updateDetails(
                 request.getItemName(),
                 request.getPrice(),
@@ -156,11 +177,11 @@ public class ItemService {
                 request.getGender(),
                 imageUrl,
                 request.getAiDescription(),
-                request.getMaxTemperature() != null ? request.getMaxTemperature() : 0,
-                request.getMinTemperature() != null ? request.getMinTemperature() : 0
+                maxTemperature != null ? maxTemperature : 0,
+                minTemperature != null ? minTemperature : 0
         );
 
-        // 5) 계절 정보 업데이트
+        // 6) 계절 정보 업데이트
         if (request.getSeasonName() != null) {
             // 기존 계절 정보 삭제
             itemSeasonRepository.deleteByItem(item);

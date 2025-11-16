@@ -15,4 +15,13 @@ public class AIResponseDTO {
     private String content;     // 내용
     private Integer minTemperature; // 최저 기온
     private Integer maxTemperature; // 최고 기온
+    
+    // 기온 정보 내부 클래스
+    @Getter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class TemperatureInfo {
+        private Integer minTemperature; // 최저 기온
+        private Integer maxTemperature; // 최고 기온
+    }
 }
