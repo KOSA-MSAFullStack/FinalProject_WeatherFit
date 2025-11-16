@@ -10,6 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * itemSeason 테이블에서 item과 season을 다 가져오기 위한 레포지토리
+ * author: 김경아
+ */
 @Repository
 public interface ItemSeasonRepository extends JpaRepository<ItemSeason, ItemSeasonId> {
 

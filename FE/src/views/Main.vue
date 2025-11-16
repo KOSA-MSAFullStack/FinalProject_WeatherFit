@@ -11,13 +11,13 @@
     <!-- Main Content -->
     <main style="margin: 0 auto; padding: 16px; padding-bottom: 40px">
       <!--오늘 날씨 기반 옷 추천-->
-      <TodayRecommendationList :region="selectedRegion" /> 
+      <TodayRecommendationList /> 
 
       <!-- 내일 날씨 기반 옷 추천-->  
-      <TomorrowRecommendationList :region="selectedRegion" />  
+      <TomorrowRecommendationList />  
 
       <!-- 이번 주 날씨 기반 옷 추천-->
-      <WeeklyRecommendationList :region="selectedRegion" />    
+      <WeeklyRecommendationList />    
     </main>
 
     <!-- Footer -->
@@ -37,7 +37,6 @@ import TodayRecommendationList from '@/components/main/TodayRecommendationList.v
 import TomorrowRecommendationList from '@/components/main/TomorrowRecommendationList.vue'
 import WeeklyRecommendationList from '@/components/main/WeeklyRecommendationList.vue'
 import { ref } from 'vue'
-const selectedRegion = ref('대전시') // 지역 입력안했을 때 기본값
 </script>
 
 <style scoped>
