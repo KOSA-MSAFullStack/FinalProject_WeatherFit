@@ -5,6 +5,7 @@
     <article
       class="hero"
       :style="heroStyle(outer?.imageURL, true)"
+      @click="clickItemDetail(outer)"
     >
       <div class="overlay"></div>
       <div class="content">
@@ -17,6 +18,7 @@
     <article
       class="hero"
       :style="heroStyle(top?.imageURL, false)"
+      @click="clickItemDetail(top)"
     >
       <div class="overlay"></div>
       <div class="content">
@@ -29,6 +31,7 @@
     <article
       class="hero"
       :style="heroStyle(bottom?.imageURL, false)"
+      @click="clickItemDetail(bottom)"
     >
       <div class="overlay"></div>
       <div class="content">
@@ -40,6 +43,8 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+
 const props = defineProps({
   // {
   //   itemId: 4,
@@ -71,6 +76,23 @@ const toFullUrl = (url) => {
   }
   const path = url.startsWith('/') ? url.slice(1) : url
   return `${BASE_IMAGE_URL}${path}`
+}
+
+const router = useRouter()
+
+// 아이템 클릭 시 상세 조회 페이지로 이동
+const clickItemDetail = (item) => {
+  if (!item || !item.itemId) {
+    return
+  }
+
+  console.log('[MainProductCard] go detail itemId =', item.itemId)
+
+  // 라우터 설정에 맞게 name / path 쓰기
+  router.push({
+    name: 'ItemDetail',               // router/index.js 에서 정한 name
+    params: { itemId: item.itemId },  // path: /items/:itemId 넘기기
+  })
 }
 
 // inline style 부분
@@ -114,7 +136,8 @@ const heroStyle = (url, useGradient = false) => {
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  min-height: 800px;
+  aspect-ratio: 3 / 4;
+  height: auto;        
   display: flex;
   align-items: flex-end;
   background: linear-gradient(180deg, #f3f4f6, #e5e7eb);
