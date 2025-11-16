@@ -52,7 +52,7 @@
                   <div class="text-xs text-gray-500 mt-1">총 주문</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-2xl font-bold text-gray-900">8</div>
+                  <div class="text-2xl font-bold text-gray-900">{{userReviews.length}}</div>
                   <div class="text-xs text-gray-500 mt-1">작성 리뷰</div>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
@@ -119,7 +119,13 @@
                         <!-- 버튼 영역 -->
                         <div class="mt-2 space-x-2">
                           <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
-                          <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">리뷰 쓰기</button>
+                          <!-- 'review' 객체가 있으면 '수정', 없으면 '작성' 버튼 표시 -->
+                          <button v-if="item.review" @click="openReviewModal(item, item.review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                            리뷰 수정
+                          </button>
+                          <button v-else @click="openReviewModal(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                            리뷰 쓰기
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -336,18 +342,26 @@
           <div v-if="activeTab === 'reviews'">
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
               <h2 class="text-xl font-bold mb-4">리뷰 관리</h2>
-              <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ reviews.length }})</h3>
+              <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ userReviews.length }}건)</h3>
+              <!-- <h3 class="text-base font-semibold mb-3">작성한 리뷰 ({{ reviews.length }})</h3> -->
+               <!-- 로딩/에러 처리 추가 -->
+              <div v-if="isReviewLoading" class="text-center py-10">... 로딩 중 ...</div>
+              <div v-else-if="userReviews.length === 0" class="text-center py-10 text-gray-500">작성한 리뷰가 없습니다.</div>
               <div class="space-y-4">
-                <div v-for="review in reviews" :key="review.id" class="border border-gray-200 bg-white rounded-lg p-4">
+                <div v-for="review in userReviews" :key="review.id" class="border border-gray-200 bg-white rounded-lg p-4">
                   <div class="flex justify-between items-center mb-2">
-                    <p class="font-semibold text-sm">{{ review.productName }}</p>
-                    <p class="text-xs text-gray-500">{{ review.date }}</p>
+                    <p class="font-semibold text-sm">{{ review.itemName }}</p>
+                    <p class="text-xs text-gray-500">{{ review.createdAt }}</p>
                   </div>
-                  <div class="text-yellow-400 mb-2">★★★★★</div>
-                  <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.text }}</p>
+                  <!-- 별점 표시 로직 추가 -->
+                  <div class="text-yellow-400 mb-2 flex items-center">
+                    <Star v-for="i in 5" :key="i" :size="16" class="fill-current" :class="i <= review.ratingScore ? 'text-yellow-400' : 'text-gray-300'" />
+                    <span class="ml-2 text-xs text-gray-600 font-semibold">{{ review.ratingScore }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.contents }}</p>
                   <div class="flex space-x-2">
-                    <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">수정</button>
-                    <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600">삭제</button>
+                    <button @click="openReviewModalForEdit(review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">수정</button>
+                    <button @click="handleReviewDelete(review.reviewId)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600">삭제</button>
                   </div>
                 </div>
               </div>
@@ -363,6 +377,15 @@
       © WeatherFit Shop · 마이페이지
     </footer> -->
   </div>
+
+  <ReviewModal 
+    :is-open="isReviewModalOpen"
+    :order-item="selectedOrderItem"
+    :existing-review="selectedReview"
+    @close="closeReviewModal"
+    @submit="handleReviewSubmit"
+    @delete="handleReviewDelete"
+  />
 </template>
 
 <script setup>
@@ -370,10 +393,103 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
 import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
+import ReviewModal from '@/components/ReviewModal.vue';
+import { Star } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const activeTab = ref('orders');
+
+// --- 리뷰 관련 상태 ---
+const isReviewModalOpen = ref(false);
+const selectedOrderItem = ref({});
+const selectedReview = ref(null);
+const userReviews = ref([]); // 리뷰 관리 탭을 위한 리뷰 목록
+const isReviewLoading = ref(false); // 리뷰 목록 로딩 상태
+
+// 데이터 매핑 객체 (프론트 <-> 백엔드)
+const weatherMap = { '맑음': 'SUNNY', '흐림': 'CLOUDY', '강풍': 'WINDY', '비': 'RAINY', '눈': 'SNOWY' };
+const tempMap = { '추워요': 'COLD', '시원해요': 'COOL', '보통이에요': 'NORMAL', '따뜻해요': 'WARM', '더워요': 'HOT' };
+const fitMap = { '편해요': 'COMFORTABLE', '보통이에요': 'NORMAL', '답답해요': 'TIGHT' };
+
+// (역방향 매핑) 백엔드 -> 프론트. 수정 모드 시 필요
+const reverseWeatherMap = Object.fromEntries(Object.entries(weatherMap).map(([k, v]) => [v, k]));
+const reverseTempMap = Object.fromEntries(Object.entries(tempMap).map(([k, v]) => [v, k]));
+const reverseFitMap = Object.fromEntries(Object.entries(fitMap).map(([k, v]) => [v, k]));
+
+// --- 리뷰 모달 이벤트 핸들러 ---
+const openReviewModal = (item, review = null) => {
+  selectedOrderItem.value = item;
+  if (review) {
+    // 수정 모드: 백엔드 데이터를 프론트 폼 데이터로 변환
+    selectedReview.value = {
+      id: review.reviewId,
+      score: review.ratingScore,
+      weather: reverseWeatherMap[review.weather],
+      weatherSuitability: reverseTempMap[review.temperature],
+      breathability: reverseFitMap[review.indoorFit],
+      content: review.contents
+    };
+  } else {
+    selectedReview.value = null;
+  }
+  isReviewModalOpen.value = true;
+};
+
+// 리뷰 모달 닫기
+const closeReviewModal = () => { isReviewModalOpen.value = false; };
+
+// 리뷰 등록/수정 처리
+const handleReviewSubmit = async (formData) => {
+  const payload = {
+    itemId: selectedOrderItem.value.itemId,
+    score: formData.score,
+    weather: weatherMap[formData.weather],
+    weatherSuitability: tempMap[formData.weatherSuitability],
+    breathability: fitMap[formData.breathability],
+    content: formData.content
+  };
+
+  try {
+    if (selectedReview.value && selectedReview.value.id) {
+      await api.put(`/api/reviews/${selectedReview.value.id}`, payload);
+    } else {
+      await api.post('/api/reviews', payload);
+    }
+    closeReviewModal();
+    fetchUserReviews();
+    activeTab.value = 'reviews';
+  } catch (error) {
+    console.error('리뷰 저장 실패:', error);
+    alert(error.response?.data?.message || '리뷰 저장 중 오류가 발생했습니다.');
+  }
+};
+
+// 리뷰 삭제 처리 (수정 모드일 때만 동작)
+const handleReviewDelete = async (reviewIdToDelete = null) => {
+  const reviewId = reviewIdToDelete || selectedReview.value?.id;
+  if (!reviewId || !confirm('정말로 이 리뷰를 삭제하시겠습니까?')) return;
+
+  try {
+    await api.delete(`/api/reviews/${reviewId}`);
+    alert('리뷰가 삭제되었습니다.');
+    closeReviewModal();
+    if (activeTab.value === 'orders') fetchOrderHistory();
+    if (activeTab.value === 'reviews') fetchUserReviews();
+  } catch (error) {
+    console.error('리뷰 삭제 실패:', error);
+    alert(error.response?.data?.message || '리뷰 삭제 중 오류가 발생했습니다.');
+  }
+};
+
+// 리뷰 관리 탭에서 '수정' 버튼을 눌렀을 때 호출될 함수
+const openReviewModalForEdit = (review) => {
+  const Item = {
+    itemId: review.itemId,
+    itemName: review.itemName
+  };
+  openReviewModal(Item, review);
+};
 
 // 주문 내역 관련 상태
 const orders = ref([]); // API 응답의 content (주문 목록)
@@ -409,24 +525,6 @@ const user = ref({
   name: '', email: '', birth: '', gender: '', phone: '',
   zipCode: '', baseAddress: '', detailAddress: '', temperatureSensitivity: '',
 });
-
-// 임시 리뷰 데이터
-const reviews = ref([
-  {
-    id: 1,
-    productName: '울 블렌드 인타르시아 니트 탑',
-    date: '2025.10.29',
-    rating: 5,
-    text: '날씨가 쌀쌀해지는 요즘 입기 딱 좋아요! 두께감도 적당하고 디자인도 심플해서 어떤 옷이랑도 잘 어울려요. 특히 날씨 추천 기능 덕분에 구매했는데 정말 만족스러워요 👍'
-  },
-  {
-    id: 2,
-    productName: '라이트 트렌치 코트',
-    date: '2025.10.21',
-    rating: 4,
-    text: '방수 기능이 생각보다 좋네요. 비 오는 날 입어봤는데 물이 스며들지 않았어요. 다만 사이즈가 약간 크게 나온 것 같아요. 한 치수 작게 주문하시는 걸 추천해요!'
-  }
-]);
 
 const resetProfileForm = () => {
   // 원본 객체를 복사하여 수정용 객체에 할당합니다.
@@ -525,6 +623,19 @@ const fetchUserProfile = async () => {
   }
 };
 
+// 사용자가 작성한 리뷰 목록을 가져오는 API 호출 함수
+const fetchUserReviews = async () => {
+  isReviewLoading.value = true;
+  try {
+    const response = await api.get('/api/reviews');
+    userReviews.value = response.data;
+  } catch (error) {
+    console.error("내가 쓴 리뷰 목록 조회 실패:", error);
+  } finally {
+    isReviewLoading.value = false;
+  }
+};
+
 // Daum 우편번호 찾기 함수
 const findAddress = () => {
   // Daum Postcode 스크립트가 로드되었는지 확인
@@ -558,7 +669,7 @@ const saveProfile = async () => {
       detail: user.value.detailAddress
     }
   };
-  console.log('Saving profile with payload:', payload);
+
   try {
     await api.put('/mypage/profile', payload);
     // 저장이 성공하면 originalUser를 업데이트
@@ -590,5 +701,6 @@ watch(activeTab, (newTab) => {
 onMounted(() => {
   fetchOrderHistory(); 
   fetchUserProfile();
+  fetchUserReviews();
 });
 </script>
