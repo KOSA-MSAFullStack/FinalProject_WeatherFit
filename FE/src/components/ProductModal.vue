@@ -166,14 +166,22 @@ export default {
           this.product.selectedGender = Object.keys(this.genderMap).find(key => this.genderMap[key] === newVal.gender) || '';
           // 계절 할당
           this.product.selectedSeasons = newVal.seasonName || [];
-          this.imagePreview = newVal.imageURL || '';
+          
+          // 이미지 URL 전체 경로로 변환
+          if (newVal.imageURL) {
+            // axios baseURL을 재사용하여 백엔드 서버 URL과 결합
+            this.imagePreview = `${api.defaults.baseURL}${newVal.imageURL}`;
+            // 파일 이름 추출
+            this.selectedFileName = newVal.imageURL.substring(newVal.imageURL.lastIndexOf('/') + 1);
+          } else {
+            this.imagePreview = '';
+            this.selectedFileName = '선택된 파일 없음';
+          }
+          
           this.product.aiDescription = newVal.aiDescription || ''; // aiDescription이 null일 경우 빈 문자열로 초기화
           this.aiBoxVisible = !!newVal.aiDescription; // AI 설명이 있으면 aiBoxVisible을 true로 설정
           this.product.maxTemperature = newVal.maxTemperature || null; // 최고 기온 로드
           this.product.minTemperature = newVal.minTemperature || null;  // 최저 기온 로드
-
-          // 파일 이름 초기화
-          this.selectedFileName = newVal.imageURL ? newVal.imageURL.substring(newVal.imageURL.lastIndexOf('/') + 1) : '선택된 파일 없음';
 
         } else {
           this.product = {
