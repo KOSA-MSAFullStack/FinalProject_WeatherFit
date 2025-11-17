@@ -26,21 +26,21 @@
                 <option>최근 3개월</option>
                 <option>전체</option>
               </select>
-              <input type="text" placeholder="주문번호/고객명 검색" style="flex:1; min-width:200px">
-              <button class="btn">검색</button>
+              <input type="text" v-model="salesSearchKeyword" placeholder="주문번호/고객명 검색" style="flex:1; min-width:200px" @keyup.enter="searchSales">
+              <button class="btn" @click="searchSales">검색</button>
             </div>
 
             <div class="stats-grid" style="margin-bottom:20px">
               <div class="stat-box">
-                <div class="stat-value">1,847</div>
+                <div class="stat-value">{{ totalOrderCount }}</div>
                 <div class="stat-label">총 주문 수</div>
               </div>
               <div class="stat-box">
-                <div class="stat-value">89,230,000원</div>
+                <div class="stat-value">{{ totalSalesAmount.toLocaleString() }}원</div>
                 <div class="stat-label">총 판매액</div>
               </div>
               <div class="stat-box">
-                <div class="stat-value">48,350원</div>
+                <div class="stat-value">{{ averageOrderAmount.toLocaleString() }}원</div>
                 <div class="stat-label">평균 주문액</div>
               </div>
             </div>
@@ -160,18 +160,11 @@ export default {
       isProductModalVisible: false,
       isCategoryModalVisible: false,
       selectedProduct: null,
-      categoryData: {}, // 백엔드에서 불러온 카테고리 데이터
-      salesData: [
-        { orderId: '20251103-0125', date: '2025.11.03 14:23', product: '울 블렌드 니트', customer: '김철수', qty: 1, price: 435000 },
-        { orderId: '20251103-0124', date: '2025.11.03 13:45', product: '라이트 트렌치', customer: '이영희', qty: 1, price: 129000 },
-        { orderId: '20251103-0123', date: '2025.11.03 12:30', product: '옥스포드 셔츠', customer: '박민수', qty: 2, price: 98000 },
-        { orderId: '20251102-0456', date: '2025.11.02 18:20', product: '치노 팬츠', customer: '정수진', qty: 1, price: 59000 },
-        { orderId: '20251102-0455', date: '2025.11.02 16:15', product: '방수 스니커즈', customer: '최지훈', qty: 1, price: 79000 },
-        { orderId: '20251102-0454', date: '2025.11.02 14:50', product: '니트 풀오버', customer: '강민지', qty: 2, price: 138000 },
-        { orderId: '20251101-0789', date: '2025.11.01 20:30', product: '울 코트', customer: '송하늘', qty: 1, price: 289000 },
-        { orderId: '20251101-0788', date: '2025.11.01 19:15', product: '레더 재킷', customer: '윤서아', qty: 1, price: 459000 },
-      ],
-      products: []
+      categoryData: {}, // 백엔드에서 불러올 카테고리 데이터
+      searchKeyword: '', // 상품 검색 키워드
+      salesSearchKeyword: '',    // 판매 내역 검색 키워드 추가
+      salesData: [], // 백엔드에서 불러올 판매 데이터
+      products: []   // 백엔드에서 불러올 상품 데이터
     };
   },
 
@@ -181,6 +174,19 @@ export default {
     },
     soldOutProductsCount() {
       return this.products.filter(product => product.quantity === 0).length;
+    },
+    // 총 주문 수
+    totalOrderCount() {
+      return this.salesData.length;
+    },
+    // 총 판매액
+    totalSalesAmount() {
+      return this.salesData.reduce((sum, sale) => sum + sale.price, 0);
+    },
+    // 평균 주문액
+    averageOrderAmount() {
+      if (this.salesData.length === 0) return 0;
+      return Math.round(this.totalSalesAmount / this.salesData.length);
     }
   },
   methods: {
@@ -203,11 +209,11 @@ export default {
       console.log('저장된 카테고리 데이터:', this.categoryData);
     },
 
-    // 상품 등록/수정 핸들러
+    // [상품 등록/수정 핸들러]
     async handleProductSubmit(productData) {
       try {
         if (this.selectedProduct) {
-          // 상품 수정
+          // [상품 수정]
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
@@ -242,7 +248,7 @@ export default {
           alert('상품이 성공적으로 수정되었습니다.');
 
         } else {
-          // 상품 등록
+          // [상품 등록]
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
@@ -284,7 +290,7 @@ export default {
       }
     },
 
-    // 상품 삭제 핸들러
+    // [상품 삭제 핸들러]
     async handleProductDelete(itemId) {
       try {
         await api.delete(`/admin/items/${itemId}`);
@@ -296,7 +302,8 @@ export default {
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
-    // 상품 목록 불러오기
+
+    // [상품 목록 불러오기]
     async fetchProducts() {
       try {
         const response = await api.get('/api/items');
@@ -306,7 +313,7 @@ export default {
         alert('상품 목록을 불러오는 데 실패했습니다.');
       }
     },
-    // 상품 검색
+    // [상품 검색]
     async searchProducts() {
       const keyword = this.searchKeyword.trim();
       
@@ -326,7 +333,39 @@ export default {
         alert('상품 검색에 실패했습니다.');
       }
     },
-    // 카테고리 목록 불러오기
+
+    // [판매 내역 불러오기]
+    async fetchSales() {
+      try {
+        const response = await api.get('/admin/orders');
+        this.salesData = response.data;
+      } catch (error) {
+        console.error('판매 내역을 불러오는 데 실패했습니다:', error);
+        alert('판매 내역을 불러오는 데 실패했습니다.');
+      }
+    },
+    // [판매 내역 검색 ]
+    async searchSales() {
+      const keyword = this.salesSearchKeyword.trim();
+      
+      // 검색어가 비어있으면 전체 목록 표시
+      if (!keyword) {
+        this.fetchSales();
+        return;
+      }
+      
+      try {
+        const response = await api.get('/admin/orders/search', {
+          params: { keyword }
+        });
+        this.salesData = response.data;
+      } catch (error) {
+        console.error('판매 내역 검색에 실패했습니다:', error);
+        alert('판매 내역 검색에 실패했습니다.');
+      }
+    },
+
+    // [카테고리 목록 불러오기]
     async fetchCategories() {
       try {
         const response = await api.get('/api/categories');
@@ -350,7 +389,8 @@ export default {
   },
   mounted() {
     this.fetchProducts();
-    this.fetchCategories(); // 카테고리 목록 불러오기
+    this.fetchCategories();
+    this.fetchSales(); // 판매 내역 불러오기
   }
 };
 </script>
