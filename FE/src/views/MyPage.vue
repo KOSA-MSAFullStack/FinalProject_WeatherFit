@@ -118,7 +118,7 @@
                         
                         <!-- 버튼 영역 -->
                         <div class="mt-2 space-x-2">
-                          <button class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
+                          <button @click="clickItemDetail(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
                           <!-- 'review' 객체가 있으면 '수정', 없으면 '작성' 버튼 표시 -->
                           <button v-if="item.review" @click="openReviewModal(item, item.review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
                             리뷰 수정
@@ -399,6 +399,20 @@ import { Star } from 'lucide-vue-next';
 const router = useRouter();
 const authStore = useAuthStore();
 const activeTab = ref('orders');
+
+const clickItemDetail = (item) => {
+  if (!item || !item.itemId) {
+    return
+  }
+
+  console.log('[MainItemCard] go detail itemId =', item.itemId)
+
+  // 라우터 설정에 맞게 name / path 쓰기
+  router.push({
+    name: 'ItemDetail',               // router/index.js 에서 정한 name
+    params: { itemId: item.itemId },  // path: /items/:itemId 넘기기
+  })
+}
 
 // --- 리뷰 관련 상태 ---
 const isReviewModalOpen = ref(false);
