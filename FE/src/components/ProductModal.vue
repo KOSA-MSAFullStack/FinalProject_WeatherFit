@@ -97,7 +97,7 @@
         <div>
           <button v-if="isEditMode" class="btn danger" @click="handleDelete">삭제하기</button>
         </div>
-        <div>
+        <div style="display: flex; gap: 6px">
           <button class="btn ghost" @click="$emit('close')">취소</button>
           <button class="btn" @click="handleSubmit">{{ isEditMode ? '저장하기' : '등록하기' }}</button>
         </div>
