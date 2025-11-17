@@ -36,7 +36,7 @@
         <button 
           class="bg-black text-white font-bold cursor-pointer"
           style="background: #000000; color: #ffffff; padding: 6px 10px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer"
-          @click="onAddToCart"
+          @click="handleAddToCart(item)"
         >
           장바구니
         </button>
@@ -48,6 +48,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { addToCart } from '@/api/itemApi'
 
 //  부모에서 :item="item" 으로 넘김
 const props = defineProps({
@@ -118,11 +119,33 @@ const displayTag = computed(() => {
   return props.item.category
 })
 
-// 버튼 클릭 시
-const onAddToCart = () => {
-  console.log('장바구니에 추가:', displayName.value, props.item)
-  emit('add-to-cart', props.item) // 나중에 부모에서 실제 장바구니 처리
-}
+const handleAddToCart = async (item) => {
+  const productId = item.itemId;
+
+  if (!productId) {
+    alert('상품 정보가 올바르지 않습니다.');
+    return;
+  }
+
+  try {
+    const response = await addToCart(productId);
+
+    if (response.status === 201) {
+      if (confirm('장바구니에 상품이 추가되었습니다. 장바구니로 이동하시겠습니까?')) {
+        router.push('/cart');
+      }
+    }
+  } catch (error) {
+    console.error('장바구니 추가 실패:', error);
+    const errorMessage = error.response?.data?.message || '장바구니 추가에 실패했습니다.';
+    if (error.response?.status === 401) {
+        alert('로그인이 필요합니다.');
+        router.push('/login');
+    } else {
+        alert(errorMessage);
+    }
+  }
+};
 </script>
 
 <style scoped>
