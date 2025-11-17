@@ -100,7 +100,7 @@
             </div>
             <div class="row">
               <div>{{ item.price.toLocaleString() }}원</div>
-              <button class="btn cart" style="padding:6px 10px;">장바구니</button>
+              <button @click="handleAddToCart(item)" class="btn cart" style="padding:6px 10px;">장바구니</button>
             </div>
           </div>
         </div>
@@ -123,7 +123,7 @@
 </template>
 
 <script setup>
-import { getAllItem } from '@/api/itemApi'
+import { getAllItem, addToCart } from '@/api/itemApi'
 import { useQuery } from '@tanstack/vue-query'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -193,7 +193,7 @@ const categories = ref({
   all: ['전체'],
   outer: ['전체', '바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
   top: ['전체', '반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
-  bottom: ['전체', '데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏팬츠', '카고', '와이드', '부츠 컷']
+  bottom: ['전체', '데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠 컷']
 })
 
 // 분류 선택 상태 초기값
@@ -318,6 +318,34 @@ const nextPage = () => {
     page.value++
   }
 }
+
+const handleAddToCart = async (item) => {
+  const productId = item.itemId;
+
+  if (!productId) {
+    alert('상품 정보가 올바르지 않습니다.');
+    return;
+  }
+
+  try {
+    const response = await addToCart(productId);
+
+    if (response.status === 201) {
+      if (confirm('장바구니에 상품이 추가되었습니다. 장바구니로 이동하시겠습니까?')) {
+        router.push('/cart');
+      }
+    }
+  } catch (error) {
+    console.error('장바구니 추가 실패:', error);
+    const errorMessage = error.response?.data?.message || '장바구니 추가에 실패했습니다.';
+    if (error.response?.status === 401) {
+        alert('로그인이 필요합니다.');
+        router.push('/login');
+    } else {
+        alert(errorMessage);
+    }
+  }
+};
 
 </script>
 
