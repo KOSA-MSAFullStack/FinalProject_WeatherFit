@@ -74,7 +74,7 @@
                 </div>
 
                 <div class="info-actions">
-                <button @click="addToCart" class="btn">장바구니</button>
+                <button @click="handleAddToCart" class="btn">장바구니</button>
                 </div>
             </div>
             </div>
@@ -222,11 +222,12 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
-import { getItemDetail } from '@/api/itemApi'  
+import { getItemDetail, addToCart } from '@/api/itemApi'
 
 const route = useRoute()
+const router = useRouter()
 
 // ----------------------
 // 1. 상품 상세 조회 (Item Detail)
@@ -428,12 +429,33 @@ const fetchReviews = async (productId) => {
 }
 
 
-const addToCart = () => {
-  console.log('장바구니 추가:', item.value)
-  // 실제 API 호출
-  // await fetch('/api/cart', { method: 'POST', body: JSON.stringify({ productId: ... }) })
-  alert('장바구니에 추가되었습니다!')
-}
+const handleAddToCart = async () => {
+  const productId = item.value.itemId;
+
+  if (!productId) {
+    alert('상품 정보가 올바르지 않습니다.');
+    return;
+  }
+
+  try {
+    const response = await addToCart(productId);
+
+    if (response.status === 201) {
+      if (confirm('장바구니에 상품이 추가되었습니다. 장바구니로 이동하시겠습니까?')) {
+        router.push('/cart');
+      }
+    }
+  } catch (error) {
+    console.error('장바구니 추가 실패:', error);
+    const errorMessage = error.response?.data?.message || '장바구니 추가에 실패했습니다.';
+    if (error.response?.status === 401) {
+        alert('로그인이 필요합니다.');
+        router.push('/login');
+    } else {
+        alert(errorMessage);
+    }
+  }
+};
 </script>
 
 <style scoped>
