@@ -123,15 +123,15 @@
       </section>
 
       <!-- Review section -->
-      <!-- <section class="panel review"> -->
-        <!-- <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">리뷰</h1> -->
+      <section class="panel review">
+        <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">리뷰</h1>
 
         <!-- 평점 헤더 -->
-        <!-- <div class="stars">
+        <div class="stars">
           <div>★★★★★</div>
           <div class="big">{{ reviewStats.avgScore }}</div>
           <div class="muted">총 <span>{{ reviewStats.count }}</span>건 리뷰</div>
-        </div> -->
+        </div>
 
         <!-- AI 요약 -->
         <!-- <div class="ai-summary">
@@ -142,7 +142,7 @@
         </div> -->
 
         <!-- 항목별 만족도 -->
-        <!-- <div class="bargrid">
+        <div class="bargrid">
           <div class="meter">
             <div class="k">착용한 날의 날씨</div>
             <div 
@@ -159,9 +159,9 @@
               </div>
               <span>{{ item.percent }}%</span>
             </div>
-          </div> -->
+          </div>
 
-          <!-- <div class="meter">
+          <div class="meter">
             <div class="k">날씨 체감</div>
             <div 
               v-for="(item, idx) in reviewStats.temperatureFeel" 
@@ -177,9 +177,9 @@
               </div>
               <span>{{ item.percent }}%</span>
             </div>
-          </div> -->
+          </div>
 
-          <!-- <div class="meter">
+          <div class="meter">
             <div class="k">실내 착용감</div>
             <div 
               v-for="(item, idx) in reviewStats.indoorComfort" 
@@ -196,10 +196,10 @@
               <span>{{ item.percent }}%</span>
             </div>
           </div>
-        </div> -->
+        </div>
 
         <!-- 개별 리뷰 리스트 -->
-        <!-- <div class="rev-list">
+        <div class="rev-list">
           <div v-for="(review, idx) in reviews" :key="idx" class="rev">
             <div class="meta">
               {{ review.stars }} 
@@ -210,8 +210,8 @@
             </div>
             <div class="body">{{ review.content }}</div>
           </div>
-        </div> -->
-      <!-- </section> -->
+        </div>
+      </section>
     </main>
 
     <footer class="wrap footer-style">
@@ -224,10 +224,16 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
-import { getItemDetail, addToCart } from '@/api/itemApi'
+import { getItemDetail, addToCart, getReviewStats } from '@/api/itemApi'
+import api from "@/utils/axios";
 
 const route = useRoute()
 const router = useRouter()
+
+const currentPage = ref(0);   // 현재 페이지 (0부터 시작)
+const pageSize = 5;           // 페이지 당 보여줄 항목 수
+const totalElements = ref(0); // 전체 리뷰 수
+const totalPages = ref(0);    // 전체 페이지 수
 
 // ----------------------
 // 1. 상품 상세 조회 (Item Detail)
@@ -298,8 +304,6 @@ const item = computed(() => {
     maxTemperature: data.maxTemperature
   }
 })
-
-console.log(item);
 
 /**
  * 2. aiDescription 파싱
@@ -415,19 +419,85 @@ const reviewStats = ref({
 // 개별 리뷰
 const reviews = ref([])
 
-const fetchReviews = async (productId) => {
-  try {
-    // 실제 API 호출
-    const response = await fetch(`/api/products/${productId}/reviews`)
-    const data = await response.json()
-    
-    reviewStats.value = data.stats || {}
-    reviews.value = data.reviews || []
-  } catch (error) {
-    console.error('리뷰 불러오기 실패:', error)
-  }
-}
+// --- 백엔드로부터 리뷰 통계를 가져오는 함수 ---
+// const fetchReviewStats = async () => {
+//   const itemId = item.value.itemId;
+//   if (!itemId) return;
 
+//   try {
+//     // 통계 API를 호출합니다.
+//     const statsData = await getReviewStats(itemId);
+//     console.log('리뷰 통계 응답:', statsData);
+    
+//     // 응답 데이터를 reviewStats 상태에 할당합니다.
+//     reviewStats.value = {
+//       avgScore: statsData.averageRating.toFixed(1), // 소수점 한 자리로
+//       count: statsData.totalReviews,
+//       aiSummary: statsData.aiSummary,
+//       weatherConditions: statsData.weatherConditionStats, // 예시 키 이름
+//       temperatureFeel: statsData.temperatureFeelStats,   // 예시 키 이름
+//       indoorComfort: statsData.indoorComfortStats      // 예시 키 이름
+//     };
+    
+//   } catch (err) {
+//     console.error('리뷰 통계 정보를 가져오는 데 실패했습니다:', err);
+//   }
+// };
+
+// --- 백엔드로부터 리뷰 내역을 가져오는 함수 ---
+const fetchReviews = async () => {
+  // 함수 내부에서 직접 itemId를 참조하도록 수정
+  const itemId = item.value.itemId;
+
+  // itemId가 없으면 함수를 즉시 종료
+  if (!itemId) {
+    console.log('리뷰 조회 대기: itemId가 아직 없습니다.');
+    return;
+  }
+
+  try {
+    const response = await api.get(`/api/reviews/items/${itemId}`, {
+        params: {
+            page: currentPage.value,
+            size: pageSize,
+            sort: 'createdAt,desc'
+        }
+    });
+    const data = response.data;
+    console.log('리뷰 데이터:', data);
+
+    // 리뷰 목록 (content로 수정)
+    // 백엔드에서 받은 리뷰 객체를 프론트엔드 템플릿에 맞게 가공(mapping)합니다.
+    reviews.value = data.content.map(review => {
+      // 별점 표시를 위한 간단한 로직
+      const stars = '★'.repeat(Math.floor(review.ratingScore)) + '☆'.repeat(5 - Math.floor(review.ratingScore));
+      
+      return {
+        stars: stars,
+        score: review.ratingScore,
+        author: review.userName,
+        date: new Date(review.createdAt).toLocaleDateString(), // 날짜 포맷팅
+        weather: `${review.weather} / ${review.temperature} / ${review.indoorFit}`,
+        content: review.contents
+      };
+    });
+
+    totalElements.value = data.totalElements;
+    totalPages.value = data.totalPages;
+      
+  } catch (err) {
+      console.error('리뷰 정보를 가져오는 데 실패했습니다:', err);
+  }
+};
+
+// --- 페이지 변경 함수 ---
+const changePage = (page) => {
+  // 요청하려는 페이지가 유효한 범위 내에 있는지 확인
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page; // 현재 페이지 상태 업데이트
+    fetchReviews(); // 해당 페이지 데이터 다시 요청
+  }
+};
 
 const handleAddToCart = async () => {
   const productId = item.value.itemId;
@@ -456,6 +526,21 @@ const handleAddToCart = async () => {
     }
   }
 };
+
+watch(
+  () => item.value.itemId, 
+  (newItemId) => {
+    if (newItemId) {      
+      // 페이지 초기화
+      currentPage.value = 0;
+      
+      // 리뷰 목록을 호출
+      fetchReviews();
+      //fetchReviewStats();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
