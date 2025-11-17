@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
@@ -24,6 +25,13 @@ public class AdminOrderController {
     @GetMapping
     public ResponseEntity<List<AdminOrderResponseDTO>> getAllOrders() {
         List<AdminOrderResponseDTO> orders = adminOrderService.getAllOrders();
+        return ResponseEntity.ok(orders);
+    }
+
+    // 주문번호/고객명 검색
+    @GetMapping("/search")
+    public ResponseEntity<List<AdminOrderResponseDTO>> searchOrders(@RequestParam String keyword) {
+        List<AdminOrderResponseDTO> orders = adminOrderService.searchOrders(keyword);
         return ResponseEntity.ok(orders);
     }
 }

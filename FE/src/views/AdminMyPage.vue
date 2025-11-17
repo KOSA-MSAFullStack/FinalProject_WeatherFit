@@ -26,8 +26,8 @@
                 <option>최근 3개월</option>
                 <option>전체</option>
               </select>
-              <input type="text" placeholder="주문번호/고객명 검색" style="flex:1; min-width:200px">
-              <button class="btn">검색</button>
+              <input type="text" v-model="salesSearchKeyword" placeholder="주문번호/고객명 검색" style="flex:1; min-width:200px" @keyup.enter="searchSales">
+              <button class="btn" @click="searchSales">검색</button>
             </div>
 
             <div class="stats-grid" style="margin-bottom:20px">
@@ -161,7 +161,8 @@ export default {
       isCategoryModalVisible: false,
       selectedProduct: null,
       categoryData: {}, // 백엔드에서 불러올 카테고리 데이터
-      searchKeyword: '', // 검색 키워드
+      searchKeyword: '', // 상품 검색 키워드
+      salesSearchKeyword: '',    // 판매 내역 검색 키워드 추가
       salesData: [], // 백엔드에서 불러올 판매 데이터
       products: []   // 백엔드에서 불러올 상품 데이터
     };
@@ -208,11 +209,11 @@ export default {
       console.log('저장된 카테고리 데이터:', this.categoryData);
     },
 
-    // 상품 등록/수정 핸들러
+    // [상품 등록/수정 핸들러]
     async handleProductSubmit(productData) {
       try {
         if (this.selectedProduct) {
-          // 상품 수정
+          // [상품 수정]
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
@@ -247,7 +248,7 @@ export default {
           alert('상품이 성공적으로 수정되었습니다.');
 
         } else {
-          // 상품 등록
+          // [상품 등록]
           const formData = new FormData();
           formData.append('itemName', productData.itemName);
           formData.append('price', productData.price);
@@ -289,7 +290,7 @@ export default {
       }
     },
 
-    // 상품 삭제 핸들러
+    // [상품 삭제 핸들러]
     async handleProductDelete(itemId) {
       try {
         await api.delete(`/admin/items/${itemId}`);
@@ -301,7 +302,8 @@ export default {
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
-    // 상품 목록 불러오기
+
+    // [상품 목록 불러오기]
     async fetchProducts() {
       try {
         const response = await api.get('/api/items');
@@ -311,7 +313,7 @@ export default {
         alert('상품 목록을 불러오는 데 실패했습니다.');
       }
     },
-    // 상품 검색
+    // [상품 검색]
     async searchProducts() {
       const keyword = this.searchKeyword.trim();
       
@@ -331,7 +333,8 @@ export default {
         alert('상품 검색에 실패했습니다.');
       }
     },
-    // 판매 내역 불러오기
+
+    // [판매 내역 불러오기]
     async fetchSales() {
       try {
         const response = await api.get('/admin/orders');
@@ -341,7 +344,28 @@ export default {
         alert('판매 내역을 불러오는 데 실패했습니다.');
       }
     },
-    // 카테고리 목록 불러오기
+    // [판매 내역 검색 ]
+    async searchSales() {
+      const keyword = this.salesSearchKeyword.trim();
+      
+      // 검색어가 비어있으면 전체 목록 표시
+      if (!keyword) {
+        this.fetchSales();
+        return;
+      }
+      
+      try {
+        const response = await api.get('/admin/orders/search', {
+          params: { keyword }
+        });
+        this.salesData = response.data;
+      } catch (error) {
+        console.error('판매 내역 검색에 실패했습니다:', error);
+        alert('판매 내역 검색에 실패했습니다.');
+      }
+    },
+
+    // [카테고리 목록 불러오기]
     async fetchCategories() {
       try {
         const response = await api.get('/api/categories');
