@@ -434,7 +434,7 @@ export default {
 
 <style scoped>
 .main-wrap {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
   min-height: 100vh;
@@ -589,7 +589,7 @@ h2 {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  //table-layout: fixed;
 }
 
 th {
@@ -601,13 +601,15 @@ th {
   font-size: 14px;
 }
 
+/*
 th:nth-child(1) { width: 15%; }
 th:nth-child(2) { width: 25%; }
 th:nth-child(3) { width: 15%; }
-th:nth-child(4) { width: 13%; }
+th:nth-child(4) { width: 12%; }
 th:nth-child(5) { width: 9%; }
-th:nth-child(6) { width: 12%; }
+th:nth-child(6) { width: 13%; }
 th:nth-child(7) { width: 8%; }
+*/
 
 td {
   padding: 12px;
@@ -615,8 +617,7 @@ td {
   vertical-align: middle;
 }
 
-td:nth-child(1),
-td:nth-child(3) {
+td:nth-child(1) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
