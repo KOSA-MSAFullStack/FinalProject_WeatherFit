@@ -20,7 +20,7 @@
       class="slider"
       style="display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory"
     >
-      <MainProductCard
+      <MainItemCard
         v-if="todayRecommendation"
         :outer="todayRecommendation.outer"
         :top="todayRecommendation.top"
@@ -34,7 +34,7 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import MainProductCard from '@/components/main/MainProductCard.vue'
+import MainItemCard from '@/components/main/MainItemCard.vue'
 import { getTodayRecommendation } from '@/api/recommendationApi.js'
 
 // App.vue에서 provide한 region 주입

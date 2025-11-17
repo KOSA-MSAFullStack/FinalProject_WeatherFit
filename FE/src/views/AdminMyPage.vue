@@ -2,8 +2,8 @@
 <!-- 관리자 페이지 -->
 
 <template>
-  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" @close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
-  <CategoryModal v-if="isCategoryModalVisible" @close="isCategoryModalVisible = false" @save="handleCategorySave" />
+  <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" :category-data="categoryData"@close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
+  <CategoryModal v-if="isCategoryModalVisible" :category-data="categoryData" @close="isCategoryModalVisible = false" @save="handleCategorySave" />
   <main class="main-wrap">
     <div class="grid-layout">
       <aside class="sidebar">
@@ -87,8 +87,8 @@
               <button class="btn" @click="openRegisterProduct()">상품 등록</button>
               <button class="btn" @click="openCategoryModal()">카테고리 관리</button>
               <div style="flex:1"></div>
-              <input type="text" placeholder="상품명 검색" style="width:250px">
-              <button class="btn">검색</button>
+              <input type="text" v-model="searchKeyword" placeholder="상품명/상품 코드 검색" style="width:250px" @keyup.enter="searchProducts">
+              <button class="btn" @click="searchProducts">검색</button>
             </div>
 
             <div class="stats-grid" style="margin-bottom:20px">
@@ -160,6 +160,7 @@ export default {
       isProductModalVisible: false,
       isCategoryModalVisible: false,
       selectedProduct: null,
+      categoryData: {}, // 백엔드에서 불러온 카테고리 데이터
       salesData: [
         { orderId: '20251103-0125', date: '2025.11.03 14:23', product: '울 블렌드 니트', customer: '김철수', qty: 1, price: 435000 },
         { orderId: '20251103-0124', date: '2025.11.03 13:45', product: '라이트 트렌치', customer: '이영희', qty: 1, price: 129000 },
@@ -197,9 +198,9 @@ export default {
     openCategoryModal() {
       this.isCategoryModalVisible = true;
     },
-    handleCategorySave(categoryData) {
-      console.log('저장된 카테고리 데이터:', categoryData);
-      // TODO: 백엔드 API 연결 시 카테고리 저장 로직 추가
+    handleCategorySave(updatedCategoryData) {
+      this.categoryData = updatedCategoryData;
+      console.log('저장된 카테고리 데이터:', this.categoryData);
     },
 
     // 상품 등록/수정 핸들러
@@ -295,6 +296,7 @@ export default {
         alert('상품 삭제에 실패했습니다: ' + (error.response?.data?.error || error.message));
       }
     },
+    // 상품 목록 불러오기
     async fetchProducts() {
       try {
         const response = await api.get('/api/items');
@@ -303,10 +305,52 @@ export default {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);
         alert('상품 목록을 불러오는 데 실패했습니다.');
       }
+    },
+    // 상품 검색
+    async searchProducts() {
+      const keyword = this.searchKeyword.trim();
+      
+      // 검색어가 비어있으면 전체 목록 표시
+      if (!keyword) {
+        this.fetchProducts();
+        return;
+      }
+      
+      try {
+        const response = await api.get('/api/items/search/keyword', {
+          params: { keyword }
+        });
+        this.products = response.data;
+      } catch (error) {
+        console.error('상품 검색에 실패했습니다:', error);
+        alert('상품 검색에 실패했습니다.');
+      }
+    },
+    // 카테고리 목록 불러오기
+    async fetchCategories() {
+      try {
+        const response = await api.get('/api/categories');
+        const categoryDataFromAPI = response.data.categoryData || {};
+        
+        // CategoryInfo 배열을 문자열 배열로 변환
+        this.categoryData = {};
+        for (const [classification, categories] of Object.entries(categoryDataFromAPI)) {
+          this.categoryData[classification] = categories.map(cat => cat.category);
+        }
+      } catch (error) {
+        console.error('카테고리 목록을 불러오는 데 실패했습니다:', error);
+        // 실패 시 기본값 사용
+        this.categoryData = {
+          '아우터': ['바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
+          '상의': ['반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
+          '하의': ['데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠컷'],
+        };
+      }
     }
   },
   mounted() {
     this.fetchProducts();
+    this.fetchCategories(); // 카테고리 목록 불러오기
   }
 };
 </script>
