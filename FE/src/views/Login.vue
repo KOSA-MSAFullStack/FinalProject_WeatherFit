@@ -102,7 +102,11 @@ const handleLogin = async () => {
     const result = await authStore.login(email.value, password.value); 
 
     if (result.success) {
-      router.push('/main');
+      if (result.role === 'ROLE_ADMIN') {
+        router.push('/admin/mypage');
+      } else {
+        router.push('/main');
+      }
     } else {
       loginErrorMessage.value = result.message;
     }

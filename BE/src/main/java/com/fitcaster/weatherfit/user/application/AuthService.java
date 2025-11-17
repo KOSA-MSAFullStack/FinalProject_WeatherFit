@@ -84,6 +84,7 @@ public class AuthService {
 
         // 응답 DTO 반환 (토큰 값 대신 만료 시간 메타데이터만 포함)
         return LoginResponse.builder()
+                .role(user.getRole())
                 .accessToken(accessToken)
                 .expiresIn(jwtTokenProvider.getAccessTokenExpiresIn())
                 .build();

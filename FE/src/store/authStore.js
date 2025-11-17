@@ -54,8 +54,9 @@ export const useAuthStore = defineStore('auth', {
                 const response = await axios.post('/users/login', { email, password }); 
                 
                 const accessToken = response.data.accessToken;
-                this.setAccessToken(accessToken); 
-                return { success: true, message: '로그인 성공!' };
+                this.setAccessToken(accessToken);
+                const role = response.data.role;
+                return { success: true, message: '로그인 성공!', role };
 
             } catch (error) {
                 let errorMessage = "알 수 없는 오류로 로그인에 실패했습니다.";
