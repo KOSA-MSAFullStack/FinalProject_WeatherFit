@@ -3,7 +3,7 @@
 <!-- * author: 김기성 -->
 
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
         <h2>{{ isEditMode ? '상품 수정' : '상품 등록' }}</h2>
