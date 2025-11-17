@@ -224,7 +224,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
-import { getItemDetail, addToCart, getReviewStats } from '@/api/itemApi'
+import { getItemDetail, addToCart } from '@/api/itemApi'
 import api from "@/utils/axios";
 
 const route = useRoute()
