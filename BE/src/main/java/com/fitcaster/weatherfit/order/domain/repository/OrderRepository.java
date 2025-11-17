@@ -25,4 +25,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH o.user " +
             "ORDER BY o.orderDate DESC")
     List<Order> findAllOrdersWithDetails();
+
+    // 주문번호 또는 고객명으로 검색
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.item " +
+            "LEFT JOIN FETCH o.user u " +
+            "WHERE o.orderNo LIKE %:keyword% OR u.name LIKE %:keyword% " +
+            "ORDER BY o.orderDate DESC")
+    List<Order> searchOrders(@Param("keyword") String keyword);
 }
