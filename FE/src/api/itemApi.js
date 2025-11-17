@@ -12,3 +12,11 @@ export async function getAllItem() {
     const res = await axios.get(`http://localhost:8080/api/items`)
     return res.data;
 }
+
+// 장바구니 담기 API
+export async function addToCart(itemId) {
+    const res = await axios.post(`http://localhost:8080/carts`, {
+        itemId
+    });
+    return res;
+}
