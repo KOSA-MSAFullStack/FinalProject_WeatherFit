@@ -1,5 +1,6 @@
 <!-- ProductModal.vue -->
 <!-- 상품 등록/수정 모달 -->
+<!-- * author: 김기성 -->
 
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
@@ -277,6 +278,7 @@ export default {
       this.generateAIDescription();
     },
 
+    // 사용자가 데이터 입력 후 "등록하기" 버튼 클릭
     handleSubmit() {
       // 제출 전에 성별 데이터를 백엔드 형식으로 변환 (단일 문자열 코드)
       const submittedProduct = { ...this.product };
