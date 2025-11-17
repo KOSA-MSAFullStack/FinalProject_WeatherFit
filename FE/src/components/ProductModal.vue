@@ -3,7 +3,7 @@
 <!-- * author: 김기성 -->
 
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
         <h2>{{ isEditMode ? '상품 수정' : '상품 등록' }}</h2>
@@ -36,7 +36,7 @@
           <div class="form-group">
             <label for="classification">분류</label>
             <select id="classification" v-model="product.classification" @change="updateCategoryOptions">
-              <option v-for="(categories, classification) in categoryData" :key="classification" :value="classification">
+              <option v-for="classification in sortedClassifications" :key="classification" :value="classification">
                 {{ classification }}
               </option>
             </select>
@@ -97,7 +97,7 @@
         <div>
           <button v-if="isEditMode" class="btn danger" @click="handleDelete">삭제하기</button>
         </div>
-        <div>
+        <div style="display: flex; gap: 6px">
           <button class="btn ghost" @click="$emit('close')">취소</button>
           <button class="btn" @click="handleSubmit">{{ isEditMode ? '저장하기' : '등록하기' }}</button>
         </div>
@@ -129,7 +129,7 @@ export default {
         itemCode: '',
         price: null,
         quantity: null,
-        classification: '상의',
+        classification: '아우터',
         category: '',
         selectedGender: '',
         selectedSeasons: [],
@@ -155,6 +155,12 @@ export default {
   computed: {
     isEditMode() {
       return !!this.productToEdit;
+    },
+    sortedClassifications() {
+      const order = ['아우터', '상의', '하의'];
+      return Object.keys(this.categoryData).sort((a, b) => {
+        return order.indexOf(a) - order.indexOf(b);
+      });
     },
   },
   watch: {
@@ -194,7 +200,7 @@ export default {
             itemCode: '',
             price: null,
             quantity: null,
-            classification: '상의',
+            classification: '아우터',
             category: '',
             selectedGender: '',
             selectedSeasons: [],
