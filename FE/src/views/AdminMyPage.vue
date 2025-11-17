@@ -1,5 +1,6 @@
 <!-- AdminMyPage.vue -->
 <!-- 관리자 페이지 -->
+<!-- * author: 김기성 -->
 
 <template>
   <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" :category-data="categoryData"@close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
