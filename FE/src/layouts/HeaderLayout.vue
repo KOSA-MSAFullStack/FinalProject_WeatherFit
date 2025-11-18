@@ -17,11 +17,28 @@
       <!-- 가운데: 오늘 날씨 표시 -->
       <div class="hidden sm:block">
         <h2 class="text-base font-semibold text-gray-700">
+          <!-- 로딩 상태 -->
           <span v-if="isLoading">날씨 정보를 불러오는 중입니다...</span>
-          <span v-else-if="isError" class="text-red-500">날씨 정보를 불러오지 못했어요</span>
-          <span v-else class="font-normal">
-            {{ weatherData.condition }} 
-            {{ weatherData.minTemperature }}°C / {{ weatherData.maxTemperature }}°C
+
+          <!-- 에러 상태 (HTTP 에러, 네트워크 에러 등) -->
+          <span v-else-if="isError" class="text-red-500">올바른 지역이 아니거나, 해당 지역의 날씨 정보를 찾을 수 없습니다.</span>
+
+          <!-- 응답은 왔는데 날씨 데이터가 없는 경우 (잘못된 지역 등) -->
+          <!-- <span v-else-if="!hasWeather" class="text-sm text-amber-600">
+            올바른 지역이 아니거나, 해당 지역의 날씨 정보를 찾을 수 없습니다.
+          </span> -->
+
+          <!-- 정상적으로 날씨가 있는 경우만 기존 UI 렌더링 -->
+          <span v-else class="font-normal font-semibold">
+            {{ region }} |
+              <img 
+                v-if="iconUrl" 
+                :src="iconUrl" 
+                alt="날씨 아이콘" 
+                class="inline-block w-6 h-6"
+              />
+            {{ weatherData.condition }} |
+            최저기온 : {{ weatherData.minTemperature }}°C / 최고기온 : {{ weatherData.maxTemperature }}°C
           </span>
         </h2>
       </div>
@@ -83,6 +100,7 @@ const authStore = useAuthStore();
 // 날씨 정보
 const region = inject('region')  // App.vue에서 받은 전역 상태 (ref)
 const cityInput = ref(''); // NavBar에서만 쓰는 로컬 입력 상태
+const DEFAULT_REGION = '대전시' // 에러났을 때 기본값 '대전시'로 다시 검색
 
 // TanStack Query로 오늘 날씨 조회
 const { data, isLoading, isError } = useQuery({
@@ -94,16 +112,30 @@ const { data, isLoading, isError } = useQuery({
     const res = await getTodayWeather(region.value)
     return res
   },
-})
+
+// 잘못된 지역일 때 계속 재시도하지 않게
+  retry: false, 
+  
+  onError: (err) => {
+    // 이미 기본값인 대전시에서조차 에러가 나면 무한루프 방지
+    if (region.value === DEFAULT_REGION) {
+      alert('날씨 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
+      return
+    }
+
+    alert('올바른 지역이 아니에요. 대전시 기준 날씨로 다시 보여드릴게요.')
+    region.value = DEFAULT_REGION  // 🔥 여기서 값만 바꿔주면
+  }
+});
 
 // 템플릿에서 쓰기 편하게 가공
 const weatherData = computed(() => {
   // 아직 데이터가 없을 때 기본값
   if (!data.value) {
     return {
-      status: '',
-      minTemp: '-',
-      maxTemp: '-',
+      condition: '',
+      minTemperature: '-',
+      maxTemperature: '-',
       icon: '',
     }
   }
@@ -112,16 +144,25 @@ const weatherData = computed(() => {
   return data.value
 })
 
+// 아이콘 url
+const iconUrl = computed(() => {
+  const iconCode = weatherData.value.icon  // 여기서 .value 필수!
+  if (!iconCode) return ''                 // 없으면 빈 문자열
+
+  return `https://openweathermap.org/img/wn/${iconCode}.png`
+})
+
 const handleWeatherUpdate = () => {
-  if (cityInput.value) {
-    alert(`도시 '${cityInput.value}'에 대한 날씨 업데이트를 요청합니다.`);
-  } else {
-    alert('도시를 입력해주세요.');
+  const trimmed = cityInput.value.trim()
+
+  if (!trimmed) {
+    alert('도시를 입력해주세요.')
+    return // ❗ 여기서 함수 종료 → region 안 바뀜 → API 안 호출됨
   }
 
-  // 주소값 입력 시 전역 region 변경
-  region.value = cityInput.value;
-};
+  // 주소값 입력 시에만 전역 region 변경
+  region.value = trimmed
+}
 
 /**
  * 로그아웃 처리 함수
