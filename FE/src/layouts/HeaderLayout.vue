@@ -33,11 +33,10 @@
           <!-- 정상적으로 날씨가 있는 경우만 기존 UI 렌더링 -->
           <span v-else class="font-normal font-semibold">
             {{ region }} |
-              <img 
-                v-if="iconUrl" 
-                :src="iconUrl" 
-                alt="날씨 아이콘" 
-                class="inline-block w-6 h-6"
+              <component 
+                v-if="weatherIconComponent"
+                :is="weatherIconComponent" 
+                class="inline-block w-6 h-6 mx-1"
               />
             {{ weatherData.condition }} |
             최저기온 : {{ weatherData.minTemperature }}°C / 최고기온 : {{ weatherData.maxTemperature }}°C
@@ -91,7 +90,10 @@
 import { computed, ref } from 'vue';
 import { inject } from 'vue'
 import { RouterLink, useRouter } from 'vue-router';
-import { Heart, UserCircle, ShoppingCart, LogOut, MoveUpRight } from 'lucide-vue-next';
+import { 
+  Heart, UserCircle, ShoppingCart, LogOut, MoveUpRight,
+  Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog 
+} from 'lucide-vue-next';
 import { useAuthStore } from '@/store/authStore'
 import { getTodayWeather } from '@/api/weatherApi.js'
 import { useQuery } from '@tanstack/vue-query';
@@ -149,13 +151,29 @@ const weatherData = computed(() => {
   return data.value
 })
 
-// 아이콘 url
-const iconUrl = computed(() => {
-  const iconCode = weatherData.value.icon  // 여기서 .value 필수!
-  if (!iconCode) return ''                 // 없으면 빈 문자열
+// OpenWeatherMap 아이콘 코드에 따라 Lucide 컴포넌트를 매핑합니다.
+const weatherIconComponent = computed(() => {
+  const condition = weatherData.value.condition;
+  if (!condition) return null; // 데이터가 없으면 아이콘 없음
 
-  return `https://openweathermap.org/img/wn/${iconCode}.png`
-})
+  switch (condition) {
+    case '맑음':
+      return Sun;
+    case '구름':
+      return Cloud;
+    case '비':
+    case '이슬비':
+      return CloudRain;
+    case '천둥/번개':
+      return CloudLightning;
+    case '눈':
+      return CloudSnow;
+    case '안개/먼지':
+      return CloudFog;
+    default: // 그 외의 경우
+      return Cloud; // 기본값으로 구름 아이콘을 보여줍니다.
+  }
+});
 
 const handleWeatherUpdate = () => {
   const trimmed = cityInput.value.trim()
