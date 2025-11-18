@@ -57,7 +57,7 @@
                     <div class="weather-value">{{ item.seasons.join(', ') }}</div>
                 </div>
                 <div class="weather-card">
-                    <div class="weather-label">최저 / 최고</div>
+                    <div class="weather-label">최저기온 / 최고기온</div>
                     <div class="weather-value">
                     {{ item.minTemperature }}°C ~ {{ item.maxTemperature }}°C
                     </div>
@@ -83,7 +83,7 @@
 
       <!-- 3. AI 설명 -->
       <section class="panel">
-        <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">AI 설명</h1>
+        <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">상품에 대한 AI 날씨 정보</h1>
         <div class="explain">
           <h3 class="text-lg font-semibold text-gray-900">총평</h3>
           <p>{{ aiExplanation.summary }}</p>

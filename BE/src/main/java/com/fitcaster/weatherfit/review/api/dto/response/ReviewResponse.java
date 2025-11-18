@@ -1,6 +1,9 @@
 package com.fitcaster.weatherfit.review.api.dto.response;
 
+import com.fitcaster.weatherfit.review.domain.entity.IndoorFit;
 import com.fitcaster.weatherfit.review.domain.entity.Review;
+import com.fitcaster.weatherfit.review.domain.entity.Temperature;
+import com.fitcaster.weatherfit.review.domain.entity.Weather;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -11,9 +14,9 @@ public class ReviewResponse {
 
     private final String userName;
     private final BigDecimal ratingScore;
-    private final String weather;
-    private final String temperature;
-    private final String indoorFit;
+    private final Weather weather;
+    private final Temperature temperature;
+    private final IndoorFit indoorFit;
     private final String contents;
     private final LocalDate createdAt;
 
@@ -22,17 +25,17 @@ public class ReviewResponse {
         return new ReviewResponse(
             review.getUser().getName(), // User 객체에서 이름 가져오기
             review.getRatingScore(),
-            review.getWeather().getDescription(), // Enum의 설명 반환
-            review.getTemperature().getDescription(),
-            review.getIndoorFit() != null ? review.getIndoorFit().getDescription() : null,
+            review.getWeather(),
+            review.getTemperature(),
+            review.getIndoorFit(),
             review.getContents(),
             review.getCreatedAt()
         );
     }
 
     // 생성자
-    private ReviewResponse(String userName, BigDecimal ratingScore, String weather,
-                           String temperature, String indoorFit, String contents, LocalDate createdAt) {
+    private ReviewResponse(String userName, BigDecimal ratingScore, Weather weather,
+                           Temperature temperature, IndoorFit indoorFit, String contents, LocalDate createdAt) {
         this.userName = userName;
         this.ratingScore = ratingScore;
         this.weather = weather;
