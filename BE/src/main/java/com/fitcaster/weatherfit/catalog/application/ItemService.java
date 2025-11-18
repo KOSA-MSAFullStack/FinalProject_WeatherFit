@@ -4,6 +4,7 @@ package com.fitcaster.weatherfit.catalog.application;
 
 import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
 import com.fitcaster.weatherfit.catalog.ai.application.AIService;
+import com.fitcaster.weatherfit.catalog.api.dto.AdminItemsResponseDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemRequestDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import com.fitcaster.weatherfit.catalog.domain.entity.Category;
@@ -16,6 +17,8 @@ import com.fitcaster.weatherfit.catalog.domain.entity.Season;
 import com.fitcaster.weatherfit.catalog.domain.repository.SeasonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
@@ -38,11 +41,12 @@ public class ItemService {
     private final AIService aiService; // AI 서비스
 
     // [모든 상품 목록 조회]
-    public List<ItemResponseDTO> getAllItems() {
-        return itemRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(ItemResponseDTO::from)
-                .collect(Collectors.toList());
+    public AdminItemsResponseDTO getAllItems(Pageable pageable) {
+        Page<ItemResponseDTO> items = itemRepository.findAll(pageable)
+                .map(ItemResponseDTO::from);
+        long sellingCount = itemRepository.countByQuantityGreaterThan(0);
+        long soldOutCount = itemRepository.countByQuantity(0);
+        return new AdminItemsResponseDTO(items, sellingCount, soldOutCount);
     }
 
     // [상품 단건 조회]
@@ -61,11 +65,12 @@ public class ItemService {
                .collect(Collectors.toList());
    }
    // [상품명 또는 상품 코드로 검색]
-   public List<ItemResponseDTO> searchItems(String keyword) {
-       return itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword)
-               .stream()
-               .map(ItemResponseDTO::from)
-               .collect(Collectors.toList());
+   public AdminItemsResponseDTO searchItems(String keyword, Pageable pageable) {
+       Page<ItemResponseDTO> items = itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword, pageable)
+               .map(ItemResponseDTO::from);
+       long sellingCount = itemRepository.countSearchResultsWithStock(keyword);
+       long soldOutCount = itemRepository.countSearchResultsWithoutStock(keyword);
+       return new AdminItemsResponseDTO(items, sellingCount, soldOutCount);
    }
 
     
