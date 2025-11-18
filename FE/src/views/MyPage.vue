@@ -354,8 +354,29 @@
                     <p class="text-xs text-gray-500">{{ review.createdAt }}</p>
                   </div>
                   <!-- 별점 표시 로직 추가 -->
-                  <div class="text-yellow-400 mb-2 flex items-center">
-                    <Star v-for="i in 5" :key="i" :size="16" class="fill-current" :class="i <= review.ratingScore ? 'text-yellow-400' : 'text-gray-300'" />
+                  <div class="mb-2 flex items-center">
+                  <!-- 각 별을 담는 컨테이너를 5번 반복합니다. -->
+                  <div v-for="i in 5" :key="i" class="relative h-4 w-4">
+                    <!-- 배경: 항상 회색의 빈 별을 깔아둡니다. -->
+                    <Star 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-gray-300"
+                    />
+                    
+                    <!-- 전경: 점수에 따라 노란색 별을 덧그립니다. -->
+                    <!-- 꽉 찬 별 -->
+                    <Star 
+                      v-if="review.ratingScore >= i" 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-yellow-400"
+                    />
+                    <!-- 반쪽 별 -->
+                    <StarHalf 
+                      v-else-if="review.ratingScore >= i - 0.5" 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-yellow-400"
+                    />
+                  </div>
                     <span class="ml-2 text-xs text-gray-600 font-semibold">{{ review.ratingScore }}</span>
                   </div>
                   <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.contents }}</p>
@@ -394,7 +415,7 @@ import { useRouter } from 'vue-router';
 import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
 import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
 import ReviewModal from '@/components/ReviewModal.vue';
-import { Star } from 'lucide-vue-next';
+import { Star, StarHalf } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -434,10 +455,11 @@ const reverseFitMap = Object.fromEntries(Object.entries(fitMap).map(([k, v]) => 
 // --- 리뷰 모달 이벤트 핸들러 ---
 const openReviewModal = (item, review = null) => {
   selectedOrderItem.value = item;
+  console.log(review);
   if (review) {
     // 수정 모드: 백엔드 데이터를 프론트 폼 데이터로 변환
     selectedReview.value = {
-      id: review.reviewId,
+      id: review.reviewId || review.id,
       score: review.ratingScore,
       weather: reverseWeatherMap[review.weather],
       weatherSuitability: reverseTempMap[review.temperature],

@@ -2,6 +2,7 @@ package com.fitcaster.weatherfit.order.api.dto.response;
 
 import com.fitcaster.weatherfit.order.domain.entity.OrderItem;
 import com.fitcaster.weatherfit.review.api.dto.response.ReviewResponse;
+import com.fitcaster.weatherfit.review.api.dto.response.UserReviewResponse;
 import com.fitcaster.weatherfit.review.domain.entity.Review;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,7 @@ public class OrderHistoryItemDto {
     private int quantity;
     private int itemPrice;
     private String itemImage;
-    private ReviewResponse review;
+    private UserReviewResponse review;
 
     public static OrderHistoryItemDto from(OrderItem orderItem) {
         OrderHistoryItemDto dto = new OrderHistoryItemDto();
@@ -38,8 +39,8 @@ public class OrderHistoryItemDto {
                 .filter(review -> review.getUser().getId().equals(userId))
                 .findFirst();
 
-        // 찾은 리뷰가 있다면 ReviewResponse 변환하고, 없다면 null을 설정합니다.
-        dto.review = reviewOptional.map(ReviewResponse::from).orElse(null);
+        // 찾은 리뷰가 있다면 UserReviewResponse 변환하고, 없다면 null을 설정합니다.
+        dto.review = reviewOptional.map(UserReviewResponse::from).orElse(null);
         return dto;
     }
 }
