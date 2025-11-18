@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,12 +71,12 @@ public class RecommendationService {
         WeatherResponse weeklySummary = summarizeWeekly(weeklyList);
 
         // 3. 계절 계산
-        String season = getSeason(weeklySummary);
+        List<String> seasons = getSeasons(weeklySummary);
 
         // 4. 계절 기준으로 후보 가져오기
-        List<Item> outers  = itemService.findByClassificationAndSeason("아우터", season);
-        List<Item> tops    = itemService.findByClassificationAndSeason("상의", season);
-        List<Item> bottoms = itemService.findByClassificationAndSeason("하의", season);
+        List<Item> outers  = itemService.findByClassificationAndSeason("아우터", seasons);
+        List<Item> tops    = itemService.findByClassificationAndSeason("상의", seasons);
+        List<Item> bottoms = itemService.findByClassificationAndSeason("하의", seasons);
 
         // 5. AI 프롬프트용 DTO 변환
         List<ItemBrief> outerBriefs   = toBriefs(outers);
@@ -101,12 +102,12 @@ public class RecommendationService {
      */
     private AiRecommendRequest getAiRecommendRequest(WeatherResponse weather, Boolean primary) {
         // 1. month → 계절 결정
-        String season = getSeason(weather);
+        List<String> seasons = getSeasons(weather);
 
         // 2. 분류와 계절로 옷 1차 분류 + Tier1/Tier2 분리
-        List<Item> outers  = findCandidates("아우터",  season, weather, primary);
-        List<Item> tops    = findCandidates("상의",    season, weather, primary);
-        List<Item> bottoms = findCandidates("하의", season, weather, primary);
+        List<Item> outers  = findCandidates("아우터", seasons, weather, primary);
+        List<Item> tops    = findCandidates("상의", seasons, weather, primary);
+        List<Item> bottoms = findCandidates("하의", seasons, weather, primary);
 
         // 3.. AI 프롬프트용 ItemBrief로 변환(AI가 참고할 필드만으로 생성)
         List<ItemBrief> outerBriefs = toBriefs(outers);
@@ -121,14 +122,14 @@ public class RecommendationService {
     /**
      * AI에게 넘길 옷을 1차 분류하는 메서드
      * @param classification 분류(아우터, 상의, 하의)
-     * @param season 계절(봄, 여름, 가을, 겨울)
+     * @param seasons 계절(봄, 여름, 가을, 겨울) 리스트
      * @param weather 날씨 정보
      * @param primary=true  → 상위 N개(Tier1, 오늘용)/primary=false → 나머지(Tier2, 내일용)
      * @return 1차 분류를 마친 상위 20개 후보군
      */
-    private List<Item> findCandidates(String classification, String season, WeatherResponse weather, Boolean primary) {
+    private List<Item> findCandidates(String classification, List<String> seasons, WeatherResponse weather, Boolean primary) {
         // 1. 분류 + 계절 기준으로 1차 조회
-        List<Item> items = itemService.findByClassificationAndSeason(classification, season);
+        List<Item> items = itemService.findByClassificationAndSeason(classification, seasons);
 
         // 2. 오늘/내일 평균 기온 계산
         double targetTemp = (weather.getMinTemperature() + weather.getMaxTemperature()) / 2.0;
@@ -265,12 +266,21 @@ public class RecommendationService {
      * @param weather 날씨 정보
      * @return 계절
      */
-    private String getSeason(WeatherResponse weather) {
+    private List<String> getSeasons(WeatherResponse weather) {
         int month = weather.getDate().getMonthValue(); // 오늘날짜의 달
+        List<String> seasons = new ArrayList<>(); // 계절 리스트
 
-        if (month >= 3 && month <= 5)  return "봄";  // 3, 4, 5
-        if (month >= 6 && month <= 8)  return "여름"; // 6, 7, 8
-        if (month >= 9 && month <= 11) return "가을"; // 9, 10, 11
-        return "겨울"; // 12, 1, 2
+        // 기본 구간
+        if (month >= 3 && month <= 5) seasons.add("봄");
+        if (month >= 6 && month <= 8) seasons.add("여름");
+        if (month >= 9 && month <= 11) seasons.add("가을");
+        if (month == 12 || month == 1 || month == 2) seasons.add("겨울");
+
+        // 경계 월에 추가 계절 포함 (예시)
+        if (month == 5) seasons.add("여름");    // 5월: 봄 + 여름
+        if (month == 8) seasons.add("가을");    // 8월: 여름 + 가을
+        if (month == 11) seasons.add("겨울");   // 11월: 가을 + 겨울
+
+        return seasons;
     }
 }

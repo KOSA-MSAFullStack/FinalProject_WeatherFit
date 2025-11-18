@@ -20,4 +20,5 @@ public class WeatherResponse {
     private Double minTemperature;     // 최저기온
     private Double maxTemperature;     // 최고기온
     private String condition;          // 날씨 설명 (예: 맑음, 흐림, 튼구름 등)
+    private String icon;               // 날씨 아이콘
 }
