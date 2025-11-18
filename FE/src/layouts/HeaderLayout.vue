@@ -25,11 +25,6 @@
           <!-- 에러 상태 (HTTP 에러, 네트워크 에러 등) -->
           <span v-else-if="isError" class="text-red-500">올바른 지역이 아니거나, 해당 지역의 날씨 정보를 찾을 수 없습니다.</span>
 
-          <!-- 응답은 왔는데 날씨 데이터가 없는 경우 (잘못된 지역 등) -->
-          <!-- <span v-else-if="!hasWeather" class="text-sm text-amber-600">
-            올바른 지역이 아니거나, 해당 지역의 날씨 정보를 찾을 수 없습니다.
-          </span> -->
-
           <!-- 정상적으로 날씨가 있는 경우만 기존 UI 렌더링 -->
           <span v-else class="font-normal font-semibold">
             {{ region }} |
@@ -105,7 +100,6 @@ console.log(userRole.value)
 // 날씨 정보
 const region = inject('region')  // App.vue에서 받은 전역 상태 (ref)
 const cityInput = ref(''); // NavBar에서만 쓰는 로컬 입력 상태
-const DEFAULT_REGION = '대전시' // 에러났을 때 기본값 '대전시'로 다시 검색
 
 // TanStack Query로 오늘 날씨 조회
 const { data, isLoading, isError } = useQuery({
@@ -117,21 +111,7 @@ const { data, isLoading, isError } = useQuery({
     const res = await getTodayWeather(region.value)
     return res
   },
-
-// 잘못된 지역일 때 계속 재시도하지 않게
-  retry: false, 
-  
-  onError: (err) => {
-    // 이미 기본값인 대전시에서조차 에러가 나면 무한루프 방지
-    if (region.value === DEFAULT_REGION) {
-      alert('날씨 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
-      return
-    }
-
-    alert('올바른 지역이 아니에요. 대전시 기준 날씨로 다시 보여드릴게요.')
-    region.value = DEFAULT_REGION  // 🔥 여기서 값만 바꿔주면
-  }
-});
+})
 
 // 템플릿에서 쓰기 편하게 가공
 const weatherData = computed(() => {
@@ -157,6 +137,7 @@ const iconUrl = computed(() => {
   return `https://openweathermap.org/img/wn/${iconCode}.png`
 })
 
+
 const handleWeatherUpdate = () => {
   const trimmed = cityInput.value.trim()
 
@@ -167,7 +148,7 @@ const handleWeatherUpdate = () => {
 
   // 주소값 입력 시에만 전역 region 변경
   region.value = trimmed
-}
+};
 
 /**
  * 로그아웃 처리 함수
