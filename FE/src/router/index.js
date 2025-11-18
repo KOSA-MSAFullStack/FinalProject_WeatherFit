@@ -26,12 +26,6 @@ const routes = [
         component: () => import("@/views/Signup.vue"),
         meta: { title: '회원가입' },
       },
-      { 
-        path: 'admin/mypage',
-        name: 'AdminMyPage',
-        component: () => import("@/views/AdminMyPage.vue"),
-        meta: { title: '관리자 페이지' },
-      },
     ]
   },
   {
@@ -82,6 +76,12 @@ const routes = [
           title: '스토어 페이지',
           requiresAuth: true // 로그인이 필요한 페이지에 메타 필드 추가
         },
+      },
+      { 
+        path: 'admin/mypage',
+        name: 'AdminMyPage',
+        component: () => import("@/views/AdminMyPage.vue"),
+        meta: { title: '관리자 페이지' },
       },
       // 예: 장바구니 등 다른 경로에도 필요 시 추가
       // { path: 'mypage', name: 'MyPage', component: MyPageComp, meta: { requiresAuth: true } },
