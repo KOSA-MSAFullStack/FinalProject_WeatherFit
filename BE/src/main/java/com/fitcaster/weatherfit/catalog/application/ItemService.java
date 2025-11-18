@@ -16,6 +16,8 @@ import com.fitcaster.weatherfit.catalog.domain.entity.Season;
 import com.fitcaster.weatherfit.catalog.domain.repository.SeasonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
@@ -38,11 +40,9 @@ public class ItemService {
     private final AIService aiService; // AI 서비스
 
     // [모든 상품 목록 조회]
-    public List<ItemResponseDTO> getAllItems() {
-        return itemRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(ItemResponseDTO::from)
-                .collect(Collectors.toList());
+    public Page<ItemResponseDTO> getAllItems(Pageable pageable) {
+        return itemRepository.findAll(pageable)
+                .map(ItemResponseDTO::from);
     }
 
     // [상품 단건 조회]
@@ -61,11 +61,9 @@ public class ItemService {
                .collect(Collectors.toList());
    }
    // [상품명 또는 상품 코드로 검색]
-   public List<ItemResponseDTO> searchItems(String keyword) {
-       return itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword)
-               .stream()
-               .map(ItemResponseDTO::from)
-               .collect(Collectors.toList());
+   public Page<ItemResponseDTO> searchItems(String keyword, Pageable pageable) {
+       return itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword, pageable)
+               .map(ItemResponseDTO::from);
    }
 
     

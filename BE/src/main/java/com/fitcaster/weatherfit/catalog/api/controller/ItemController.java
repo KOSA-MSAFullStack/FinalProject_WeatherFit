@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
 
 // * author: 김기성
@@ -24,8 +28,8 @@ public class ItemController {
 
     // [모든 상품 목록 조회]
     @GetMapping
-    public List<ItemResponseDTO> getAllItems() {
-        return itemService.getAllItems();
+    public Page<ItemResponseDTO> getAllItems(@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return itemService.getAllItems(pageable);
     }
 
     // [상품 단건 조회]
@@ -42,7 +46,7 @@ public class ItemController {
    }
    // [상품명 또는 상품 코드로 검색]
    @GetMapping("/search/keyword")
-   public List<ItemResponseDTO> searchItems(@RequestParam String keyword) {
-       return itemService.searchItems(keyword);
+   public Page<ItemResponseDTO> searchItems(@RequestParam String keyword, Pageable pageable) {
+       return itemService.searchItems(keyword, pageable);
    }
 }

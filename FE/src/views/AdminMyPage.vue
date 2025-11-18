@@ -92,7 +92,7 @@
 
             <div class="stats-grid" style="margin-bottom:20px">
               <div class="stat-box">
-                <div class="stat-value">{{ products.length }}</div>
+                <div class="stat-value">{{ totalProducts }}</div>
                 <div class="stat-label">등록 상품</div>
               </div>
               <div class="stat-box">
@@ -135,6 +135,30 @@
                 </tbody>
               </table>
             </div>
+            <!-- 페이지네이션 UI -->
+            <div class="pagination-container">
+              <div class="items-per-page">
+                <label for="items-per-page">페이지 당 항목 수:</label>
+                <select id="items-per-page" v-model="pageSize" @change="changePageSize">
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+              <div class="pagination-controls">
+                <button @click="goToFirstPage" :disabled="currentPage === 0">«</button>
+                <button @click="prevPage" :disabled="currentPage === 0">‹</button>
+                <span class="page-info">{{ currentPage + 1 }} / {{ totalPages }}</span>
+                <button @click="nextPage" :disabled="currentPage >= totalPages - 1">›</button>
+                <button @click="goToLastPage" :disabled="currentPage >= totalPages - 1">»</button>
+              </div>
+              <div class="page-jump">
+                <input type="number" v-model.number="jumpToPage" @keyup.enter="goToPage" min="1" :max="totalPages">
+                <button @click="goToPage">이동</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -165,7 +189,12 @@ export default {
       searchKeyword: '', // 상품 검색 키워드
       salesSearchKeyword: '',    // 판매 내역 검색 키워드 추가
       salesData: [], // 백엔드에서 불러올 판매 데이터
-      products: []   // 백엔드에서 불러올 상품 데이터
+      products: [],   // 현재 페이지의 상품 데이터
+      totalProducts: 0, // 전체 상품 수
+      currentPage: 0,   // 현재 페이지 (0-based)
+      pageSize: 10,      // 페이지당 상품 수
+      totalPages: 0,     // 전체 페이지 수
+      jumpToPage: 1      // 페이지 이동 입력 모델
     };
   },
 
@@ -189,12 +218,14 @@ export default {
       }, {});
       return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
     },
+    
     sellingProductsCount() {
       return this.products.filter(product => product.quantity > 0).length;
     },
     soldOutProductsCount() {
       return this.products.filter(product => product.quantity === 0).length;
     },
+
     // 총 주문 수
     totalOrderCount() {
       // 그룹화된 판매 내역의 수를 기반으로 총 주문 수를 계산
@@ -343,8 +374,16 @@ export default {
     // [상품 목록 불러오기]
     async fetchProducts() {
       try {
-        const response = await api.get('/api/items');
-        this.products = response.data;
+        const response = await api.get('/api/items', {
+          params: {
+            page: this.currentPage,
+            size: this.pageSize,
+            sort: 'createdAt,desc'
+          }
+        });
+        this.products = response.data.content;
+        this.totalPages = response.data.totalPages;
+        this.totalProducts = response.data.totalElements;
       } catch (error) {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);
         alert('상품 목록을 불러오는 데 실패했습니다.');
@@ -352,9 +391,9 @@ export default {
     },
     // [상품 검색]
     async searchProducts() {
+      this.currentPage = 0; // 검색 시 첫 페이지로 리셋
       const keyword = this.searchKeyword.trim();
       
-      // 검색어가 비어있으면 전체 목록 표시
       if (!keyword) {
         this.fetchProducts();
         return;
@@ -362,9 +401,16 @@ export default {
       
       try {
         const response = await api.get('/api/items/search/keyword', {
-          params: { keyword }
+          params: { 
+            keyword,
+            page: this.currentPage,
+            size: this.pageSize,
+            sort: 'createdAt,desc'
+          }
         });
-        this.products = response.data;
+        this.products = response.data.content;
+        this.totalPages = response.data.totalPages;
+        this.totalProducts = response.data.totalElements;
       } catch (error) {
         console.error('상품 검색에 실패했습니다:', error);
         alert('상품 검색에 실패했습니다.');
@@ -401,9 +447,44 @@ export default {
         alert('판매 내역 검색에 실패했습니다.');
       }
     },
-
-    // [카테고리 목록 불러오기]
-    async fetchCategories() {
+    
+        // [페이지네이션]
+        changePageSize() {
+          this.currentPage = 0;
+          this.fetchProducts();
+        },
+        goToFirstPage() {
+          this.currentPage = 0;
+          this.fetchProducts();
+        },
+        prevPage() {
+          if (this.currentPage > 0) {
+            this.currentPage--;
+            this.fetchProducts();
+          }
+        },
+        nextPage() {
+          if (this.currentPage < this.totalPages - 1) {
+            this.currentPage++;
+            this.fetchProducts();
+          }
+        },
+        goToLastPage() {
+          this.currentPage = this.totalPages - 1;
+          this.fetchProducts();
+        },
+        goToPage() {
+          const page = this.jumpToPage - 1;
+          if (page >= 0 && page < this.totalPages) {
+            this.currentPage = page;
+            this.fetchProducts();
+          } else {
+            alert('유효하지 않은 페이지 번호입니다.');
+          }
+        },
+    
+        // [카테고리 목록 불러오기]
+        async fetchCategories() {
       try {
         const response = await api.get('/api/categories');
         const categoryDataFromAPI = response.data.categoryData || {};
@@ -731,6 +812,63 @@ tr:hover {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pagination-controls button {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.page-info {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 10px;
+}
+
+.items-per-page, .page-jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.items-per-page select, .page-jump input {
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  width: 70px;
+}
+
+.page-jump button {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
 
 .text-xs { font-size: 12px; }
 .text-gray-500 { color: #6b7280; }
