@@ -3,8 +3,10 @@
     <div class="px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
 
       <div class="flex items-center space-x-6">
-        <RouterLink to="/main" class="flex items-center space-x-2 text-gray-900 hover:text-cyan-600 transition-colors">
-          <div class="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-xs">W</div>
+        <RouterLink v-if="userRole === 'ROLE_USER'" to="/main" class="flex items-center space-x-2 text-gray-900 hover:text-cyan-600 transition-colors">
+          <div class="text-xl font-extrabold tracking-tight">WeatherFit</div>
+        </RouterLink>
+        <RouterLink v-if="userRole === 'ROLE_ADMIN'" to="/admin/mypage" class="flex items-center space-x-2 text-gray-900 hover:text-cyan-600 transition-colors">
           <div class="text-xl font-extrabold tracking-tight">WeatherFit</div>
         </RouterLink>
         
@@ -15,7 +17,7 @@
       </div>
 
       <!-- 가운데: 오늘 날씨 표시 -->
-      <div class="hidden sm:block">
+      <div v-if="userRole === 'ROLE_USER'" class="hidden sm:block">
         <h2 class="text-base font-semibold text-gray-700">
           <span v-if="isLoading">날씨 정보를 불러오는 중입니다...</span>
           <span v-else-if="isError" class="text-red-500">날씨 정보를 불러오지 못했어요</span>
@@ -29,13 +31,13 @@
       <div class="flex items-center space-x-4">
         
         <div class="flex space-x-4 text-gray-600">
-          <RouterLink to="/wishlist" aria-label="찜 목록" class="hover:text-cyan-600 transition-colors">
+          <!-- <RouterLink v-if="userRole === 'ROLE_USER'" to="/wishlist" aria-label="찜 목록" class="hover:text-cyan-600 transition-colors">
             <Heart class="w-6 h-6" />
-          </RouterLink>
-          <RouterLink to="/mypage" aria-label="마이페이지" class="hover:text-cyan-600 transition-colors">
+          </RouterLink> -->
+          <RouterLink v-if="userRole === 'ROLE_USER'" to="/mypage" aria-label="마이페이지" class="hover:text-cyan-600 transition-colors">
             <UserCircle class="w-6 h-6" />
           </RouterLink>
-          <RouterLink to="/cart" aria-label="장바구니" class="hover:text-cyan-600 transition-colors">
+          <RouterLink v-if="userRole === 'ROLE_USER'" to="/cart" aria-label="장바구니" class="hover:text-cyan-600 transition-colors">
             <ShoppingCart class="w-6 h-6" />
           </RouterLink>
           <div 
@@ -47,12 +49,12 @@
           </div>
         </div>
         
-        <div class="hidden lg:flex items-center space-x-2">
+        <div v-if="userRole === 'ROLE_USER'" class="hidden lg:flex items-center space-x-2">
           <input
             v-model="cityInput"
             id="city"
             placeholder="예시: 대전시 도룡동"
-            class="p-1.5 border border-gray-300 rounded-lg text-sm w-28 focus:ring-cyan-500 focus:border-cyan-500"
+            class="p-1.5 border border-gray-300 rounded-lg text-sm w-40 focus:ring-cyan-500 focus:border-cyan-500"
           />
           <button 
             id="btnWeather" 
@@ -79,6 +81,9 @@ import { useQuery } from '@tanstack/vue-query';
 
 const router = useRouter();
 const authStore = useAuthStore();
+
+const userRole = computed(() => authStore.user.role);
+console.log(userRole.value)
 
 // 날씨 정보
 const region = inject('region')  // App.vue에서 받은 전역 상태 (ref)
