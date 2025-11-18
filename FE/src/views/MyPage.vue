@@ -46,7 +46,7 @@
           <div v-if="activeTab === 'orders'">
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
               <h2 class="text-2xl font-bold mb-4">안녕하세요, {{ user.name }}님! 👋</h2>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">{{ totalElements }}</div>
                   <div class="text-xs text-gray-500 mt-1">총 주문</div>
@@ -55,10 +55,10 @@
                   <div class="text-2xl font-bold text-gray-900">{{userReviews.length}}</div>
                   <div class="text-xs text-gray-500 mt-1">작성 리뷰</div>
                 </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <!-- <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">24</div>
                   <div class="text-xs text-gray-500 mt-1">찜 목록</div>
-                </div>
+                </div> -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">3</div>
                   <div class="text-xs text-gray-500 mt-1">장바구니</div>
@@ -471,7 +471,9 @@ const handleReviewSubmit = async (formData) => {
       await api.post('/api/reviews', payload);
     }
     closeReviewModal();
-    fetchUserReviews();
+    await fetchUserReviews();
+    await fetchOrderHistory();
+
     activeTab.value = 'reviews';
   } catch (error) {
     console.error('리뷰 저장 실패:', error);
@@ -488,8 +490,9 @@ const handleReviewDelete = async (reviewIdToDelete = null) => {
     await api.delete(`/api/reviews/${reviewId}`);
     alert('리뷰가 삭제되었습니다.');
     closeReviewModal();
-    if (activeTab.value === 'orders') fetchOrderHistory();
-    if (activeTab.value === 'reviews') fetchUserReviews();
+    
+    await fetchOrderHistory();
+    await fetchUserReviews();
   } catch (error) {
     console.error('리뷰 삭제 실패:', error);
     alert(error.response?.data?.message || '리뷰 삭제 중 오류가 발생했습니다.');
