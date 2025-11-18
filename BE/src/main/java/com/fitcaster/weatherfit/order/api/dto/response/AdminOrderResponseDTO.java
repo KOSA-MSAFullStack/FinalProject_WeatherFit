@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,7 +27,7 @@ public class AdminOrderResponseDTO {
     private int price;            // 판매금액
     private String imageURL;      // 상품 이미지 URL
 
-    // Order 엔티티로부터 DTO 생성
+    // Order 엔티티 목록으로부터 DTO 목록 생성
     public static List<AdminOrderResponseDTO> fromOrders(List<Order> orders) {
         return orders.stream()
                 .flatMap(order -> order.getOrderItems().stream()
@@ -37,8 +38,36 @@ public class AdminOrderResponseDTO {
                                 .customer(order.getUser().getName())
                                 .qty(orderItem.getQuantity())
                                 .price(orderItem.getItem().getPrice() * orderItem.getQuantity())
-                                .imageURL(orderItem.getItem().getImageURL()) // 이미지 URL 추가
+                                .imageURL(orderItem.getItem().getImageURL())
                                 .build()))
                 .collect(Collectors.toList());
+    }
+
+    // Order 엔티티로부터 DTO 생성 (Page 버전)
+    public static List<AdminOrderResponseDTO> fromOrdersPage(Page<Order> orderPage) {
+        return orderPage.getContent().stream()
+                .flatMap(order -> order.getOrderItems().stream()
+                        .map(orderItem -> AdminOrderResponseDTO.builder()
+                                .orderId(order.getOrderNo())
+                                .date(order.getOrderDate().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")))
+                                .product(orderItem.getItem().getItemName())
+                                .customer(order.getUser().getName())
+                                .qty(orderItem.getQuantity())
+                                .price(orderItem.getItem().getPrice() * orderItem.getQuantity())
+                                .imageURL(orderItem.getItem().getImageURL())
+                                .build()))
+                .collect(Collectors.toList());
+    }
+
+    // 페이지 정보를 포함한 Wrapper DTO
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PagedResponse {
+        private List<AdminOrderResponseDTO> orders;
+        private int currentPage;
+        private int totalPages;
+        private long totalElements;
     }
 }
