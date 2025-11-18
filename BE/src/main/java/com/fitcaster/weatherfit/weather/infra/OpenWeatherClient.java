@@ -28,6 +28,36 @@ public class OpenWeatherClient {
     private final WebClient openWeatherWebClient; // OpenWeatherMap API에 요청을 보내고 응답(JSON, XML 등)을 받아오는 역할
 
     /**
+     * 오늘 날씨 정보 추출
+     */
+    public WeatherResponse getTodayWeather(double lat, double lon) {
+        Map<String, Object> data = requestWeatherData(lat, lon);
+        return parseWeatherData(data, 0); // daily[0] = 오늘
+    }
+
+    /**
+     * 내일 날씨 정보 추출
+     */
+    public WeatherResponse getTomorrowWeather(double lat, double lon) {
+        Map<String, Object> data = requestWeatherData(lat, lon);
+        return parseWeatherData(data, 1); // daily[1] = 내일
+    }
+
+    /**
+     * 이번주 (오늘 이후 7일치) 날씨 목록 추출
+     */
+    public List<WeatherResponse> getWeeklyWeather(double lat, double lon) {
+        Map<String, Object> data = requestWeatherData(lat, lon);
+        List<Map<String, Object>> dailyList = (List<Map<String, Object>>) data.get("daily");
+
+        List<WeatherResponse> result = new ArrayList<>();
+        for (int i = 0; i < dailyList.size(); i++) {
+            result.add(parseWeatherData(data, i));
+        }
+        return result;
+    }
+
+    /**
      * 위도(lat), 경도(lon)를 기반으로 One Call 3.0 API 호출
      * @param lat 위도
      * @param lon 경도
@@ -85,7 +115,11 @@ public class OpenWeatherClient {
         // 기온 및 날씨 설명 추출
         double minTemp = ((Number) temp.get("min")).doubleValue();         // 최저기온
         double maxTemp = ((Number) temp.get("max")).doubleValue();         // 최고기온
-        String condition = (String) weatherList.get(0).get("description"); // 날씨 상태
+
+        // 날씨 상태 id 값
+        int code = ((Number) weatherList.get(0).get("id")).intValue();
+        String condition = getWeatherCondition(code); // 날씨 id로 상태 추출
+        String icon = (String) weatherList.get(0).get("icon");
 
         // 변환한 데이터를 DTO로 반환
         return WeatherResponse.builder()
@@ -93,37 +127,44 @@ public class OpenWeatherClient {
                 .minTemperature(minTemp)
                 .maxTemperature(maxTemp)
                 .condition(condition)
+                .icon(icon)
                 .build();
     }
 
     /**
-     * 오늘 날씨 정보 추출
+     * weather 배열의 id 값으로 날씨 상태 변환
+     * @param code weather의 id 값
+     * @return 날씨 상태
      */
-    public WeatherResponse getTodayWeather(double lat, double lon) {
-        Map<String, Object> data = requestWeatherData(lat, lon);
-        return parseWeatherData(data, 0); // daily[0] = 오늘
-    }
-
-    /**
-     * 내일 날씨 정보 추출
-     */
-    public WeatherResponse getTomorrowWeather(double lat, double lon) {
-        Map<String, Object> data = requestWeatherData(lat, lon);
-        return parseWeatherData(data, 1); // daily[1] = 내일
-    }
-
-    /**
-     * 이번주 (오늘 이후 7일치) 날씨 목록 추출
-     */
-    public List<WeatherResponse> getWeeklyWeather(double lat, double lon) {
-        Map<String, Object> data = requestWeatherData(lat, lon);
-        List<Map<String, Object>> dailyList = (List<Map<String, Object>>) data.get("daily");
-
-        List<WeatherResponse> result = new ArrayList<>();
-        for (int i = 0; i < dailyList.size(); i++) {
-            result.add(parseWeatherData(data, i));
+    private String getWeatherCondition(int code) {
+        String status = "";
+        switch (code / 100) {
+            case 2: // 2xx: Thunderstorm
+                status = "천둥/번개";
+                break;
+            case 3: // 3xx: Drizzle
+                status = "이슬비";
+                break;
+            case 5: // 5xx: Rain
+                status = "비";
+                break;
+            case 6: // 6xx: Snow
+                status = "눈";
+                break;
+            case 7: // 7xx: 안개/먼지 등
+                status = "안개/먼지";
+                break;
+            case 8: // 800~804
+                if (code == 800) {
+                    status = "맑음";
+                } else if (code / 10 == 80) {
+                    status = "구름";
+                }
+                break;
+            default:
+                break;
         }
-        return result;
+        return status;
     }
 }
 

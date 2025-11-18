@@ -4,6 +4,7 @@
 package com.fitcaster.weatherfit.catalog.api.controller;
 
 import com.fitcaster.weatherfit.catalog.application.ItemService;
+import com.fitcaster.weatherfit.catalog.api.dto.AdminItemsResponseDTO;
 import com.fitcaster.weatherfit.catalog.api.dto.ItemResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import java.util.List;
 
 // * author: 김기성
@@ -24,8 +28,9 @@ public class ItemController {
 
     // [모든 상품 목록 조회]
     @GetMapping
-    public List<ItemResponseDTO> getAllItems() {
-        return itemService.getAllItems();
+    public ResponseEntity<AdminItemsResponseDTO> getAllItems(@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        AdminItemsResponseDTO response = itemService.getAllItems(pageable);
+        return ResponseEntity.ok(response);
     }
 
     // [상품 단건 조회]
@@ -42,7 +47,8 @@ public class ItemController {
    }
    // [상품명 또는 상품 코드로 검색]
    @GetMapping("/search/keyword")
-   public List<ItemResponseDTO> searchItems(@RequestParam String keyword) {
-       return itemService.searchItems(keyword);
+   public ResponseEntity<AdminItemsResponseDTO> searchItems(@RequestParam String keyword, Pageable pageable) {
+       AdminItemsResponseDTO response = itemService.searchItems(keyword, pageable);
+       return ResponseEntity.ok(response);
    }
 }

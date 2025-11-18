@@ -20,7 +20,7 @@ public interface ItemSeasonRepository extends JpaRepository<ItemSeason, ItemSeas
     /**
      * 계절과 분류로 1차로 분류하기 위한 쿼리
      * @param classification 분류(아우터, 상의, 하의)
-     * @param season 계절(봄, 여름, 가을, 겨울)
+     * @param seasons 계절(봄, 여름, 가을, 겨울) 리스트
      * @return 분류와 계절에 맞게 필터링된 옷 리스트
      */
     @Query("""
@@ -28,11 +28,11 @@ public interface ItemSeasonRepository extends JpaRepository<ItemSeason, ItemSeas
             join is.item i
             join fetch i.category c
             join fetch c.classification cl
-            where is.season.seasonName = :season AND
+            where is.season.seasonName in :seasons AND
             cl.classification = :classification
             """
     )
-    List<Item> findByClassificationAndSeason(@Param("classification") String classification, @Param("season") String season);
+    List<Item> findByClassificationAndSeason(@Param("classification") String classification, @Param("seasons") List<String> seasons);
 
     // 특정 상품의 모든 계절 정보 삭제
     void deleteByItem(Item item);
