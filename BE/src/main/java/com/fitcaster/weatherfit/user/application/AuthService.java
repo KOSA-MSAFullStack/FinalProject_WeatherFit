@@ -84,6 +84,7 @@ public class AuthService {
 
         // 응답 DTO 반환 (토큰 값 대신 만료 시간 메타데이터만 포함)
         return LoginResponse.builder()
+                .role(user.getRole())
                 .accessToken(accessToken)
                 .expiresIn(jwtTokenProvider.getAccessTokenExpiresIn())
                 .build();
@@ -116,14 +117,6 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new AuthenticationException("DB에 Refresh Token이 존재하지 않습니다. (로그아웃되었거나 탈취된 토큰)") {});
 
-        // (보안 강화) DB에 저장된 토큰과 쿠키의 토큰이 일치하는지 확인
-        if (!refreshToken.getToken().equals(refreshTokenValue)) {
-            // 토큰이 일치하지 않으면, 탈취 시도로 간주하고 DB 토큰 삭제 (로그아웃 처리)
-            refreshTokenRepository.delete(refreshToken);
-            // 비정상 접근으로 401 처리
-            throw new AuthenticationException("토큰이 일치하지 않습니다. (비정상 접근)") {};
-        }
-
         // User 엔티티 가져오기
         User user = refreshToken.getUser();
         if (user == null) {
@@ -144,6 +137,7 @@ public class AuthService {
 
         // 응답 DTO 반환
         return AccessTokenResponse.builder()
+                .role(user.getRole())
                 .accessToken(newAccessToken)
                 .expiresIn(expiresIn)
                 .build();
