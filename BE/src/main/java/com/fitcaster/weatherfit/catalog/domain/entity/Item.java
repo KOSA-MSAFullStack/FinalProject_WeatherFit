@@ -4,6 +4,8 @@
 package com.fitcaster.weatherfit.catalog.domain.entity;
 
 import java.time.LocalDate;
+
+import com.fitcaster.weatherfit.review.domain.entity.Review;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +18,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Builder;
@@ -93,6 +98,9 @@ public class Item {
     @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Builder.Default
     private List<ItemSeason> itemSeasons = new ArrayList<>();
+
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
+    private Set<Review> reviews = new LinkedHashSet<>();
 
 
 

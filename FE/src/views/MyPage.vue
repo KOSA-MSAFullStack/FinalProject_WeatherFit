@@ -46,7 +46,7 @@
           <div v-if="activeTab === 'orders'">
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
               <h2 class="text-2xl font-bold mb-4">안녕하세요, {{ user.name }}님! 👋</h2>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">{{ totalElements }}</div>
                   <div class="text-xs text-gray-500 mt-1">총 주문</div>
@@ -55,10 +55,10 @@
                   <div class="text-2xl font-bold text-gray-900">{{userReviews.length}}</div>
                   <div class="text-xs text-gray-500 mt-1">작성 리뷰</div>
                 </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <!-- <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">24</div>
                   <div class="text-xs text-gray-500 mt-1">찜 목록</div>
-                </div>
+                </div> -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-2xl font-bold text-gray-900">3</div>
                   <div class="text-xs text-gray-500 mt-1">장바구니</div>
@@ -354,8 +354,29 @@
                     <p class="text-xs text-gray-500">{{ review.createdAt }}</p>
                   </div>
                   <!-- 별점 표시 로직 추가 -->
-                  <div class="text-yellow-400 mb-2 flex items-center">
-                    <Star v-for="i in 5" :key="i" :size="16" class="fill-current" :class="i <= review.ratingScore ? 'text-yellow-400' : 'text-gray-300'" />
+                  <div class="mb-2 flex items-center">
+                  <!-- 각 별을 담는 컨테이너를 5번 반복합니다. -->
+                  <div v-for="i in 5" :key="i" class="relative h-4 w-4">
+                    <!-- 배경: 항상 회색의 빈 별을 깔아둡니다. -->
+                    <Star 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-gray-300"
+                    />
+                    
+                    <!-- 전경: 점수에 따라 노란색 별을 덧그립니다. -->
+                    <!-- 꽉 찬 별 -->
+                    <Star 
+                      v-if="review.ratingScore >= i" 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-yellow-400"
+                    />
+                    <!-- 반쪽 별 -->
+                    <StarHalf 
+                      v-else-if="review.ratingScore >= i - 0.5" 
+                      :size="16" 
+                      class="absolute top-0 left-0 fill-current text-yellow-400"
+                    />
+                  </div>
                     <span class="ml-2 text-xs text-gray-600 font-semibold">{{ review.ratingScore }}</span>
                   </div>
                   <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.contents }}</p>
@@ -394,7 +415,7 @@ import { useRouter } from 'vue-router';
 import api from '@/utils/axios'; // 인터셉터가 설정된 axios 인스턴스를 가져옵니다.
 import { useAuthStore } from '@/store/authStore'; // 로그아웃 처리를 위해 스토어를 사용합니다.
 import ReviewModal from '@/components/ReviewModal.vue';
-import { Star } from 'lucide-vue-next';
+import { Star, StarHalf } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -434,10 +455,11 @@ const reverseFitMap = Object.fromEntries(Object.entries(fitMap).map(([k, v]) => 
 // --- 리뷰 모달 이벤트 핸들러 ---
 const openReviewModal = (item, review = null) => {
   selectedOrderItem.value = item;
+  console.log(review);
   if (review) {
     // 수정 모드: 백엔드 데이터를 프론트 폼 데이터로 변환
     selectedReview.value = {
-      id: review.reviewId,
+      id: review.reviewId || review.id,
       score: review.ratingScore,
       weather: reverseWeatherMap[review.weather],
       weatherSuitability: reverseTempMap[review.temperature],
@@ -471,7 +493,9 @@ const handleReviewSubmit = async (formData) => {
       await api.post('/api/reviews', payload);
     }
     closeReviewModal();
-    fetchUserReviews();
+    await fetchUserReviews();
+    await fetchOrderHistory();
+
     activeTab.value = 'reviews';
   } catch (error) {
     console.error('리뷰 저장 실패:', error);
@@ -488,8 +512,9 @@ const handleReviewDelete = async (reviewIdToDelete = null) => {
     await api.delete(`/api/reviews/${reviewId}`);
     alert('리뷰가 삭제되었습니다.');
     closeReviewModal();
-    if (activeTab.value === 'orders') fetchOrderHistory();
-    if (activeTab.value === 'reviews') fetchUserReviews();
+    
+    await fetchOrderHistory();
+    await fetchUserReviews();
   } catch (error) {
     console.error('리뷰 삭제 실패:', error);
     alert(error.response?.data?.message || '리뷰 삭제 중 오류가 발생했습니다.');
