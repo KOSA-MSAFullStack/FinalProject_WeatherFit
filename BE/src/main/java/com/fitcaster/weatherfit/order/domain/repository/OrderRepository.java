@@ -17,6 +17,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId")
     Page<Order> findOrdersByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "JOIN FETCH o.user u " + // 주문한 사용자
+            "JOIN FETCH o.orderItems oi " + // 주문 아이템
+            "JOIN FETCH oi.item i " + // 아이템 상세
+            "LEFT JOIN FETCH i.reviews r " + // 아이템의 리뷰들 (없을 수 있으므로 LEFT JOIN)
+            "LEFT JOIN FETCH r.user ru " + // 리뷰를 쓴 사용자 (없을 수 있으므로 LEFT JOIN)
+            "WHERE o.id IN :orderIds") // ID 목록으로 조회
+    List<Order> findOrdersWithDetailsByIds(@Param("orderIds") List<Long> orderIds);
+
     // * author: 김기성
     // 전체 주문 조회 (최신순)
     @Query("SELECT DISTINCT o FROM Order o " +

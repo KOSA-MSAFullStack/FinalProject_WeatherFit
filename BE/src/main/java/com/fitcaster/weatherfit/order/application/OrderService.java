@@ -12,6 +12,7 @@ import com.fitcaster.weatherfit.user.domain.entity.User;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,9 +97,25 @@ public class OrderService {
         // Repository로부터 Page<OrderItem> 객체를 받음
         Page<Order> orderPage = orderRepository.findOrdersByUserId(userId, pageable);
 
+        // 조회된 Order들의 ID만 리스트로 추출합니다.
+        List<Long> orderIds = orderPage.getContent().stream()
+                .map(Order::getId)
+                .collect(Collectors.toList());
+
+        // 만약 조회된 주문이 없다면, 빈 페이지를 그대로 반환합니다.
+        if (orderIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Order> ordersWithDetails = orderRepository.findOrdersWithDetailsByIds(orderIds);
+
+        List<OrderHistoryResponse> dtos = ordersWithDetails.stream()
+                .map(OrderHistoryResponse::from)
+                .collect(Collectors.toList());
+
         // Page.map()을 사용하여 내용물(content)만 DTO로 변환
         // 이 과정에서 페이징 정보(전체 개수, 페이지 번호 등)는 그대로 유지됨
-        return orderPage.map(OrderHistoryResponse::from);
+        return new PageImpl<>(dtos, pageable, orderPage.getTotalElements());
     }
 
     /**
