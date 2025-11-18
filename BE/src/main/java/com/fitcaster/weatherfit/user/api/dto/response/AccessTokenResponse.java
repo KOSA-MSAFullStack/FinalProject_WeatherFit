@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AccessTokenResponse {
+    private String role;
     private String accessToken;
     private long expiresIn;
 }

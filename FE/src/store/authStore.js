@@ -10,6 +10,9 @@ export const useAuthStore = defineStore('auth', {
         isAuthReady: false, // 앱 초기화 준비 완료 여부 (새로고침 후 AT 복구 시도 완료)
         isRefreshing: false, // 토큰 재발급 로직 중복 실행 방지 플래그
         loginError: null, // 로그인 오류 메시지 저장
+        user: { // <-- 사용자 정보를 담을 객체 추가
+            role: null,
+        },
     }),
 
     // 게터 (Getters): 계산된 속성
@@ -18,17 +21,23 @@ export const useAuthStore = defineStore('auth', {
         getIsAuthenticated: (state) => state.isAuthenticated,
         getIsAuthReady: (state) => state.isAuthReady,
         getLoginError: (state) => state.loginError,
+        getUserRole: (state) => state.user.role,
     },
 
     // 액션 (Actions): 상태 변경 및 비동기 로직
     actions: {
         // --- 헬퍼: Access Token 설정 및 상태 업데이트 ---
-        setAccessToken(token) {
+        setAccessToken(token, role) {
             this.accessToken = token;
             this.isAuthenticated = !!token;
-            this.loginError = null; // 토큰 설정 시 오류 메시지 초기화
+            this.loginError = null; // 토큰 설정 시 오류 메시지 
+            this.user.role = role;
             
-            console.log(`[AuthStore] Access Token 설정 완료. 인증 상태: ${this.isAuthenticated}`);
+            if (!token) { // 토큰이 없으면 모든 인증 정보 초기화
+                this.user.role = null;
+            }
+
+            console.log(`[AuthStore] Access Token 설정 완료. 인증 상태: ${this.isAuthenticated}, 역할: ${this.user.role}`);
         },
 
         // --- 초기화: 앱 시작 시 AT 복구 시도 ---
@@ -54,8 +63,9 @@ export const useAuthStore = defineStore('auth', {
                 const response = await axios.post('/users/login', { email, password }); 
                 
                 const accessToken = response.data.accessToken;
-                this.setAccessToken(accessToken); 
-                return { success: true, message: '로그인 성공!' };
+                const role = response.data.role;
+                this.setAccessToken(accessToken, role);
+                return { success: true, message: '로그인 성공!', role };
 
             } catch (error) {
                 let errorMessage = "알 수 없는 오류로 로그인에 실패했습니다.";
@@ -78,7 +88,7 @@ export const useAuthStore = defineStore('auth', {
                 }
                 
                 this.loginError = errorMessage; 
-                this.setAccessToken(null);
+                this.setAccessToken(null, null);
                 return { success: false, message: errorMessage };
             }
         },
@@ -95,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
                 }
             } finally {
                 // API 성공/실패 여부와 관계없이 클라이언트의 상태를 확실히 초기화합니다.
-                this.setAccessToken(null);
+                this.setAccessToken(null, null);
 
                 // 로그아웃 후 로그인 페이지로 이동합니다.
                 // 현재 페이지가 이미 /login이 아닐 경우에만 이동하도록 방어 코드를 추가합니다.
@@ -126,9 +136,10 @@ export const useAuthStore = defineStore('auth', {
                 const response = await axios.post('/users/refresh'); 
                 
                 const newAccessToken = response.data.accessToken;
+                const role = response.data.role;
 
                 if (newAccessToken) {
-                    this.setAccessToken(newAccessToken);
+                    this.setAccessToken(newAccessToken, role);
                     this.isRefreshing = false;
                     return true; // 성공
                 } else {
@@ -137,7 +148,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 console.error('토큰 재발급 실패: 재인증 필요', error);
                 this.isRefreshing = false;
-                this.setAccessToken(null); // RT도 무효화된 것으로 간주, 인증 상태 해제
+                this.setAccessToken(null, null); // RT도 무효화된 것으로 간주, 인증 상태 해제
                 return false; // 실패
             }
         },

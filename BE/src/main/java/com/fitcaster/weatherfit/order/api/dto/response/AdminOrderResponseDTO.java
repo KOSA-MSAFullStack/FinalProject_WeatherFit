@@ -24,6 +24,7 @@ public class AdminOrderResponseDTO {
     private String customer;      // 고객명
     private int qty;              // 수량
     private int price;            // 판매금액
+    private String imageURL;      // 상품 이미지 URL
 
     // Order 엔티티로부터 DTO 생성
     public static List<AdminOrderResponseDTO> fromOrders(List<Order> orders) {
@@ -36,6 +37,7 @@ public class AdminOrderResponseDTO {
                                 .customer(order.getUser().getName())
                                 .qty(orderItem.getQuantity())
                                 .price(orderItem.getItem().getPrice() * orderItem.getQuantity())
+                                .imageURL(orderItem.getItem().getImageURL()) // 이미지 URL 추가
                                 .build()))
                 .collect(Collectors.toList());
     }

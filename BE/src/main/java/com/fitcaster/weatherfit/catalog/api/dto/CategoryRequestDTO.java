@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+// * author: 김기성
 public class CategoryRequestDTO {
     
     // 카테고리 추가 요청 DTO

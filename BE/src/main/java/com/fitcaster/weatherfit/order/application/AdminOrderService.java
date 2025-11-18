@@ -24,4 +24,10 @@ public class AdminOrderService {
         List<Order> orders = orderRepository.findAllOrdersWithDetails();
         return AdminOrderResponseDTO.fromOrders(orders);
     }
+
+    // 주문번호/고객명 검색
+    public List<AdminOrderResponseDTO> searchOrders(String keyword) {
+        List<Order> orders = orderRepository.searchOrders(keyword);
+        return AdminOrderResponseDTO.fromOrders(orders);
+    }
 }
