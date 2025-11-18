@@ -232,8 +232,8 @@ public class ItemService {
         }
     }
 
-    public List<Item> findByClassificationAndSeason(String classification, String season) {
-        List<Item> items = itemSeasonRepository.findByClassificationAndSeason(classification, season);
+    public List<Item> findByClassificationAndSeason(String classification, List<String> seasons) {
+        List<Item> items = itemSeasonRepository.findByClassificationAndSeason(classification, seasons);
         return items;
     }
 }
