@@ -17,7 +17,7 @@
               {{ classification.label }}
             </a>
           </div>
-          <div>
+          <div class="search">
             <input v-model="searchQuery" placeholder="상품 검색" />
             <button class="btn" @click="search">검색</button>
           </div>
@@ -38,6 +38,7 @@
 
         <div class="filters">
           <div class="wrap">
+            <!-- 성별 필터 -->
             <div
               class="pill"
               :class="{ blue: activeGender === 'M' }"
@@ -51,6 +52,35 @@
               @click="changeGender('F')"
             >
               여성
+            </div>
+            <!-- 계절 필터 -->
+            <div
+              class="pill"
+              :class="{ blue: activeSeason === '봄' }"
+              @click="changeSeason('봄')"
+            >
+              봄
+            </div>
+            <div
+              class="pill"
+              :class="{ blue: activeSeason === '여름' }"
+              @click="changeSeason('여름')"
+            >
+              여름
+            </div>
+            <div
+              class="pill"
+              :class="{ blue: activeSeason === '가을' }"
+              @click="changeSeason('가을')"
+            >
+              가을
+            </div>
+            <div
+              class="pill"
+              :class="{ blue: activeSeason === '겨울' }"
+              @click="changeSeason('겨울')"
+            >
+              겨울
             </div>
           </div>
         </div>
@@ -92,11 +122,12 @@
               backgroundPosition: 'center'
             }"
             @click="clickItemDetail(item)"
-          ></div>
+          >
+            <span class="category-badge">{{ item.category }}</span>
+          </div>
           <div class="meta">
             <div class="row">
               <div class=item-name @click="clickItemDetail(item)">{{ item.itemName }}</div>
-              <span class="badge">{{ item.category }}</span>
             </div>
             <div class="row">
               <div>{{ item.price.toLocaleString() }}원</div>
@@ -139,7 +170,10 @@ const { data, isLoading, isError } = useQuery({
 // 2. API에서 가져온 data -> items(항상 배열이 되게)
 const items = computed(() => {
   // data.value가 아직 로딩 중이면 undefined 일 수 있으니 방어코드
-  return data?.value ?? []
+  const raw = data?.value ?? []
+
+  // quantity가 0보다 큰 것만 남기기(품절 처리)
+  return raw.filter(p => (p.quantity ?? 0) > 0)
 })
 
 console.log(items.value);
@@ -205,6 +239,9 @@ const activeCategory = ref('전체')
 // 성별 필터링
 const activeGender = ref('전체')   // '전체' | '남성' | '여성'
 
+// 계절 필터링
+const activeSeason = ref('전체')   // '전체' | '봄' | '여름' | '가을' | '겨울'
+
 // 검색 쿼리
 const searchQuery = ref('')
 
@@ -223,6 +260,17 @@ const changeGender = (g) => {
     activeGender.value = '전체'
   } else {
     activeGender.value = g
+  }
+  page.value = 0
+}
+
+// 계절 바꾸는 메서드
+const changeSeason = (s) => {
+  // 같은 계절을 한 번 더 누르면 '전체'로 초기화
+  if (activeSeason.value === s) {
+    activeSeason.value = '전체'
+  } else {
+    activeSeason.value = s
   }
   page.value = 0
 }
@@ -254,14 +302,21 @@ const filteredItems = computed(() => {
     )
   }
 
-  // 5) 검색 필터 (상품명 기준)
+// 5) 계절 필터
+  if (activeSeason.value !== '전체') {
+    result = result.filter(p =>
+      Array.isArray(p.seasonName) && p.seasonName.includes(activeSeason.value)
+    )
+  }
+
+  // 6) 검색 필터 (상품명 기준)
   if (searchQuery.value) {
     result = result.filter(p =>
       p.itemName?.includes(searchQuery.value)
     )
   }
 
-  // 6) 정렬
+  // 7) 정렬
   if (sortType.value === 'low') {
     result.sort((a, b) => a.price - b.price)
   } else if (sortType.value === 'high') {
@@ -447,6 +502,12 @@ input::placeholder {
   background: #000000;
 }
 
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .btn.ghost {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -591,6 +652,19 @@ input::placeholder {
   aspect-ratio: 3/4;
   background: linear-gradient(180deg, #f3f4f6, #e5e7eb);
   cursor: pointer;
+  position: relative;
+}
+
+.category-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #06b6d4;  /* 무신사 느낌의 파란색 */
+  color: #ffffff;
 }
 
 .meta {
