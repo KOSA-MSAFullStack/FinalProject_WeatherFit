@@ -191,6 +191,8 @@ export default {
       salesData: [], // 백엔드에서 불러올 판매 데이터
       products: [],   // 현재 페이지의 상품 데이터
       totalProducts: 0, // 전체 상품 수
+      sellingProductsCount: 0, // 판매 중인 상품 수
+      soldOutProductsCount: 0, // 품절 상품 수
       currentPage: 0,   // 현재 페이지 (0-based)
       pageSize: 10,      // 페이지당 상품 수
       totalPages: 0,     // 전체 페이지 수
@@ -219,13 +221,6 @@ export default {
       return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
     },
     
-    sellingProductsCount() {
-      return this.products.filter(product => product.quantity > 0).length;
-    },
-    soldOutProductsCount() {
-      return this.products.filter(product => product.quantity === 0).length;
-    },
-
     // 총 주문 수
     totalOrderCount() {
       // 그룹화된 판매 내역의 수를 기반으로 총 주문 수를 계산
@@ -381,9 +376,11 @@ export default {
             sort: 'createdAt,desc'
           }
         });
-        this.products = response.data.content;
-        this.totalPages = response.data.totalPages;
-        this.totalProducts = response.data.totalElements;
+        this.products = response.data.items.content;
+        this.totalPages = response.data.items.totalPages;
+        this.totalProducts = response.data.items.totalElements;
+        this.sellingProductsCount = response.data.sellingCount;
+        this.soldOutProductsCount = response.data.soldOutCount;
       } catch (error) {
         console.error('상품 목록을 불러오는 데 실패했습니다:', error);
         alert('상품 목록을 불러오는 데 실패했습니다.');
@@ -408,9 +405,11 @@ export default {
             sort: 'createdAt,desc'
           }
         });
-        this.products = response.data.content;
-        this.totalPages = response.data.totalPages;
-        this.totalProducts = response.data.totalElements;
+        this.products = response.data.items.content;
+        this.totalPages = response.data.items.totalPages;
+        this.totalProducts = response.data.items.totalElements;
+        this.sellingProductsCount = response.data.sellingCount;
+        this.soldOutProductsCount = response.data.soldOutCount;
       } catch (error) {
         console.error('상품 검색에 실패했습니다:', error);
         alert('상품 검색에 실패했습니다.');
