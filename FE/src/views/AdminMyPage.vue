@@ -1,5 +1,6 @@
 <!-- AdminMyPage.vue -->
 <!-- 관리자 페이지 -->
+<!-- * author: 김기성 -->
 
 <template>
   <ProductModal v-if="isProductModalVisible" :product-to-edit="selectedProduct" :category-data="categoryData"@close="isProductModalVisible = false" @submit="handleProductSubmit" @delete="handleProductDelete" />
@@ -45,35 +46,33 @@
               </div>
             </div>
 
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>주문번호</th>
-                    <th>주문일시</th>
-                    <th>상품정보</th>
-                    <th>고객</th>
-                    <th>수량</th>
-                    <th>판매금액</th>
-                  </tr>
-                </thead>
-                <tbody id="salesTable">
-                  <tr v-for="sale in salesData" :key="sale.orderId">
-                    <td><span class="order-id" @click="alert('주문 상세: ' + sale.orderId)">{{ sale.orderId }}</span></td>
-                    <td>{{ sale.date }}</td>
-                    <td>
-                      <div class="product-info">
-                        <div>
-                          <div class="product-name">{{ sale.product }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{{ sale.customer }}</td>
-                    <td>{{ sale.qty }}개</td>
-                    <td>{{ sale.price.toLocaleString() }}원</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="space-y-6">
+              <div v-if="groupedSales.length === 0" class="empty-sales">
+                판매 내역이 없습니다.
+              </div>
+              <div v-for="group in groupedSales" :key="group.orderId" class="sale-card">
+                <div class="sale-card-header">
+                  <div class="flex items-center gap-4">
+                    <span>{{ formatDate(group.date) }} 주문</span>
+                    <span class="order-no">| 주문번호: {{ group.orderId }}</span>
+                  </div>
+                  <div class="text-xs text-gray-500">고객: {{ group.customer }}</div>
+                </div>
+                <div v-for="sale in group.items" :key="sale.product" class="p-4 flex gap-4 items-center border-b border-gray-100 last:border-b-0">
+                  <div class="sale-item-image">
+                    <img :src="getFullImageUrl(sale.imageURL)" :alt="sale.product" class="w-full h-full object-cover">
+                  </div>
+                  <div class="grow">
+                    <p class="font-bold text-gray-800 line-clamp-1">{{ sale.product }}</p>
+                    <p class="text-xs text-gray-500 mt-1">수량: {{ sale.qty }}개</p>
+                  </div>
+                  <div class="text-sm font-semibold text-gray-700 w-24 text-right">{{ sale.price.toLocaleString() }}원</div>
+                </div>
+                <div class="sale-card-footer">
+                  <span>총 {{ group.totalQty }}개</span>
+                  <span class="font-bold">합계: {{ group.totalPrice.toLocaleString() }}원</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -148,6 +147,8 @@ import ProductModal from '../components/ProductModal.vue';
 import CategoryModal from '../components/CategoryModal.vue';
 import api from '@/utils/axios';
 
+const API_BASE_URL = api.defaults.baseURL || '';
+
 export default {
   name: 'AdminMyPage',
   components: {
@@ -169,6 +170,25 @@ export default {
   },
 
   computed: {
+    groupedSales() {
+      const groups = this.salesData.reduce((acc, sale) => {
+        if (!acc[sale.orderId]) {
+          acc[sale.orderId] = {
+            orderId: sale.orderId,
+            date: sale.date,
+            customer: sale.customer,
+            items: [],
+            totalPrice: 0,
+            totalQty: 0,
+          };
+        }
+        acc[sale.orderId].items.push(sale);
+        acc[sale.orderId].totalPrice += sale.price;
+        acc[sale.orderId].totalQty += sale.qty;
+        return acc;
+      }, {});
+      return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
+    },
     sellingProductsCount() {
       return this.products.filter(product => product.quantity > 0).length;
     },
@@ -177,7 +197,8 @@ export default {
     },
     // 총 주문 수
     totalOrderCount() {
-      return this.salesData.length;
+      // 그룹화된 판매 내역의 수를 기반으로 총 주문 수를 계산
+      return this.groupedSales.length;
     },
     // 총 판매액
     totalSalesAmount() {
@@ -185,11 +206,27 @@ export default {
     },
     // 평균 주문액
     averageOrderAmount() {
-      if (this.salesData.length === 0) return 0;
-      return Math.round(this.totalSalesAmount / this.salesData.length);
+      if (this.groupedSales.length === 0) return 0;
+      // 총 판매액을 총 주문 수로 나누어 평균 주문액을 계산
+      return Math.round(this.totalSalesAmount / this.groupedSales.length);
     }
   },
   methods: {
+    getFullImageUrl(relativePath) {
+      if (!relativePath) {
+        return 'https://placehold.co/80x80/f1f5f9/94a3b8?text=Img'; 
+      }
+      return `${API_BASE_URL}${relativePath}`;
+    },
+    formatDate(datetime) {
+        if (!datetime) return '';
+        const date = new Date(datetime);
+        return date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).replace(/\. /g, '.').replace(/\.$/, '');
+    },
     showPage(pageId) {
       this.activePage = pageId;
     },
@@ -397,7 +434,7 @@ export default {
 
 <style scoped>
 .main-wrap {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
   min-height: 100vh;
@@ -552,7 +589,7 @@ h2 {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  //table-layout: fixed;
 }
 
 th {
@@ -564,13 +601,15 @@ th {
   font-size: 14px;
 }
 
+/*
 th:nth-child(1) { width: 15%; }
 th:nth-child(2) { width: 25%; }
 th:nth-child(3) { width: 15%; }
-th:nth-child(4) { width: 13%; }
+th:nth-child(4) { width: 12%; }
 th:nth-child(5) { width: 9%; }
-th:nth-child(6) { width: 12%; }
+th:nth-child(6) { width: 13%; }
 th:nth-child(7) { width: 8%; }
+*/
 
 td {
   padding: 12px;
@@ -578,8 +617,7 @@ td {
   vertical-align: middle;
 }
 
-td:nth-child(1),
-td:nth-child(3) {
+td:nth-child(1) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -620,5 +658,93 @@ tr:hover {
 
 .page.active {
   display: block
+}
+
+/* MyPage.vue 스타일과 유사하게 재작성 */
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.sale-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.sale-card-header {
+  background-color: #f9fafb;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid var(--line);
+}
+
+.sale-card-footer {
+  background-color: #f9fafb;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+  border-top: 1px solid var(--line);
+}
+
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-4 { gap: 1rem; }
+
+.order-no {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.p-4 { padding: 1rem; }
+
+.sale-item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.object-cover { object-fit: cover; }
+
+.grow { flex-grow: 1; }
+
+.font-bold { font-weight: 700; }
+.text-gray-800 { color: #1f2937; }
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.text-xs { font-size: 12px; }
+.text-gray-500 { color: #6b7280; }
+.mt-1 { margin-top: 4px; }
+
+.text-sm { font-size: 14px; }
+.font-semibold { font-weight: 600; }
+.text-gray-700 { color: #374151; }
+
+.empty-sales {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
 }
 </style>

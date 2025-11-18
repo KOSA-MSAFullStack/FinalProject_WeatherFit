@@ -1,5 +1,6 @@
 <!-- CategoryModal.vue -->
 <!-- 카테고리 관리 모달 -->
+<!-- * author: 김기성 -->
 
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
