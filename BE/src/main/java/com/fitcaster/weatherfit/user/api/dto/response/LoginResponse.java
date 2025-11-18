@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponse {
+    private String role;
     private String accessToken;
     private long expiresIn; // Access Token 만료 시간 (초 단위)
 }
