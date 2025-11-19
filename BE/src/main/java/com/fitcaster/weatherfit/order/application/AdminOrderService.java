@@ -33,11 +33,19 @@ public class AdminOrderService {
             Page<Order> orderPage = orderRepository.findAllOrdersWithDetails(pageable);
             List<AdminOrderResponseDTO> orders = AdminOrderResponseDTO.fromOrdersPage(orderPage);
             
+            // 전체 통계 계산
+            long totalOrderCount = orderPage.getTotalElements();
+            long totalSalesAmount = orderRepository.calculateTotalSalesAmount();
+            long averageOrderAmount = totalOrderCount > 0 ? totalSalesAmount / totalOrderCount : 0;
+            
             return AdminOrderResponseDTO.PagedResponse.builder()
                     .orders(orders)
                     .currentPage(orderPage.getNumber())
                     .totalPages(orderPage.getTotalPages())
                     .totalElements(orderPage.getTotalElements())
+                    .totalOrderCount(totalOrderCount)
+                    .totalSalesAmount(totalSalesAmount)
+                    .averageOrderAmount(averageOrderAmount)
                     .build();
         } catch (Exception e) {
             throw new RuntimeException("주문 내역 조회 실패", e);
@@ -53,11 +61,19 @@ public class AdminOrderService {
             Page<Order> orderPage = orderRepository.searchOrders(keyword, pageable);
             List<AdminOrderResponseDTO> orders = AdminOrderResponseDTO.fromOrdersPage(orderPage);
             
+            // 검색 결과 통계 계산
+            long totalOrderCount = orderPage.getTotalElements();
+            long totalSalesAmount = orderRepository.calculateTotalSalesAmountByKeyword(keyword);
+            long averageOrderAmount = totalOrderCount > 0 ? totalSalesAmount / totalOrderCount : 0;
+            
             return AdminOrderResponseDTO.PagedResponse.builder()
                     .orders(orders)
                     .currentPage(orderPage.getNumber())
                     .totalPages(orderPage.getTotalPages())
                     .totalElements(orderPage.getTotalElements())
+                    .totalOrderCount(totalOrderCount)
+                    .totalSalesAmount(totalSalesAmount)
+                    .averageOrderAmount(averageOrderAmount)
                     .build();
         } catch (Exception e) {
             throw new RuntimeException("주문 검색 실패", e);
