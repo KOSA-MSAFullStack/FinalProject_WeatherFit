@@ -40,7 +40,15 @@ public class ItemService {
     private final SeasonRepository seasonRepository; // 계절 레포지토리
     private final AIService aiService; // AI 서비스
 
-    // [모든 상품 목록 조회]
+    // [스토어 페이지 - 모든 상품 목록 조회]
+    public List<ItemResponseDTO> findAllItemsByOrderByCreatedAtDesc() {
+        return itemRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(ItemResponseDTO::from)
+                .collect(Collectors.toList());
+    }
+
+    // [관리자 페이지(상품 관리) - 모든 상품 목록 조회]
     public AdminItemsResponseDTO getAllItems(Pageable pageable) {
         Page<ItemResponseDTO> items = itemRepository.findAll(pageable)
                 .map(ItemResponseDTO::from);
