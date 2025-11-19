@@ -398,6 +398,18 @@ export default {
 
     // [상품 목록 불러오기]
     async fetchProducts() {
+      const keyword = this.searchKeyword.trim();
+      
+      // 검색 키워드가 있으면 검색 API, 없으면 전체 목록 API 호출
+      if (keyword) {
+        await this.searchProductsAPI(keyword);
+      } else {
+        await this.fetchProductsAPI();
+      }
+    },
+    
+    // [전체 상품 목록 API 호출]
+    async fetchProductsAPI() {
       try {
         const response = await api.get('/api/items', {
           params: {
@@ -416,16 +428,9 @@ export default {
         alert('상품 목록을 불러오는 데 실패했습니다.');
       }
     },
-    // [상품 검색]
-    async searchProducts() {
-      this.currentPage = 0; // 검색 시 첫 페이지로 리셋
-      const keyword = this.searchKeyword.trim();
-      
-      if (!keyword) {
-        this.fetchProducts();
-        return;
-      }
-      
+    
+    // [상품 검색 API 호출]
+    async searchProductsAPI(keyword) {
       try {
         const response = await api.get('/api/items/search/keyword', {
           params: { 
@@ -445,9 +450,27 @@ export default {
         alert('상품 검색에 실패했습니다.');
       }
     },
+    
+    // [상품 검색]
+    async searchProducts() {
+      this.currentPage = 0; // 검색 시 첫 페이지로 리셋
+      await this.fetchProducts();
+    },
 
-    // [판매 내역 불러오기 - 페이징]
+    // [판매 내역 불러오기]
     async fetchSales() {
+      const keyword = this.salesSearchKeyword.trim();
+      
+      // 검색 키워드가 있으면 검색 API, 없으면 전체 목록 API 호출
+      if (keyword) {
+        await this.searchSalesAPI(keyword);
+      } else {
+        await this.fetchSalesAPI();
+      }
+    },
+    
+    // [전체 판매 내역 API 호출]
+    async fetchSalesAPI() {
       try {
         const response = await api.get('/admin/orders', {
           params: {
@@ -465,17 +488,8 @@ export default {
       }
     },
     
-    // [판매 내역 검색 - 페이징]
-    async searchSales() {
-      this.salesCurrentPage = 0; // 검색 시 첫 페이지로 리셋
-      const keyword = this.salesSearchKeyword.trim();
-      
-      // 검색어가 비어있으면 전체 목록 표시
-      if (!keyword) {
-        this.fetchSales();
-        return;
-      }
-      
+    // [판매 내역 검색 API 호출]
+    async searchSalesAPI(keyword) {
       try {
         const response = await api.get('/admin/orders/search', {
           params: { 
@@ -491,6 +505,12 @@ export default {
         console.error('판매 내역 검색에 실패했습니다:', error);
         alert('판매 내역 검색에 실패했습니다.');
       }
+    },
+    
+    // [판매 내역 검색]
+    async searchSales() {
+      this.salesCurrentPage = 0; // 검색 시 첫 페이지로 리셋
+      await this.fetchSales();
     },
     
         // [상품 관리 페이지네이션]
