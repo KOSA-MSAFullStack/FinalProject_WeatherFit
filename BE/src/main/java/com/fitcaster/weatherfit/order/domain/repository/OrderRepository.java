@@ -46,4 +46,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN o.user u " +
             "WHERE o.orderNo LIKE %:keyword% OR u.name LIKE %:keyword%")
     Page<Order> searchOrders(@Param("keyword") String keyword, Pageable pageable);
+
+    // 전체 주문 총 판매액 계산
+    @Query("SELECT COALESCE(SUM(oi.quantity * i.price), 0) " +
+            "FROM Order o " +
+            "JOIN o.orderItems oi " +
+            "JOIN oi.item i")
+    Long calculateTotalSalesAmount();
+
+    // 검색된 주문 총 판매액 계산
+    @Query("SELECT COALESCE(SUM(oi.quantity * i.price), 0) " +
+            "FROM Order o " +
+            "JOIN o.orderItems oi " +
+            "JOIN oi.item i " +
+            "LEFT JOIN o.user u " +
+            "WHERE o.orderNo LIKE %:keyword% OR u.name LIKE %:keyword%")
+    Long calculateTotalSalesAmountByKeyword(@Param("keyword") String keyword);
 }

@@ -226,7 +226,11 @@ export default {
       salesPageSize: 5,      // 페이지당 항목 수
       salesTotalPages: 0,     // 전체 페이지 수
       salesTotalElements: 0,  // 전체 항목 수
-      salesJumpToPage: 1      // 페이지 이동 입력 모델
+      salesJumpToPage: 1,      // 페이지 이동 입력 모델
+      // 판매 내역 통계 (백엔드에서 받아온 전체 통계)
+      totalOrderCount: 0,
+      totalSalesAmount: 0,
+      averageOrderAmount: 0
     };
   },
 
@@ -249,22 +253,6 @@ export default {
         return acc;
       }, {});
       return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
-    },
-    
-    // 총 주문 수
-    totalOrderCount() {
-      // 그룹화된 판매 내역의 수를 기반으로 총 주문 수를 계산
-      return this.groupedSales.length;
-    },
-    // 총 판매액
-    totalSalesAmount() {
-      return this.salesData.reduce((sum, sale) => sum + sale.price, 0);
-    },
-    // 평균 주문액
-    averageOrderAmount() {
-      if (this.groupedSales.length === 0) return 0;
-      // 총 판매액을 총 주문 수로 나누어 평균 주문액을 계산
-      return Math.round(this.totalSalesAmount / this.groupedSales.length);
     }
   },
   methods: {
@@ -482,6 +470,10 @@ export default {
         this.salesData = response.data.orders;
         this.salesTotalPages = response.data.totalPages;
         this.salesTotalElements = response.data.totalElements;
+        // 백엔드에서 받아온 전체 통계
+        this.totalOrderCount = response.data.totalOrderCount;
+        this.totalSalesAmount = response.data.totalSalesAmount;
+        this.averageOrderAmount = response.data.averageOrderAmount;
       } catch (error) {
         console.error('판매 내역을 불러오는 데 실패했습니다:', error);
         alert('판매 내역을 불러오는 데 실패했습니다.');
@@ -501,6 +493,10 @@ export default {
         this.salesData = response.data.orders;
         this.salesTotalPages = response.data.totalPages;
         this.salesTotalElements = response.data.totalElements;
+        // 백엔드에서 받아온 검색 결과 통계
+        this.totalOrderCount = response.data.totalOrderCount;
+        this.totalSalesAmount = response.data.totalSalesAmount;
+        this.averageOrderAmount = response.data.averageOrderAmount;
       } catch (error) {
         console.error('판매 내역 검색에 실패했습니다:', error);
         alert('판매 내역 검색에 실패했습니다.');
