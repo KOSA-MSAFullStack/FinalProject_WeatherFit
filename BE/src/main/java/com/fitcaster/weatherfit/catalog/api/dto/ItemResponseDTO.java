@@ -20,9 +20,9 @@ public class ItemResponseDTO {
     private int price;              // 가격
     private String gender;          // 성별 (남-M / 여-F / 남여공용-C)
     private String imageURL;        // 이미지 URL
-    private String aiDescription;   // AI 설명
+//    private String aiDescription;   // AI 설명
     private LocalDate createdAt;    // 상품 등록일
-    private String reviewAiSummary; // AI가 요약한 리뷰
+//    private String reviewAiSummary; // AI가 요약한 리뷰
     private String category;        // 카테고리명
     private String classification;  // 분류명
     private List<String> seasonName;   // 계절명 리스트
@@ -45,9 +45,9 @@ public class ItemResponseDTO {
                 .price(item.getPrice())
                 .gender(item.getGender())
                 .imageURL(item.getImageURL())
-                .aiDescription(item.getAiDescription())
+//                .aiDescription(item.getAiDescription())
                 .createdAt(item.getCreatedAt())
-                .reviewAiSummary(item.getReviewAiSummary())
+//                .reviewAiSummary(item.getReviewAiSummary())
                 .category(item.getCategory().getCategory())
                 .classification(item.getCategory().getClassification().getClassification())
                 .seasonName(seasonNames)
