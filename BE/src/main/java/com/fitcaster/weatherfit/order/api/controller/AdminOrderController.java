@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
 
 // * author: 김기성
 @RestController
@@ -21,17 +20,23 @@ public class AdminOrderController {
 
     private final AdminOrderService adminOrderService;
 
-    // 전체 주문 내역 조회
+    // 전체 주문 내역 조회 (페이징)
     @GetMapping
-    public ResponseEntity<List<AdminOrderResponseDTO>> getAllOrders() {
-        List<AdminOrderResponseDTO> orders = adminOrderService.getAllOrders();
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<AdminOrderResponseDTO.PagedResponse> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "orderDate") String sort) {
+        AdminOrderResponseDTO.PagedResponse response = adminOrderService.getAllOrders(page, size, sort);
+        return ResponseEntity.ok(response);
     }
 
-    // 주문번호/고객명 검색
+    // 주문번호/고객명 검색 (페이징)
     @GetMapping("/search")
-    public ResponseEntity<List<AdminOrderResponseDTO>> searchOrders(@RequestParam String keyword) {
-        List<AdminOrderResponseDTO> orders = adminOrderService.searchOrders(keyword);
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<AdminOrderResponseDTO.PagedResponse> searchOrders(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        AdminOrderResponseDTO.PagedResponse response = adminOrderService.searchOrders(keyword, page, size);
+        return ResponseEntity.ok(response);
     }
 }

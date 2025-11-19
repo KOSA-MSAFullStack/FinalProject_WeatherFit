@@ -74,6 +74,29 @@
                 </div>
               </div>
             </div>
+            
+            <!-- 판매 내역 페이지네이션 UI -->
+            <div class="pagination-container">
+              <div class="items-per-page">
+                <label for="sales-items-per-page">페이지 당 항목 수:</label>
+                <select id="sales-items-per-page" v-model="salesPageSize" @change="changeSalesPageSize">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+              </div>
+              <div class="pagination-controls">
+                <button @click="goToSalesFirstPage" :disabled="salesCurrentPage === 0">«</button>
+                <button @click="salesPrevPage" :disabled="salesCurrentPage === 0">‹</button>
+                <span class="page-info">{{ salesCurrentPage + 1 }} / {{ salesTotalPages }}</span>
+                <button @click="salesNextPage" :disabled="salesCurrentPage >= salesTotalPages - 1">›</button>
+                <button @click="goToSalesLastPage" :disabled="salesCurrentPage >= salesTotalPages - 1">»</button>
+              </div>
+              <div class="page-jump">
+                <input type="number" v-model.number="salesJumpToPage" @keyup.enter="goToSalesPage" min="1" :max="salesTotalPages">
+                <button @click="goToSalesPage">이동</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -187,16 +210,27 @@ export default {
       selectedProduct: null,
       categoryData: {}, // 백엔드에서 불러올 카테고리 데이터
       searchKeyword: '', // 상품 검색 키워드
-      salesSearchKeyword: '',    // 판매 내역 검색 키워드 추가
-      salesData: [], // 백엔드에서 불러올 판매 데이터
+      salesSearchKeyword: '',    // 판매 내역 검색 키워드
+      salesData: [], // 현재 페이지의 판매 데이터
       products: [],   // 현재 페이지의 상품 데이터
       totalProducts: 0, // 전체 상품 수
       sellingProductsCount: 0, // 판매 중인 상품 수
       soldOutProductsCount: 0, // 품절 상품 수
+      // 상품 관리 페이징
       currentPage: 0,   // 현재 페이지 (0-based)
       pageSize: 10,      // 페이지당 상품 수
       totalPages: 0,     // 전체 페이지 수
-      jumpToPage: 1      // 페이지 이동 입력 모델
+      jumpToPage: 1,      // 페이지 이동 입력 모델
+      // 판매 내역 페이징
+      salesCurrentPage: 0,   // 현재 페이지 (0-based)
+      salesPageSize: 5,      // 페이지당 항목 수
+      salesTotalPages: 0,     // 전체 페이지 수
+      salesTotalElements: 0,  // 전체 항목 수
+      salesJumpToPage: 1,      // 페이지 이동 입력 모델
+      // 판매 내역 통계 (백엔드에서 받아온 전체 통계)
+      totalOrderCount: 0,
+      totalSalesAmount: 0,
+      averageOrderAmount: 0
     };
   },
 
@@ -219,22 +253,6 @@ export default {
         return acc;
       }, {});
       return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
-    },
-    
-    // 총 주문 수
-    totalOrderCount() {
-      // 그룹화된 판매 내역의 수를 기반으로 총 주문 수를 계산
-      return this.groupedSales.length;
-    },
-    // 총 판매액
-    totalSalesAmount() {
-      return this.salesData.reduce((sum, sale) => sum + sale.price, 0);
-    },
-    // 평균 주문액
-    averageOrderAmount() {
-      if (this.groupedSales.length === 0) return 0;
-      // 총 판매액을 총 주문 수로 나누어 평균 주문액을 계산
-      return Math.round(this.totalSalesAmount / this.groupedSales.length);
     }
   },
   methods: {
@@ -368,6 +386,18 @@ export default {
 
     // [상품 목록 불러오기]
     async fetchProducts() {
+      const keyword = this.searchKeyword.trim();
+      
+      // 검색 키워드가 있으면 검색 API, 없으면 전체 목록 API 호출
+      if (keyword) {
+        await this.searchProductsAPI(keyword);
+      } else {
+        await this.fetchProductsAPI();
+      }
+    },
+    
+    // [전체 상품 목록 API 호출]
+    async fetchProductsAPI() {
       try {
         const response = await api.get('/api/items', {
           params: {
@@ -386,16 +416,9 @@ export default {
         alert('상품 목록을 불러오는 데 실패했습니다.');
       }
     },
-    // [상품 검색]
-    async searchProducts() {
-      this.currentPage = 0; // 검색 시 첫 페이지로 리셋
-      const keyword = this.searchKeyword.trim();
-      
-      if (!keyword) {
-        this.fetchProducts();
-        return;
-      }
-      
+    
+    // [상품 검색 API 호출]
+    async searchProductsAPI(keyword) {
       try {
         const response = await api.get('/api/items/search/keyword', {
           params: { 
@@ -415,39 +438,78 @@ export default {
         alert('상품 검색에 실패했습니다.');
       }
     },
+    
+    // [상품 검색]
+    async searchProducts() {
+      this.currentPage = 0; // 검색 시 첫 페이지로 리셋
+      await this.fetchProducts();
+    },
 
     // [판매 내역 불러오기]
     async fetchSales() {
+      const keyword = this.salesSearchKeyword.trim();
+      
+      // 검색 키워드가 있으면 검색 API, 없으면 전체 목록 API 호출
+      if (keyword) {
+        await this.searchSalesAPI(keyword);
+      } else {
+        await this.fetchSalesAPI();
+      }
+    },
+    
+    // [전체 판매 내역 API 호출]
+    async fetchSalesAPI() {
       try {
-        const response = await api.get('/admin/orders');
-        this.salesData = response.data;
+        const response = await api.get('/admin/orders', {
+          params: {
+            page: this.salesCurrentPage,
+            size: this.salesPageSize,
+            sort: 'orderDate'
+          }
+        });
+        this.salesData = response.data.orders;
+        this.salesTotalPages = response.data.totalPages;
+        this.salesTotalElements = response.data.totalElements;
+        // 백엔드에서 받아온 전체 통계
+        this.totalOrderCount = response.data.totalOrderCount;
+        this.totalSalesAmount = response.data.totalSalesAmount;
+        this.averageOrderAmount = response.data.averageOrderAmount;
       } catch (error) {
         console.error('판매 내역을 불러오는 데 실패했습니다:', error);
         alert('판매 내역을 불러오는 데 실패했습니다.');
       }
     },
-    // [판매 내역 검색 ]
-    async searchSales() {
-      const keyword = this.salesSearchKeyword.trim();
-      
-      // 검색어가 비어있으면 전체 목록 표시
-      if (!keyword) {
-        this.fetchSales();
-        return;
-      }
-      
+    
+    // [판매 내역 검색 API 호출]
+    async searchSalesAPI(keyword) {
       try {
         const response = await api.get('/admin/orders/search', {
-          params: { keyword }
+          params: { 
+            keyword,
+            page: this.salesCurrentPage,
+            size: this.salesPageSize
+          }
         });
-        this.salesData = response.data;
+        this.salesData = response.data.orders;
+        this.salesTotalPages = response.data.totalPages;
+        this.salesTotalElements = response.data.totalElements;
+        // 백엔드에서 받아온 검색 결과 통계
+        this.totalOrderCount = response.data.totalOrderCount;
+        this.totalSalesAmount = response.data.totalSalesAmount;
+        this.averageOrderAmount = response.data.averageOrderAmount;
       } catch (error) {
         console.error('판매 내역 검색에 실패했습니다:', error);
         alert('판매 내역 검색에 실패했습니다.');
       }
     },
     
-        // [페이지네이션]
+    // [판매 내역 검색]
+    async searchSales() {
+      this.salesCurrentPage = 0; // 검색 시 첫 페이지로 리셋
+      await this.fetchSales();
+    },
+    
+        // [상품 관리 페이지네이션]
         changePageSize() {
           this.currentPage = 0;
           this.fetchProducts();
@@ -477,6 +539,41 @@ export default {
           if (page >= 0 && page < this.totalPages) {
             this.currentPage = page;
             this.fetchProducts();
+          } else {
+            alert('유효하지 않은 페이지 번호입니다.');
+          }
+        },
+
+        // [판매 내역 페이지네이션]
+        changeSalesPageSize() {
+          this.salesCurrentPage = 0;
+          this.fetchSales();
+        },
+        goToSalesFirstPage() {
+          this.salesCurrentPage = 0;
+          this.fetchSales();
+        },
+        salesPrevPage() {
+          if (this.salesCurrentPage > 0) {
+            this.salesCurrentPage--;
+            this.fetchSales();
+          }
+        },
+        salesNextPage() {
+          if (this.salesCurrentPage < this.salesTotalPages - 1) {
+            this.salesCurrentPage++;
+            this.fetchSales();
+          }
+        },
+        goToSalesLastPage() {
+          this.salesCurrentPage = this.salesTotalPages - 1;
+          this.fetchSales();
+        },
+        goToSalesPage() {
+          const page = this.salesJumpToPage - 1;
+          if (page >= 0 && page < this.salesTotalPages) {
+            this.salesCurrentPage = page;
+            this.fetchSales();
           } else {
             alert('유효하지 않은 페이지 번호입니다.');
           }
