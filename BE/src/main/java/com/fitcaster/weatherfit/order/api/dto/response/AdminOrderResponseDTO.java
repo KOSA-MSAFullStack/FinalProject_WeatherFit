@@ -69,5 +69,8 @@ public class AdminOrderResponseDTO {
         private int currentPage;
         private int totalPages;
         private long totalElements;
+        private long totalOrderCount;      // 전체 주문 수
+        private long totalSalesAmount;     // 전체 판매액
+        private long averageOrderAmount;   // 평균 주문액
     }
 }
