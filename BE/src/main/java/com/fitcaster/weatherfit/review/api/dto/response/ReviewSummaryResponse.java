@@ -17,17 +17,21 @@ public class ReviewSummaryResponse {
     private final Map<Weather, Long> weatherStatistics;
     private final Map<Temperature, Long> temperatureStatistics;
     private final Map<IndoorFit, Long> indoorFitStatistics;
-
+    
     private final Page<ReviewResponse> reviews;
+    
+    // AI 리뷰 요약 필드 추가
+    private final String aiSummary;
 
     public ReviewSummaryResponse(long totalReviews, BigDecimal averageRating,
                                  Map<Weather, Long> weatherStatistics, Map<Temperature, Long> temperatureStatistics,
-                                 Map<IndoorFit, Long> indoorFitStatistics, Page<ReviewResponse> reviews) {
+                                 Map<IndoorFit, Long> indoorFitStatistics, Page<ReviewResponse> reviews, String aiSummary) {
         this.totalReviews = totalReviews;
         this.averageRating = averageRating;
         this.weatherStatistics = weatherStatistics;
         this.temperatureStatistics = temperatureStatistics;
         this.indoorFitStatistics = indoorFitStatistics;
         this.reviews = reviews;
+        this.aiSummary = aiSummary;
     }
 }
