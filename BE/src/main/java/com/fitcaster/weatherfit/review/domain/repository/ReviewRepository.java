@@ -1,6 +1,11 @@
 package com.fitcaster.weatherfit.review.domain.repository;
 
+import com.fitcaster.weatherfit.review.api.dto.response.EnumStatisticsDto;
+import com.fitcaster.weatherfit.review.api.dto.response.ReviewStatisticsDto;
+import com.fitcaster.weatherfit.review.domain.entity.IndoorFit;
 import com.fitcaster.weatherfit.review.domain.entity.Review;
+import com.fitcaster.weatherfit.review.domain.entity.Temperature;
+import com.fitcaster.weatherfit.review.domain.entity.Weather;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +25,26 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      */
     @Query("SELECT r FROM Review r JOIN FETCH r.user WHERE r.item.id = :itemId")
     Page<Review> findByItemId(@Param("itemId") Long itemId, Pageable pageable);
+
+    // 상품 ID에 대한 전체 리뷰 수와 평균 별점을 한 번에 조회
+    @Query("SELECT new com.fitcaster.weatherfit.review.api.dto.response.ReviewStatisticsDto(COUNT(r), AVG(r.ratingScore)) " +
+            "FROM Review r WHERE r.item.id = :itemId")
+    ReviewStatisticsDto findReviewStatisticsByItemId(@Param("itemId") Long itemId);
+
+    // 날씨(Weather)별 리뷰 수 통계 조회
+    @Query("SELECT new com.fitcaster.weatherfit.review.api.dto.response.EnumStatisticsDto(r.weather, COUNT(r)) " +
+            "FROM Review r WHERE r.item.id = :itemId GROUP BY r.weather")
+    List<EnumStatisticsDto<Weather>> findWeatherStatisticsByItemId(@Param("itemId") Long itemId);
+
+    // 체감 온도(Temperature)별 리뷰 수 통계 조회
+    @Query("SELECT new com.fitcaster.weatherfit.review.api.dto.response.EnumStatisticsDto(r.temperature, COUNT(r)) " +
+            "FROM Review r WHERE r.item.id = :itemId GROUP BY r.temperature")
+    List<EnumStatisticsDto<Temperature>> findTemperatureStatisticsByItemId(@Param("itemId") Long itemId);
+
+    // 실내 활동 적합도(IndoorFit)별 리뷰 수 통계 조회
+    @Query("SELECT new com.fitcaster.weatherfit.review.api.dto.response.EnumStatisticsDto(r.indoorFit, COUNT(r)) " +
+            "FROM Review r WHERE r.item.id = :itemId GROUP BY r.indoorFit")
+    List<EnumStatisticsDto<IndoorFit>> findIndoorFitStatisticsByItemId(@Param("itemId") Long itemId);
 
     /**
      * 특정 사용자 ID(userId)를 기준으로 해당 사용자가 작성한 모든 리뷰를 조회합니다.
