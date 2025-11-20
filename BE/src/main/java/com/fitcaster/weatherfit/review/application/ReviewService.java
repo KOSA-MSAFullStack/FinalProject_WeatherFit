@@ -3,8 +3,7 @@ package com.fitcaster.weatherfit.review.application;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
 import com.fitcaster.weatherfit.catalog.domain.repository.ItemRepository;
 import com.fitcaster.weatherfit.review.api.dto.request.ReviewRequest;
-import com.fitcaster.weatherfit.review.api.dto.response.ReviewResponse;
-import com.fitcaster.weatherfit.review.api.dto.response.UserReviewResponse;
+import com.fitcaster.weatherfit.review.api.dto.response.*;
 import com.fitcaster.weatherfit.review.domain.entity.IndoorFit;
 import com.fitcaster.weatherfit.review.domain.entity.Review;
 import com.fitcaster.weatherfit.review.domain.entity.Temperature;
@@ -22,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -132,12 +132,31 @@ public class ReviewService {
      * @param pageable 페이징 및 정렬 정보 (e.g., page=0, size=10, sort=createdAt,desc)
      * @return 페이징된 리뷰 DTO 목록
      */
-    public Page<ReviewResponse> findReviewsByItemId(Long itemId, Pageable pageable) {
-        // Repository를 통해 페이징된 Review 엔티티 목록을 조회
+    public ReviewSummaryResponse findReviewsAndStatisticsByItemId(Long itemId, Pageable pageable) {
+        // 기존 리뷰 페이징 조회
         Page<Review> reviewPage = reviewRepository.findByItemId(itemId, pageable);
+        Page<ReviewResponse> reviewResponsePage = reviewPage.map(ReviewResponse::from);
 
-        // 조회된 엔티티 목록(Page<Review>)을 DTO 목록(Page<ReviewResponse>)으로 변환
-        // Page 객체의 map 메서드를 사용하면 페이징 정보는 유지하면서 내용물(엔티티)만 DTO로 손쉽게 변경할 수 있습니다.
-        return reviewPage.map(ReviewResponse::from);
+        // 평균 별점 및 리뷰 건수 조회
+        ReviewStatisticsDto statistics = reviewRepository.findReviewStatisticsByItemId(itemId);
+
+        // 각 Enum 타입별 통계 조회
+        Map<Weather, Long> weatherStats = reviewRepository.findWeatherStatisticsByItemId(itemId).stream()
+                .collect(Collectors.toMap(EnumStatisticsDto::getEnumValue, EnumStatisticsDto::getCount));
+        Map<Temperature, Long> temperatureStats = reviewRepository.findTemperatureStatisticsByItemId(itemId).stream()
+                .collect(Collectors.toMap(EnumStatisticsDto::getEnumValue, EnumStatisticsDto::getCount));
+        Map<IndoorFit, Long> indoorFitStats = reviewRepository.findIndoorFitStatisticsByItemId(itemId).stream()
+                .collect(Collectors.toMap(EnumStatisticsDto::getEnumValue, EnumStatisticsDto::getCount));
+
+        // 조회한 모든 정보를 새로운 DTO에 담아 반환
+        return new ReviewSummaryResponse(
+                statistics.getTotalCount(),
+                statistics.getAverageRating(),
+                weatherStats,
+                temperatureStats,
+                indoorFitStats,
+                reviewResponsePage
+        );
+
     }
 }

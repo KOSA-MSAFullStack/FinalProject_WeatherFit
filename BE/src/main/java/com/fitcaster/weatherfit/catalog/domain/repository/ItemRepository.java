@@ -31,4 +31,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     // 검색 결과 중 품절된 상품 개수 조회
     @Query("SELECT COUNT(i) FROM Item i WHERE (LOWER(i.itemName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(i.itemCode) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND i.quantity = 0")
     long countSearchResultsWithoutStock(@Param("keyword") String keyword);
+
+    // 스토어 페이지에 넘겨줄 전체 상품 최신순 조회
+    List<Item> findAllByOrderByCreatedAtDesc();
 }

@@ -2,6 +2,7 @@ package com.fitcaster.weatherfit.review.api.controller;
 
 import com.fitcaster.weatherfit.review.api.dto.request.ReviewRequest;
 import com.fitcaster.weatherfit.review.api.dto.response.ReviewResponse;
+import com.fitcaster.weatherfit.review.api.dto.response.ReviewSummaryResponse;
 import com.fitcaster.weatherfit.review.api.dto.response.UserReviewResponse;
 import com.fitcaster.weatherfit.review.application.ReviewService;
 import com.fitcaster.weatherfit.user.domain.entity.User;
@@ -79,20 +80,20 @@ public class ReviewController {
      * @return 성공 시 HTTP 204 No Content 응답
      */
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId,
-                                             @AuthenticationPrincipal User user) {
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId, @AuthenticationPrincipal User user) {
         reviewService.deleteReview(reviewId, user.getId());
 
         // 내용 없이 성공적으로 삭제되었음을 알리는 HTTP 204 응답 반환
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * 상품 리뷰 조회 API
+     */
     @GetMapping("/items/{itemId}")
-    public ResponseEntity<Page<ReviewResponse>> getReviewsByItem(
-            @PathVariable Long itemId,
-            @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable) {
+    public ResponseEntity<ReviewSummaryResponse> getReviewsByItem(@PathVariable Long itemId, @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable) {
 
-        Page<ReviewResponse> reviews = reviewService.findReviewsByItemId(itemId, pageable);
-        return ResponseEntity.ok(reviews);
+        ReviewSummaryResponse response = reviewService.findReviewsAndStatisticsByItemId(itemId, pageable);
+        return ResponseEntity.ok(response);
     }
 }

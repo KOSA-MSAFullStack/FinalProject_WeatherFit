@@ -419,31 +419,6 @@ const reviewStats = ref({
 // 개별 리뷰
 const reviews = ref([])
 
-// --- 백엔드로부터 리뷰 통계를 가져오는 함수 ---
-// const fetchReviewStats = async () => {
-//   const itemId = item.value.itemId;
-//   if (!itemId) return;
-
-//   try {
-//     // 통계 API를 호출합니다.
-//     const statsData = await getReviewStats(itemId);
-//     console.log('리뷰 통계 응답:', statsData);
-    
-//     // 응답 데이터를 reviewStats 상태에 할당합니다.
-//     reviewStats.value = {
-//       avgScore: statsData.averageRating.toFixed(1), // 소수점 한 자리로
-//       count: statsData.totalReviews,
-//       aiSummary: statsData.aiSummary,
-//       weatherConditions: statsData.weatherConditionStats, // 예시 키 이름
-//       temperatureFeel: statsData.temperatureFeelStats,   // 예시 키 이름
-//       indoorComfort: statsData.indoorComfortStats      // 예시 키 이름
-//     };
-    
-//   } catch (err) {
-//     console.error('리뷰 통계 정보를 가져오는 데 실패했습니다:', err);
-//   }
-// };
-
 // --- 백엔드로부터 리뷰 내역을 가져오는 함수 ---
 const fetchReviews = async () => {
   // 함수 내부에서 직접 itemId를 참조하도록 수정
@@ -464,19 +439,28 @@ const fetchReviews = async () => {
         }
     });
     const data = response.data;
-    console.log('리뷰 데이터:', data);
+    console.log('통합 리뷰 데이터:', data);
 
-    // 리뷰 목록 (content로 수정)
-    // 백엔드에서 받은 리뷰 객체를 프론트엔드 템플릿에 맞게 가공(mapping)합니다.
-    reviews.value = data.content.map(review => {
-      // 별점 표시를 위한 간단한 로직
+    // --- 통계 정보 업데이트 ---
+    // 백엔드 응답에서 직접 통계 값을 가져와 reviewStats 상태를 업데이트합니다.
+    reviewStats.value.avgScore = data.averageRating.toFixed(1); // 소수점 한 자리
+    reviewStats.value.count = data.totalReviews;
+    
+    // 통계 데이터를 UI에 맞는 형식으로 가공합니다. (가공 함수는 아래에서 만듭니다)
+    reviewStats.value.weatherConditions = processStats(data.weatherStatistics, data.totalReviews);
+    reviewStats.value.temperatureFeel = processStats(data.temperatureStatistics, data.totalReviews);
+    reviewStats.value.indoorComfort = processStats(data.indoorFitStatistics, data.totalReviews);
+
+    // --- 개별 리뷰 목록 업데이트 ---
+    // 리뷰 목록의 경로가 `data.reviews.content`로 변경되었습니다.
+    reviews.value = data.reviews.content.map(review => {
       const stars = '★'.repeat(Math.floor(review.ratingScore)) + '☆'.repeat(5 - Math.floor(review.ratingScore));
       
       return {
         stars: stars,
         score: review.ratingScore,
         author: review.userName,
-        date: new Date(review.createdAt).toLocaleDateString(), // 날짜 포맷팅
+        date: new Date(review.createdAt).toLocaleDateString(),
         weather: `${review.weather} / ${review.temperature} / ${review.indoorFit}`,
         content: review.contents
       };
@@ -488,6 +472,36 @@ const fetchReviews = async () => {
   } catch (err) {
       console.error('리뷰 정보를 가져오는 데 실패했습니다:', err);
   }
+};
+
+/**
+ * 백엔드에서 받은 통계 객체를 UI의 진행률 막대 형식에 맞게 변환합니다.
+ * @param {object} stats - 예: { "맑음": 10, "흐림": 5 }
+ * @param {number} total - 전체 리뷰 수
+ * @returns {array} - 예: [{ label: '맑음', percent: 67, color: '#...' }, ...]
+ */
+const processStats = (stats, total) => {
+  if (!stats || total === 0) {
+    return [];
+  }
+
+  // 각 항목에 대한 색상을 미리 정의해두면 좋습니다.
+  const colorMap = {
+    // 날씨
+    '맑음': '#4f9cf9', '흐림': '#9ca3af', '강풍': '#f59e0b', '비': '#3b82f6', '눈': '#a78bfa',
+    // 체감
+    '추워요': '#60a5fa', '시원해요': '#34d399', '보통이에요': '#a3a3a3', '따뜻해요': '#fbbf24', '더워요': '#f87171',
+    // 실내
+    '편해요': '#10b981', '답답해요': '#ef4444'
+  };
+
+  return Object.entries(stats).map(([label, count]) => {
+    return {
+      label: label,
+      percent: Math.round((count / total) * 100), // 백분율로 변환 후 반올림
+      color: colorMap[label] || '#6b7280' // 미리 정의된 색상 사용, 없으면 기본색
+    };
+  });
 };
 
 // --- 페이지 변경 함수 ---
@@ -536,7 +550,6 @@ watch(
       
       // 리뷰 목록을 호출
       fetchReviews();
-      //fetchReviewStats();
     }
   },
   { immediate: true }
