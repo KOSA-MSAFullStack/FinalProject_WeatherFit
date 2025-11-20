@@ -9,8 +9,9 @@ export async function getItemDetail(itemId) {
 
 // 상품 목록 조회 API
 export async function getAllItem() {
-    const res = await axios.get(`http://localhost:8080/api/items`)
+    const res = await axios.get(`http://localhost:8080/api/items/all`)
     return res.data;
+    // return res.data.content ?? [];
 }
 
 // 장바구니 담기 API

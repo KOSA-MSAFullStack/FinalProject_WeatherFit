@@ -26,7 +26,13 @@ public class ItemController {
 
     private final ItemService itemService;
 
-    // [모든 상품 목록 조회]
+    // [스토어 페이지 - 모든 상품 목록 조회]
+    @GetMapping("/all")
+    public List<ItemResponseDTO> findAllItemsByOrderByCreatedAtDesc() {
+        return itemService.findAllItemsByOrderByCreatedAtDesc();
+    }
+
+    // [관리자 페이지(상품 관리) - 모든 상품 목록 조회]
     @GetMapping
     public ResponseEntity<AdminItemsResponseDTO> getAllItems(@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         AdminItemsResponseDTO response = itemService.getAllItems(pageable);
