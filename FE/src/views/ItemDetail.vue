@@ -134,12 +134,12 @@
         </div>
 
         <!-- AI 요약 -->
-        <!-- <div class="ai-summary">
+        <div v-if="item.reviewAiSummary" class="ai-summary">
           <div class="head">AI가 최근 리뷰를 요약했어요</div>
           <p style="margin:6px 0 0 0;">
-            {{ reviewStats.aiSummary }}
+            {{ item.reviewAiSummary }}
           </p>
-        </div> -->
+        </div>
 
         <!-- 항목별 만족도 -->
         <div class="bargrid">
