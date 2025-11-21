@@ -9,8 +9,6 @@ import com.fitcaster.weatherfit.review.domain.entity.Review;
 import com.fitcaster.weatherfit.review.domain.entity.Temperature;
 import com.fitcaster.weatherfit.review.domain.entity.Weather;
 import com.fitcaster.weatherfit.review.domain.repository.ReviewRepository;
-import com.fitcaster.weatherfit.user.domain.entity.Gender;
-import com.fitcaster.weatherfit.user.domain.entity.TemperatureSensitivity;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import com.fitcaster.weatherfit.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +32,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final ReviewSummaryService reviewSummaryService;
+
 
     /**
      * 현재 로그인한 사용자가 작성한 모든 리뷰 목록을 조회합니다.
@@ -75,6 +73,9 @@ public class ReviewService {
                 .build();
 
         reviewRepository.save(review);
+
+        // AI 리뷰 요약 생성 및 업데이트 - 비동기 호출 (// * author: 김기성)
+        reviewSummaryService.updateAiReviewSummary(item.getItemId());
     }
 
     /**
@@ -95,7 +96,6 @@ public class ReviewService {
         }
 
         // Review 엔티티의 데이터를 업데이트합니다.
-        // 엔티티 내에 update 메서드를 만들어 사용하는 것을 권장합니다. (아래 설명 참고)
         review.update(
                 request.score(),
                 Weather.valueOf(request.weather()),
@@ -103,6 +103,9 @@ public class ReviewService {
                 IndoorFit.valueOf(request.breathability()),
                 request.content()
         );
+
+        // AI 리뷰 요약 업데이트 - 비동기 호출 (// * author: 김기성)
+        reviewSummaryService.updateAiReviewSummary(review.getItem().getItemId());
     }
 
     /**
@@ -121,8 +124,13 @@ public class ReviewService {
             throw new SecurityException("리뷰를 삭제할 권한이 없습니다.");
         }
 
+        Item item = review.getItem();
+
         // 리뷰를 삭제합니다.
         reviewRepository.delete(review);
+
+        // AI 리뷰 요약 업데이트 - 비동기 호출 (// * author: 김기성)
+        reviewSummaryService.updateAiReviewSummary(item.getItemId());
     }
 
     /**
@@ -132,6 +140,7 @@ public class ReviewService {
      * @param pageable 페이징 및 정렬 정보 (e.g., page=0, size=10, sort=createdAt,desc)
      * @return 페이징된 리뷰 DTO 목록
      */
+    @Transactional(readOnly = true)
     public ReviewSummaryResponse findReviewsAndStatisticsByItemId(Long itemId, Pageable pageable) {
         // 기존 리뷰 페이징 조회
         Page<Review> reviewPage = reviewRepository.findByItemId(itemId, pageable);
@@ -148,6 +157,11 @@ public class ReviewService {
         Map<IndoorFit, Long> indoorFitStats = reviewRepository.findIndoorFitStatisticsByItemId(itemId).stream()
                 .collect(Collectors.toMap(EnumStatisticsDto::getEnumValue, EnumStatisticsDto::getCount));
 
+        // Item 엔티티에서 AI 요약 가져오기 (// * author: 김기성)
+        String aiSummary = itemRepository.findById(itemId)
+                .map(Item::getReviewAiSummary)
+                .orElse("리뷰 요약을 찾을 수 없습니다.");
+
         // 조회한 모든 정보를 새로운 DTO에 담아 반환
         return new ReviewSummaryResponse(
                 statistics.getTotalCount(),
@@ -155,8 +169,8 @@ public class ReviewService {
                 weatherStats,
                 temperatureStats,
                 indoorFitStats,
-                reviewResponsePage
+                reviewResponsePage,
+                aiSummary
         );
-
     }
 }
