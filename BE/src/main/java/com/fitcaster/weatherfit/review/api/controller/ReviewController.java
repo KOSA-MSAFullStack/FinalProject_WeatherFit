@@ -1,14 +1,12 @@
 package com.fitcaster.weatherfit.review.api.controller;
 
 import com.fitcaster.weatherfit.review.api.dto.request.ReviewRequest;
-import com.fitcaster.weatherfit.review.api.dto.response.ReviewResponse;
 import com.fitcaster.weatherfit.review.api.dto.response.ReviewSummaryResponse;
 import com.fitcaster.weatherfit.review.api.dto.response.UserReviewResponse;
 import com.fitcaster.weatherfit.review.application.ReviewService;
 import com.fitcaster.weatherfit.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
