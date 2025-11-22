@@ -211,6 +211,43 @@
             <div class="body">{{ review.content }}</div>
           </div>
         </div>
+
+        <!-- 페이지네이션 UI -->
+        <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-2">
+          <!-- 이전 페이지 버튼 -->
+          <button 
+            @click="changePage(currentPage - 1)" 
+            :disabled="currentPage === 0"
+            class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            이전
+          </button>
+          
+          <!-- 페이지 번호 버튼 -->
+          <button 
+            v-for="page in totalPages" 
+            :key="page" 
+            @click="changePage(page - 1)"
+            :class="[
+              'px-4 py-2 leading-tight border rounded-lg',
+              (page - 1) === currentPage 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+            ]"
+          >
+            {{ page }}
+          </button>
+          
+          <!-- 다음 페이지 버튼 -->
+          <button 
+            @click="changePage(currentPage + 1)" 
+            :disabled="currentPage >= totalPages - 1"
+            class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            다음
+          </button>
+        </div>
+
       </section>
     </main>
 
@@ -416,6 +453,28 @@ const reviewStats = ref({
   indoorComfort: []
 })
 
+// 데이터 매핑 객체 (프론트 <-> 백엔드)
+const weatherMap = { '맑음': 'SUNNY', '흐림': 'CLOUDY', '강풍': 'WINDY', '비': 'RAINY', '눈': 'SNOWY' };
+const tempMap = { '추워요': 'COLD', '시원해요': 'COOL', '보통이에요': 'NORMAL', '따뜻해요': 'WARM', '더워요': 'HOT' };
+const fitMap = { '편해요': 'COMFORTABLE', '보통이에요': 'NORMAL', '답답해요': 'TIGHT' };
+
+// (역방향 매핑) 백엔드 -> 프론트.
+const reverseWeatherMap = Object.fromEntries(Object.entries(weatherMap).map(([k, v]) => [v, k]));
+const reverseTempMap = Object.fromEntries(Object.entries(tempMap).map(([k, v]) => [v, k]));
+const reverseFitMap = Object.fromEntries(Object.entries(fitMap).map(([k, v]) => [v, k]));
+
+const translateStatisticKeys = (stats, reverseMap) => {
+    const translatedStats = {};
+    for (const key in stats) {
+        if (Object.hasOwnProperty.call(stats, key)) {
+            // 영문 키에 해당하는 한국어 값을 찾고, 없으면 원본 키를 사용합니다.
+            const koreanKey = reverseMap[key] || key;
+            translatedStats[koreanKey] = stats[key];
+        }
+    }
+    return translatedStats;
+};
+
 // 개별 리뷰
 const reviews = ref([])
 
@@ -439,7 +498,9 @@ const fetchReviews = async () => {
         }
     });
     const data = response.data;
-    console.log('통합 리뷰 데이터:', data);
+
+    totalElements.value = data.reviews.totalElements;
+    totalPages.value = data.reviews.totalPages;
 
     // --- 통계 정보 업데이트 ---
     // 백엔드 응답에서 직접 통계 값을 가져와 reviewStats 상태를 업데이트합니다.
@@ -447,27 +508,31 @@ const fetchReviews = async () => {
     reviewStats.value.count = data.totalReviews;
     
     // 통계 데이터를 UI에 맞는 형식으로 가공합니다. (가공 함수는 아래에서 만듭니다)
-    reviewStats.value.weatherConditions = processStats(data.weatherStatistics, data.totalReviews);
-    reviewStats.value.temperatureFeel = processStats(data.temperatureStatistics, data.totalReviews);
-    reviewStats.value.indoorComfort = processStats(data.indoorFitStatistics, data.totalReviews);
+    const translatedWeatherStats = translateStatisticKeys(data.weatherStatistics, reverseWeatherMap);
+    const translatedTempStats = translateStatisticKeys(data.temperatureStatistics, reverseTempMap);
+    const translatedFitStats = translateStatisticKeys(data.indoorFitStatistics, reverseFitMap);
+
+    reviewStats.value.weatherConditions = processStats(translatedWeatherStats, data.totalReviews);
+    reviewStats.value.temperatureFeel = processStats(translatedTempStats, data.totalReviews);
+    reviewStats.value.indoorComfort = processStats(translatedFitStats, data.totalReviews);
 
     // --- 개별 리뷰 목록 업데이트 ---
     // 리뷰 목록의 경로가 `data.reviews.content`로 변경되었습니다.
     reviews.value = data.reviews.content.map(review => {
       const stars = '★'.repeat(Math.floor(review.ratingScore)) + '☆'.repeat(5 - Math.floor(review.ratingScore));
+      const koreanWeather = reverseWeatherMap[review.weather] || review.weather;
+      const koreanTemp = reverseTempMap[review.temperature] || review.temperature;
+      const koreanFit = reverseFitMap[review.indoorFit] || review.indoorFit;
       
       return {
         stars: stars,
         score: review.ratingScore,
         author: review.userName,
         date: new Date(review.createdAt).toLocaleDateString(),
-        weather: `${review.weather} / ${review.temperature} / ${review.indoorFit}`,
+        weather: `${koreanWeather} / ${koreanTemp} / ${koreanFit}`,
         content: review.contents
       };
     });
-
-    totalElements.value = data.totalElements;
-    totalPages.value = data.totalPages;
       
   } catch (err) {
       console.error('리뷰 정보를 가져오는 데 실패했습니다:', err);
