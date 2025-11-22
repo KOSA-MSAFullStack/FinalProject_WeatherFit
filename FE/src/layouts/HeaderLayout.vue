@@ -102,7 +102,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const userRole = computed(() => authStore.user.role);
-console.log(userRole.value)
 
 // 날씨 정보
 const region = inject('region')  // App.vue에서 받은 전역 상태 (ref)
