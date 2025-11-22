@@ -211,6 +211,43 @@
             <div class="body">{{ review.content }}</div>
           </div>
         </div>
+
+        <!-- 페이지네이션 UI -->
+        <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-2">
+          <!-- 이전 페이지 버튼 -->
+          <button 
+            @click="changePage(currentPage - 1)" 
+            :disabled="currentPage === 0"
+            class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            이전
+          </button>
+          
+          <!-- 페이지 번호 버튼 -->
+          <button 
+            v-for="page in totalPages" 
+            :key="page" 
+            @click="changePage(page - 1)"
+            :class="[
+              'px-4 py-2 leading-tight border rounded-lg',
+              (page - 1) === currentPage 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700'
+            ]"
+          >
+            {{ page }}
+          </button>
+          
+          <!-- 다음 페이지 버튼 -->
+          <button 
+            @click="changePage(currentPage + 1)" 
+            :disabled="currentPage >= totalPages - 1"
+            class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            다음
+          </button>
+        </div>
+
       </section>
     </main>
 
@@ -462,6 +499,9 @@ const fetchReviews = async () => {
     });
     const data = response.data;
 
+    totalElements.value = data.reviews.totalElements;
+    totalPages.value = data.reviews.totalPages;
+
     // --- 통계 정보 업데이트 ---
     // 백엔드 응답에서 직접 통계 값을 가져와 reviewStats 상태를 업데이트합니다.
     reviewStats.value.avgScore = data.averageRating.toFixed(1); // 소수점 한 자리
@@ -493,9 +533,6 @@ const fetchReviews = async () => {
         content: review.contents
       };
     });
-
-    totalElements.value = data.totalElements;
-    totalPages.value = data.totalPages;
       
   } catch (err) {
       console.error('리뷰 정보를 가져오는 데 실패했습니다:', err);
