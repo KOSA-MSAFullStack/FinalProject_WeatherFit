@@ -27,7 +27,6 @@ public class CartService {
     private final UserRepository userRepository; // 사용자 유효성 검사를 위해 필요
     private final ItemRepository itemRepository; // 상품 유효성 검사를 위해 필요
 
-    // --- 1. 장바구니에 상품 추가 (중복 시 예외 발생) ---
     /**
      * 장바구니에 상품을 새로 추가합니다. 이미 존재하는 상품이면 예외(CartItemExistsException)를 발생시킵니다.
      * 초기 수량은 항상 1입니다.
@@ -66,7 +65,6 @@ public class CartService {
         }
     }
 
-    // --- 2. 장바구니 목록 조회 ---
     /**
      * 특정 사용자의 장바구니 전체 목록을 조회합니다.
      * @param userId 사용자 ID
@@ -79,7 +77,6 @@ public class CartService {
         return cartRepository.findByUser(user);
     }
 
-    // --- 3. 장바구니 항목 수량 변경 (장바구니 페이지에서 사용) ---
     /**
      * 장바구니 항목의 수량을 변경합니다. (프론트엔드의 수량 조절 버튼 로직)
      * @param cartId 변경할 장바구니 항목 ID
@@ -94,7 +91,6 @@ public class CartService {
         cart.updateQuantity(newQuantity);
     }
 
-    // --- 4. 장바구니 상품 삭제 ---
     /**
      * 장바구니에서 특정 상품을 삭제합니다.
      * @param cartId 삭제할 장바구니 항목 ID
@@ -102,5 +98,13 @@ public class CartService {
     @Transactional
     public void removeCartItem(Long cartId) {
         cartRepository.deleteById(cartId);
+    }
+
+    /**
+     * 장바구니에 등록된 상품 개수 조회
+     */
+    @Transactional
+    public int getCartItemCount(Long userId) {
+        return cartRepository.countByUserId(userId);
     }
 }
