@@ -39,7 +39,7 @@ public class ReviewService {
      * 현재 로그인한 사용자가 작성한 모든 리뷰 목록을 조회합니다.
      */
     public List<UserReviewResponse> findReviewsByUserId(Long userId) { // 반환 타입 변경
-        List<Review> reviews = reviewRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Review> reviews = reviewRepository.findByUserIdOrderByIdDesc(userId);
 
         return reviews.stream()
                 .map(UserReviewResponse::from)

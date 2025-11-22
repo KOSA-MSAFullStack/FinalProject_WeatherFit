@@ -53,7 +53,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * @param userId 조회할 사용자의 ID
      * @return 해당 사용자가 작성한 리뷰 목록
      */
-    List<Review> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Review> findByUserIdOrderByIdDesc(Long userId);
 
     // 특정 상품의 모든 리뷰 최신순 조회 (// * author: 김기성)
     // AI 요약을 위해 모든 리뷰 로드

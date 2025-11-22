@@ -60,7 +60,7 @@
                   <div class="text-xs text-gray-500 mt-1">찜 목록</div>
                 </div> -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-2xl font-bold text-gray-900">3</div>
+                  <div class="text-2xl font-bold text-gray-900">{{cartCount}}</div>
                   <div class="text-xs text-gray-500 mt-1">장바구니</div>
                 </div>
               </div>
@@ -529,6 +529,8 @@ const openReviewModalForEdit = (review) => {
   };
   openReviewModal(Item, review);
 };
+// --- 장바구니 수량 상태 --- 
+const cartCount = ref(0);
 
 // 주문 내역 관련 상태
 const orders = ref([]); // API 응답의 content (주문 목록)
@@ -603,6 +605,16 @@ const formatDate = (datetime) => {
         month: '2-digit',
         day: '2-digit'
     }).replace(/\. /g, '.').replace(/\.$/, ''); // 2025. 11. 16. -> 2025.11.16
+};
+
+// --- 장바구니 수량 가져오기 함수 ---
+const fetchCartCount = async () => {
+    try {
+        const response = await api.get('/mypage/cart');
+        cartCount.value = response.data || 0;
+    } catch (error) {
+        console.error('장바구니 수량을 가져오는 데 실패했습니다:', error);
+    }
 };
 
 // --- 백엔드로부터 주문 내역을 가져오는 함수 ---
@@ -738,7 +750,8 @@ watch(activeTab, (newTab) => {
 
 // 컴포넌트가 마운트될 때 사용자 정보를 자동으로 가져옵니다.
 onMounted(() => {
-  fetchOrderHistory(); 
+  fetchCartCount();
+  fetchOrderHistory();
   fetchUserProfile();
   fetchUserReviews();
 });

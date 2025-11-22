@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -94,27 +96,40 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public Page<OrderHistoryResponse> getOrderHistory(Long userId, Pageable pageable) {
-        // Repository로부터 Page<OrderItem> 객체를 받음
+        // 1차 조회: Repository로부터 Page<OrderItem> 객체를 받음
         Page<Order> orderPage = orderRepository.findOrdersByUserId(userId, pageable);
 
-        // 조회된 Order들의 ID만 리스트로 추출합니다.
-        List<Long> orderIds = orderPage.getContent().stream()
-                .map(Order::getId)
-                .collect(Collectors.toList());
-
         // 만약 조회된 주문이 없다면, 빈 페이지를 그대로 반환합니다.
-        if (orderIds.isEmpty()) {
+        if (orderPage.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        List<Order> ordersWithDetails = orderRepository.findOrdersWithDetailsByIds(orderIds);
+        // 1차 조회에서 얻은, 정렬이 유지된 ID 목록만 리스트로 추출
+        List<Long> orderedOrderIds = orderPage.getContent().stream()
+                .map(Order::getId)
+                .collect(Collectors.toList());
 
-        List<OrderHistoryResponse> dtos = ordersWithDetails.stream()
+
+        // 2차 조회: 1차에서 추출한 ID 목록을 사용하여 주문 상세 정보(OrderItems, Item)를 Fetch Join으로 한 번에 가져옴
+        //    (N+1 문제 해결. 하지만 이 쿼리 결과는 순서가 보장되지 않음)
+        List<Order> ordersWithDetails = orderRepository.findOrdersWithDetailsByIds(orderedOrderIds);
+
+        // 순서 복원 및 DTO 매핑을 위한 Map 생성
+        //    (ID를 키로 Full Detail Order 객체를 빠르게 찾기 위함)
+        Map<Long, Order> detailMap = ordersWithDetails.stream()
+                .collect(Collectors.toMap(Order::getId, Function.identity()));
+
+        // 순서 복원 및 DTO 변환:
+        //    1차 조회에서 얻은 '정렬이 유지된 ID 목록'을 순회하며, Map에서 Full Detail Order 객체를 찾아 DTO로 변환합니다.
+        //    이 과정으로 N+1 문제도 해결되고, 페이징 정렬 순서도 복원됩니다.
+        List<OrderHistoryResponse> dtos = orderedOrderIds.stream()
+                .map(detailMap::get)
                 .map(OrderHistoryResponse::from)
                 .collect(Collectors.toList());
 
-        // Page.map()을 사용하여 내용물(content)만 DTO로 변환
-        // 이 과정에서 페이징 정보(전체 개수, 페이지 번호 등)는 그대로 유지됨
+        // PageImpl 생성:
+        //    변환된 DTO 목록(dtos), 원래의 pageable 정보, 그리고 총 요소 개수(orderPage.getTotalElements())를 사용하여
+        //    페이지 메타데이터가 정확하게 유지되는 새로운 Page 객체를 반환합니다.
         return new PageImpl<>(dtos, pageable, orderPage.getTotalElements());
     }
 
