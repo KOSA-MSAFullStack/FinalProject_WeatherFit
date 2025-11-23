@@ -263,7 +263,7 @@ const createOrderApi = async (cartItemIds) => {
         // 성공 모달 표시 및 주문 완료 페이지로 리다이렉션
         showCustomModal(
             "주문 성공", 
-            `주문이 성공적으로 완료되었습니다. 주문번호: ${orderId}`, 
+            "주문이 성공적으로 완료되었습니다.", 
             false, 
             () => {
                 // 주문 내역 페이지로 이동

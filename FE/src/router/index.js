@@ -92,6 +92,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 뒤로가기/앞으로가기일 때는 원래 위치로
+    if (savedPosition) {
+      return savedPosition
+    }
+
+    // 그 외엔 항상 맨 위
+    return {
+      left: 0,
+      top: 0,
+    }
+  },
 });
 
 // 전역 네비게이션 가드 설정
