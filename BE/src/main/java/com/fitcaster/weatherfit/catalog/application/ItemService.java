@@ -43,7 +43,7 @@ public class ItemService {
 
     // [스토어 페이지 - 모든 상품 목록 조회]
     public List<ItemResponseDTO> findAllItemsByOrderByCreatedAtDesc() {
-        return itemRepository.findAllByOrderByCreatedAtDesc()
+        return itemRepository.findAllByOrderByItemIdDesc()
                 .stream()
                 .map(ItemResponseDTO::from)
                 .collect(Collectors.toList());
