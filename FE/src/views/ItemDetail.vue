@@ -83,7 +83,7 @@
 
       <!-- 3. AI 설명 -->
       <section class="panel">
-        <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">상품에 대한 AI 날씨 정보</h1>
+        <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 15px">상품에 대한 AI 설명</h1>
         <div class="explain">
           <h3 class="text-lg font-semibold text-gray-900">총평</h3>
           <p>{{ aiExplanation.summary }}</p>
@@ -443,6 +443,12 @@ const aiExplanation = computed(() => {
   return parseAiDescription(item.value.aiDescription)
 })
 
+
+// 리뷰 선택지 전체 목록(표시 순서까지 고정)
+const WEATHER_LABELS = ['맑음', '흐림', '강풍', '비', '눈'];
+const TEMP_LABELS    = ['추워요', '시원해요', '보통이에요', '따뜻해요', '더워요'];
+const FIT_LABELS     = ['편해요', '보통이에요', '답답해요'];
+
 // 리뷰 통계
 const reviewStats = ref({
   avgScore: 0,
@@ -509,12 +515,13 @@ const fetchReviews = async () => {
     
     // 통계 데이터를 UI에 맞는 형식으로 가공합니다. (가공 함수는 아래에서 만듭니다)
     const translatedWeatherStats = translateStatisticKeys(data.weatherStatistics, reverseWeatherMap);
-    const translatedTempStats = translateStatisticKeys(data.temperatureStatistics, reverseTempMap);
-    const translatedFitStats = translateStatisticKeys(data.indoorFitStatistics, reverseFitMap);
+    const translatedTempStats    = translateStatisticKeys(data.temperatureStatistics, reverseTempMap);
+    const translatedFitStats     = translateStatisticKeys(data.indoorFitStatistics, reverseFitMap);
 
-    reviewStats.value.weatherConditions = processStats(translatedWeatherStats, data.totalReviews);
-    reviewStats.value.temperatureFeel = processStats(translatedTempStats, data.totalReviews);
-    reviewStats.value.indoorComfort = processStats(translatedFitStats, data.totalReviews);
+    // 항상 전체 목록(라벨 배열)을 넘긴다
+    reviewStats.value.weatherConditions = processStats(translatedWeatherStats, data.totalReviews, WEATHER_LABELS);
+    reviewStats.value.temperatureFeel   = processStats(translatedTempStats, data.totalReviews, TEMP_LABELS);
+    reviewStats.value.indoorComfort     = processStats(translatedFitStats, data.totalReviews, FIT_LABELS);
 
     // --- 개별 리뷰 목록 업데이트 ---
     // 리뷰 목록의 경로가 `data.reviews.content`로 변경되었습니다.
@@ -543,13 +550,10 @@ const fetchReviews = async () => {
  * 백엔드에서 받은 통계 객체를 UI의 진행률 막대 형식에 맞게 변환합니다.
  * @param {object} stats - 예: { "맑음": 10, "흐림": 5 }
  * @param {number} total - 전체 리뷰 수
+ * @param {string[]} labels - 보여줄 라벨 전체 목록 (순서 포함)
  * @returns {array} - 예: [{ label: '맑음', percent: 67, color: '#...' }, ...]
  */
-const processStats = (stats, total) => {
-  if (!stats || total === 0) {
-    return [];
-  }
-
+const processStats = (stats, total, labels) => {
   // 각 항목에 대한 색상을 미리 정의해두면 좋습니다.
   const colorMap = {
     // 날씨
@@ -560,11 +564,15 @@ const processStats = (stats, total) => {
     '편해요': '#10b981', '답답해요': '#ef4444'
   };
 
-  return Object.entries(stats).map(([label, count]) => {
+  // stats 에 없는 라벨도 0%로 만들어서 항상 다 보여주기
+  return labels.map((label) => {
+    const count = stats?.[label] ?? 0;
+    const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+
     return {
-      label: label,
-      percent: Math.round((count / total) * 100), // 백분율로 변환 후 반올림
-      color: colorMap[label] || '#6b7280' // 미리 정의된 색상 사용, 없으면 기본색
+      label,
+      percent,
+      color: colorMap[label] || '#6b7280'
     };
   });
 };
