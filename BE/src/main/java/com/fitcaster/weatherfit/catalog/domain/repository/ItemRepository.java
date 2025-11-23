@@ -37,5 +37,5 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     long countSearchResultsWithoutStock(@Param("keyword") String keyword);
 
     // 스토어 페이지에 넘겨줄 전체 상품 최신순 조회
-    List<Item> findAllByOrderByCreatedAtDesc();
+    List<Item> findAllByOrderByItemIdDesc();
 }
