@@ -82,13 +82,17 @@
         <hr style="border:none; border-top:1px solid var(--line); margin:8px 0 20px;">
 
         <div class="form-group">
-          <button class="btn ghost" id="btnGenerateAI" type="button" @click="generateAIDescription" v-if="!aiBoxVisible">AI 설명 생성</button>
+          <button class="btn ghost" id="btnGenerateAI" type="button" @click="generateAIDescription" :disabled="isGeneratingAI" v-if="!aiBoxVisible && !isGeneratingAI">{{ isGeneratingAI ? 'AI 설명 생성 중...' : 'AI 설명 생성' }}</button>
           <div class="ai-box" id="aiBox" v-if="aiBoxVisible">
             <div class="ai-box-header">
               <h3>AI 설명</h3>
-              <button class="btn ghost" type="button" id="btnRegenAI" style="font-size:13px; padding:6px 10px;" @click="regenerateAIDescription">다시 생성</button>
+              <button class="btn ghost" type="button" id="btnRegenAI" style="font-size:13px; padding:6px 10px;" @click="regenerateAIDescription" :disabled="isGeneratingAI">다시 생성</button>
             </div>
-            <textarea id="aiDescription" placeholder="AI가 생성한 설명이 여기에 표시됩니다." v-model="product.aiDescription"></textarea>
+            <div v-if="isGeneratingAI" class="ai-loading-spinner">
+              <div class="spinner"></div>
+              <p>AI 설명 생성 중...</p>
+            </div>
+            <textarea id="aiDescription" placeholder="AI가 생성한 설명이 여기에 표시됩니다." v-model="product.aiDescription" v-else></textarea>
           </div>
         </div>
       </div>
@@ -150,6 +154,7 @@ export default {
       categories: [],
       imagePreview: '',
       aiBoxVisible: false,
+      isGeneratingAI: false,
     };
   },
   computed: {
@@ -251,8 +256,9 @@ export default {
         return;
       }
 
+      this.isGeneratingAI = true; // AI 설명 생성 시작
       this.aiBoxVisible = true;
-      this.product.aiDescription = 'AI 설명 생성 중... 잠시만 기다려 주세요.'; // 로딩 메시지
+      this.product.aiDescription = ''; // 기존 로딩 메시지 대신, 로딩 스피너가 표시될 예정
 
       const formData = new FormData();
       formData.append('itemName', this.product.itemName);
@@ -276,6 +282,8 @@ export default {
         console.error('AI 설명 생성 실패:', error);
         this.product.aiDescription = 'AI 설명 생성에 실패했습니다. 다시 시도해주세요.';
         alert('AI 설명 생성 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
+      } finally {
+        this.isGeneratingAI = false; // AI 설명 생성 완료 (성공 또는 실패)
       }
     },
     
@@ -545,5 +553,30 @@ input[type="file"] {
   border-radius: 12px;
   margin-top: 8px;
   background: #fafafa center/contain no-repeat;
+}
+
+.ai-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px; /* textarea와 동일한 높이 */
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--accent1); /* 스피너 색상 */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

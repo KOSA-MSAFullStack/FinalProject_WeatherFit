@@ -15,6 +15,7 @@ import com.fitcaster.weatherfit.catalog.domain.repository.ItemRepository;
 import com.fitcaster.weatherfit.catalog.domain.repository.ItemSeasonRepository;
 import com.fitcaster.weatherfit.catalog.domain.entity.Season;
 import com.fitcaster.weatherfit.catalog.domain.repository.SeasonRepository;
+import com.fitcaster.weatherfit.common.exception.DuplicateItemCodeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -65,29 +66,34 @@ public class ItemService {
         return ItemResponseDTO.from(item);
     }
 
-   // [상품명 검색]
-   public List<ItemResponseDTO> searchItemsByName(String itemName) {
-       return itemRepository.findByItemNameContainingIgnoreCase(itemName)
-               .stream()
-               .map(ItemResponseDTO::from)
-               .collect(Collectors.toList());
-   }
-   // [상품명 또는 상품 코드로 검색]
-   public AdminItemsResponseDTO searchItems(String keyword, Pageable pageable) {
-       Page<ItemResponseDTO> items = itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword, pageable)
-               .map(ItemResponseDTO::from);
-       long sellingCount = itemRepository.countSearchResultsWithStock(keyword);
-       long soldOutCount = itemRepository.countSearchResultsWithoutStock(keyword);
-       return new AdminItemsResponseDTO(items, sellingCount, soldOutCount);
-   }
+    // [상품명 검색]
+    public List<ItemResponseDTO> searchItemsByName(String itemName) {
+        return itemRepository.findByItemNameContainingIgnoreCase(itemName)
+                .stream()
+                .map(ItemResponseDTO::from)
+                .collect(Collectors.toList());
+    }
+    // [상품명 또는 상품 코드로 검색]
+    public AdminItemsResponseDTO searchItems(String keyword, Pageable pageable) {
+        Page<ItemResponseDTO> items = itemRepository.findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(keyword, keyword, pageable)
+                .map(ItemResponseDTO::from);
+        long sellingCount = itemRepository.countSearchResultsWithStock(keyword);
+        long soldOutCount = itemRepository.countSearchResultsWithoutStock(keyword);
+        return new AdminItemsResponseDTO(items, sellingCount, soldOutCount);
+    }
 
-    
+
     // [상품 등록]
     @Transactional
     public ItemResponseDTO createItem(ItemRequestDTO.Create request) {
         // itemCode 공백 제거
         String cleanedItemCode = request.getItemCode() != null ? request.getItemCode().trim() : "";
-        
+
+        // 상품 코드 중복 확인
+        if (itemRepository.existsByItemCode(cleanedItemCode)) {
+            throw new DuplicateItemCodeException("⚠️ 이미 사용 중인 상품 코드입니다: " + cleanedItemCode);
+        }
+
         // 카테고리 조회
         Category category = categoryRepository.findByCategory(request.getCategory())
                 .orElseThrow(() -> new IllegalArgumentException("⚠️ 카테고리를 찾을 수 없습니다: " + request.getCategory()));
