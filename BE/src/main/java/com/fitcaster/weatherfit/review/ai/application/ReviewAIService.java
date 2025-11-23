@@ -6,6 +6,7 @@ package com.fitcaster.weatherfit.review.ai.application;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import com.fitcaster.weatherfit.review.domain.entity.Review;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,9 +59,16 @@ public class ReviewAIService {
                     .map(Review::getContents)
                     .collect(Collectors.joining("\n- "));
 
+            // OpenAI 옵션 설정
+            OpenAiChatOptions options = OpenAiChatOptions.builder()
+                    .model("gpt-4o-mini")             // OpenAI API 모델 설정
+                    .temperature(0.5)     // 1.0일수록 창의적, but 느리고 일관성 떨어짐
+                    .build();
+
             return chatClient.prompt()
                     .system(systemPrompt)
                     .user("다음 리뷰들을 요약해줘:\n- " + reviewContents)
+                    .options(options)       // OpenAI 옵션 설정
                     .call()
                     .content();
 
