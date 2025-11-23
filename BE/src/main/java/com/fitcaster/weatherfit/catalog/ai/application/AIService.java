@@ -7,6 +7,7 @@ import com.fitcaster.weatherfit.catalog.ai.api.dto.AIRequestDTO;
 import com.fitcaster.weatherfit.catalog.ai.api.dto.AIResponseDTO;
 import com.fitcaster.weatherfit.common.exception.InternalServerException;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
@@ -87,7 +88,7 @@ public class AIService {
                     
                      - 각 항목의 세부 내용은 모두 " - "로 시작하는 리스트 형식으로 구조화하여 작성합니다.
                       (예: "- 14–18°C: 실내/외를 오갈 때 ...")
-                     - 각 항목의 설명은 2~4개의 리스트 아이템으로 구성해주세요.
+                     - 각 항목의 설명은 2~3개의 리스트 아이템으로 구성해주세요.
                      - 각 리스트 아이템은 1~3문장 정도로 구체적으로 작성합니다.
                      - 각 섹션 사이에는 빈 줄 한 줄만 넣습니다.
                     
@@ -98,16 +99,16 @@ public class AIService {
                     - 구매 결정을 도와줄 핵심 강점(예: 레이어링 최적, 데일리/출근용으로 무난, 포인트 컬러 등)을 강조합니다.
                     
                     2) 🌡️ 권장 기온대
-                    - 섭씨(°C) 기준으로 최소 3개 이상의 기온 구간을 나누어 제시합니다.
+                    - 섭씨(°C) 기준으로 기온 구간을 나누어 3개의 리스트 항목을 제시합니다.
                     - 각 구간마다 " - ○○-○○°C:" 형식으로 작성합니다.
                       예: "- 14–18°C: 단독 착용으로 쾌적하며, 출퇴근/캠퍼스에 적합합니다."
                     - 각 구간마다 단독 착용 / 이너 추가 / 아우터 레이어링 등 구체적인 착용 방법을 안내합니다.
                     - 기온 수치는 상품의 두께감과 계절 정보를 참고해 현실적인 범위로 설정합니다.
-                    - 마지막 리스트 항목에는 반드시 다음 문장을 포함합니다.
+                    - 추가로 마지막 리스트 항목에는 반드시 다음 문장을 포함합니다. (이 항목을 포함하여 총 4개의 리스트 항목임)
                       "- 이 옷에 가장 적절한 최고/최저 기온은 OO°C / XX°C입니다."
                     
                     3) ✨ 상황별 보완 팁
-                    - 날씨/환경 상황별로 최소 3개 이상 작성합니다.
+                    - 날씨/환경 상황별로 3개의 리스트 항목을 작성합니다.
                       예: 비/습한 날, 강풍/노상 대기, 난방이 강한 실내, 장시간 실외 활동 등 특정 환경 조건에서의 레이어링/관리 팁을 제공합니다..
                     - 각 항목은 " - 상황: 보완 방법" 형식으로 작성합니다.
                       예: "- 비/습한 날: 니트 위에 가벼운 방수 트렌치나 윈드브레이커를 레이어링하면
@@ -124,7 +125,7 @@ public class AIService {
                             바람이 강한 날에는 경량 패딩이나 코트를 더해 체감 온도를 안정적으로 유지하는 것이 좋습니다."
                     
                     5) 👗 함께 코디하면 좋은 아이템
-                    - 최소 2개의 기온 구간별로 작성
+                    - 2개의 리스트 항목으로 기온 구간별로 작성합니다.
                     - 기온대 또는 TPO(출근, 데이트, 캠퍼스, 여행 등)에 따라 3~4개 정도 코디 조합을 제안합니다.
                     - 상·하의, 아우터, 신발, 가방/액세서리를 포함해 "한 벌" 단위로 구체적으로 구성합니다.
                     - 상품의 분류(아우터/상의/하의)에 맞춰 현실적인 조합을 작성합니다.
@@ -182,6 +183,13 @@ public class AIService {
             final Resource image =
                     request.getImage() != null ? request.getImage().getResource() : null;
 
+            // // OpenAI 옵션 설정
+            // OpenAiChatOptions options = OpenAiChatOptions.builder()
+            // .model("gpt-5")             // OpenAI API 모델 설정
+            // .temperature(0.5)     // 1.0일수록 창의적, but 느리고 일관성 떨어짐
+            // .maxCompletionTokens(1500)        // 응답 길이 제한
+            // .build();
+
             // ChatClient 호출  
             String result = chatClient.prompt()
                     .system(systemPrompt)
@@ -191,6 +199,7 @@ public class AIService {
                             u.media(new MimeType("image","webp"), image);
                         }
                     })
+                    //.options(options)       // OpenAI 옵션 설정
                     .call()
                     .content();
 

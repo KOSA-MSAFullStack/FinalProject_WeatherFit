@@ -15,6 +15,10 @@ import java.util.List;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     // 상품명 검색
     List<Item> findByItemNameContainingIgnoreCase(String itemName);
+
+    // 상품 코드로 상품 존재 여부 확인
+    boolean existsByItemCode(String itemCode);
+
     // 상품명 또는 상품 코드로 검색 (페이지네이션)
     Page<Item> findByItemNameContainingIgnoreCaseOrItemCodeContainingIgnoreCase(String itemName, String itemCode, Pageable pageable);
 

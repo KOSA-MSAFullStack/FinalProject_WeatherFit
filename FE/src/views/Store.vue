@@ -143,18 +143,18 @@
         <button class="btn" @click="nextPage">다음</button>
       </div>
 
-      <div class="brandbar">
+      <!-- <div class="brandbar">
         <div class="badge">브랜드 정보</div>
         <div class="muted">교환/반품 · 배송정책 · AS 문의: help@brand.com · 02-0000-0000</div>
-      </div>
+      </div> -->
     </main>
 
-    <footer class="wrap">© 2025 Brand Shop · Seller Center</footer>
+    <footer class="wrap">데이터는 무신사 스탠다드에서 참고하였습니다.</footer>
   </div>
 </template>
 
 <script setup>
-import { getAllItem, addToCart } from '@/api/itemApi'
+import { getAllItem, addToCart, getCategoryData } from '@/api/itemApi'
 import { useQuery } from '@tanstack/vue-query'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -222,13 +222,28 @@ const classifications = ref([
   { key: 'bottom', label: '하의' }
 ])
 
-// 서브 카테고리 매핑
-const categories = ref({
-  all: ['전체'],
-  outer: ['전체', '바람막이', '수트/블레이저', '가디건', '후드 집업', '무스탕', '패딩', '코트'],
-  top: ['전체', '반소매 티셔츠', '긴소매 티셔츠', '맨투맨/스웨트', '후드 티셔츠', '니트/스웨터', '피케/카라', '셔츠/블라우스', '민소매'],
-  bottom: ['전체', '데님 팬츠', '슬랙스', '코튼 팬츠', '조거/트레이닝', '숏 팬츠', '카고', '와이드', '부츠 컷']
+// 카테고리 API 호출
+const { data: categoryRes, isLoading: isCatLoading, isError: isCatError } = useQuery({
+  queryKey: ['categoryData'],
+  queryFn: getCategoryData
 })
+
+// 백엔드 응답 -> 프론트에서 쓰기 좋은 형태로 변환
+const categoriesByClassification = computed(() => {
+  const cd = categoryRes?.value?.categoryData ?? {}
+
+  const outerList  = (cd['아우터'] ?? []).map(c => c.category)
+  const topList    = (cd['상의'] ?? []).map(c => c.category)
+  const bottomList = (cd['하의'] ?? []).map(c => c.category)
+
+  return {
+    all: ['전체'],
+    outer: ['전체', ...outerList],
+    top: ['전체', ...topList],
+    bottom: ['전체', ...bottomList]
+  }
+})
+
 
 // 분류 선택 상태 초기값
 const activeClassification = ref('all')
@@ -250,7 +265,7 @@ const sortType = ref('pop')
 
 // 선택한 분류에 따른 현재 카테고리들
 const currentCategories = computed(() => {
-  return categories.value[activeClassification.value] || []
+  return categoriesByClassification.value[activeClassification.value] || ['전체']
 })
 
 // 성별 바꾸는 메서드
