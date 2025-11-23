@@ -26,6 +26,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT); // HTTP 409
     }
 
+    // DuplicateItemCodeException 처리: 상품 코드가 중복된 경우
+    @ExceptionHandler(DuplicateItemCodeException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateItemCodeException(DuplicateItemCodeException ex) {
+        Map<String, String> errorDetails = new HashMap<>();
+        errorDetails.put("code", "ITEM_CODE_DUPLICATE");
+        errorDetails.put("message", ex.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT); // HTTP 409
+    }
+
     // [인증 실패 예외 처리] - HTTP Status 401 Unauthorized
     // 로그인 정보 불일치, 토큰 만료/유효성 등 인증 관련 문제 처리
     @ExceptionHandler(AuthenticationException.class)
