@@ -21,3 +21,9 @@ export async function addToCart(itemId) {
     });
     return res;
 }
+
+// 카테고리 목록 조회 API
+export const getCategoryData = async () => {
+    const res = await axios.get('http://localhost:8080/api/categories') 
+    return res.data
+}
