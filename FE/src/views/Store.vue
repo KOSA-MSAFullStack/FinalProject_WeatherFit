@@ -143,13 +143,13 @@
         <button class="btn" @click="nextPage">다음</button>
       </div>
 
-      <div class="brandbar">
+      <!-- <div class="brandbar">
         <div class="badge">브랜드 정보</div>
         <div class="muted">교환/반품 · 배송정책 · AS 문의: help@brand.com · 02-0000-0000</div>
-      </div>
+      </div> -->
     </main>
 
-    <footer class="wrap">© 2025 Brand Shop · Seller Center</footer>
+    <footer class="wrap">데이터는 무신사 스탠다드에서 참고하였습니다.</footer>
   </div>
 </template>
 
