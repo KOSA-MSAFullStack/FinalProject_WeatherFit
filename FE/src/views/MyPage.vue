@@ -118,12 +118,12 @@
                         
                         <!-- 버튼 영역 -->
                         <div class="mt-2 space-x-2">
-                          <button @click="clickItemDetail(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">상세 보기</button>
+                          <button @click="clickItemDetail(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 cursor-pointer">상세 보기</button>
                           <!-- 'review' 객체가 있으면 '수정', 없으면 '작성' 버튼 표시 -->
-                          <button v-if="item.review" @click="openReviewModal(item, item.review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                          <button v-if="item.review" @click="openReviewModal(item, item.review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600 cursor-pointer">
                             리뷰 수정
                           </button>
-                          <button v-else @click="openReviewModal(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600">
+                          <button v-else @click="openReviewModal(item)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600 cursor-pointer">
                             리뷰 쓰기
                           </button>
                         </div>
@@ -381,8 +381,8 @@
                   </div>
                   <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ review.contents }}</p>
                   <div class="flex space-x-2">
-                    <button @click="openReviewModalForEdit(review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50">수정</button>
-                    <button @click="handleReviewDelete(review.reviewId)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600">삭제</button>
+                    <button @click="openReviewModalForEdit(review)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 cursor-pointer">수정</button>
+                    <button @click="handleReviewDelete(review.reviewId)" class="px-3 py-1.5 rounded-md font-semibold text-xs transition-colors duration-200 bg-red-500 text-white hover:bg-red-600 cursor-pointer">삭제</button>
                   </div>
                 </div>
               </div>
