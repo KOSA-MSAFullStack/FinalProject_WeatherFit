@@ -53,6 +53,13 @@
             >
               여성
             </div>
+            <div
+              class="pill"
+              :class="{ blue: activeGender === 'C' }"
+              @click="changeGender('C')"
+            >
+              남여공용
+            </div>
             <!-- 계절 필터 -->
             <div
               class="pill"
@@ -252,7 +259,7 @@ const activeClassification = ref('all')
 const activeCategory = ref('전체')
 
 // 성별 필터링
-const activeGender = ref('전체')   // '전체' | '남성' | '여성'
+const activeGender = ref('전체')   // '전체' | '남성' | '여성' | '남여공용'
 
 // 계절 필터링
 const activeSeason = ref('전체')   // '전체' | '봄' | '여름' | '가을' | '겨울'

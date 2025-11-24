@@ -129,15 +129,18 @@ public class RecommendationService {
      */
     private List<Item> findCandidates(String classification, List<String> seasons, WeatherResponse weather, Boolean primary) {
         // 1. 분류 + 계절 기준으로 1차 조회
-        List<Item> items = itemService.findByClassificationAndSeason(classification, seasons);
+        List<Item> items = itemService.findByClassificationAndSeason(classification, seasons)
+                .stream()
+                .collect(Collectors.toMap(Item::getItemId, i -> i, (a,b) -> a))
+                .values().stream().toList();
 
         // 2. 오늘/내일 평균 기온 계산
         double targetTemp = (weather.getMinTemperature() + weather.getMaxTemperature()) / 2.0;
 
         // 3. 아이템별 "적정 온도" 계산 후, target과 얼마나 가까운지로 정렬
         List<Item> valid = items.stream()
-                // todo: 1. 우선, 기온 범위가 너무 안 맞는 건 걸러내기(보류)
-//                .filter(item -> isTemperatureInRange(item, weather))
+                // 1. 우선, 기온 범위가 너무 안 맞는 건 걸러내기(보류)
+                .filter(item -> isTemperatureInRange(item, weather))
                 // 2. targetTemp와의 거리 기준으로 정렬
                 .sorted((a, b) -> Double.compare(
                         distanceFromTarget(a, targetTemp),
