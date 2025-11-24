@@ -124,7 +124,7 @@
           <button 
             v-if="isEditMode" 
             @click="$emit('delete')"
-            class="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+            class="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors cursor-pointer"
           >
             삭제하기
           </button>
@@ -132,7 +132,7 @@
         <div class="flex gap-2">
           <button 
             @click="close"
-            class="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+            class="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             취소
           </button>
@@ -140,7 +140,7 @@
             @click="submit"
             :disabled="!isValid"
             :class="[
-              'px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all shadow-md',
+              'px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all shadow-md cursor-pointer',
               isValid 
                 ? 'bg-gradient-to-br from-blue-400 to-violet-400 hover:opacity-90' 
                 : 'bg-gray-300 cursor-not-allowed shadow-none'
