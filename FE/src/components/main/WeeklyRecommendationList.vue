@@ -6,11 +6,17 @@
     id="wx"
   >
     <div class="flex items-center justify-between" style="margin-bottom: 8px">
-       <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 10px">이번주 날씨에 맞는 추천 상품</h1>
+      <h1 class="text-2xl font-bold text-gray-900" style="margin-bottom: 10px">이번주 날씨에 맞는 추천 상품</h1>
     </div>
 
     <!-- 로딩 상태 -->
-    <p v-if="isLoading" style="font-size: 14px; color: #666">추천 상품을 불러오는 중입니다...</p>
+    <div v-if="isLoading" class="slider">
+      <div
+        v-for="n in SKELETON_COUNT"
+        :key="n"
+        class="skeleton skeleton-item"
+      />
+    </div>
 
     <!-- 에러 상태 -->
     <p v-else-if="isError" style="font-size: 14px; color: #e11d48">
@@ -64,4 +70,49 @@ const items = computed(() => {
 
   return list
 })
+
+// 이번주 추천도 최대 3개라서 3개 스켈레톤
+const SKELETON_COUNT = 3
 </script>
+<style scoped>
+/* 로딩/정상 공통 slider */
+.slider {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+}
+
+/* ItemCard와 동일 비율(4/3) */
+.skeleton-item {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  scroll-snap-align: start;
+}
+
+/* 스켈레톤 효과 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e5e7eb 37%,
+    #f3f4f6 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.error {
+  font-size: 14px;
+  color: #e11d48;
+}
+</style>
