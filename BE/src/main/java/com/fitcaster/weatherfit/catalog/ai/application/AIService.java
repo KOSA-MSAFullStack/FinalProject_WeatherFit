@@ -183,14 +183,14 @@ public class AIService {
             final Resource image =
                     request.getImage() != null ? request.getImage().getResource() : null;
 
-            // // OpenAI 옵션 설정
-            // OpenAiChatOptions options = OpenAiChatOptions.builder()
-            // .model("gpt-5")             // OpenAI API 모델 설정
-            // .temperature(0.5)     // 1.0일수록 창의적, but 느리고 일관성 떨어짐
-            // .maxCompletionTokens(1500)        // 응답 길이 제한
-            // .build();
+            // OpenAI 옵션 설정
+            OpenAiChatOptions options = OpenAiChatOptions.builder()
+            .model("gpt-4o-mini")             // OpenAI API 모델 설정
+            .temperature(0.6)     // 1.0일수록 창의적, but 느리고 일관성 떨어짐
+            //.maxCompletionTokens(1500)        // 응답 길이 제한
+            .build();
 
-            // ChatClient 호출  
+            // ChatClient 호출 
             String result = chatClient.prompt()
                     .system(systemPrompt)
                     .user(u -> {
@@ -199,7 +199,7 @@ public class AIService {
                             u.media(new MimeType("image","webp"), image);
                         }
                     })
-                    //.options(options)       // OpenAI 옵션 설정
+                    .options(options)       // OpenAI 옵션 설정
                     .call()
                     .content();
 
