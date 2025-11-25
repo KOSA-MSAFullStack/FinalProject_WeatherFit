@@ -31,9 +31,9 @@ public class OpenAiAdapter implements AiPort {
      * @return 오늘 날씨 기반 추천 옷(아우터 1개, 상의 1개, 하의 1개)
      */
     @Override
-    public AiTodayRecommendResponse recommendToday(AiRecommendRequest request) {
+    public AiTodayRecommendResponse recommendToday(AiRecommendRequest request, String temperatureSensitivity) {
         // 1. 프롬프트 문자열 생성
-        String userPrompt = promptTemplate.buildTodayRecommendPrompt(request);
+        String userPrompt = promptTemplate.buildTodayRecommendPrompt(request, temperatureSensitivity);
 
         // 2. AI에게 요청 보내서 응답 받기
         AiTodayRecommendResponse response = callAi(0.0, userPrompt, AiTodayRecommendResponse.class);
@@ -47,9 +47,9 @@ public class OpenAiAdapter implements AiPort {
      * @return 내일 날씨 기반 추천 옷(아우터, 상의, 하의 중 3개)
      */
     @Override
-    public AiTomorrowRecommendResponse recommendTomorrow(AiRecommendRequest request) {
+    public AiTomorrowRecommendResponse recommendTomorrow(AiRecommendRequest request, String temperatureSensitivity) {
         // 1. 프롬프트 문자열 생성
-        String userPrompt = promptTemplate.buildTomorrowRecommendPrompt(request);
+        String userPrompt = promptTemplate.buildTomorrowRecommendPrompt(request, temperatureSensitivity);
 
         // 2. AI에게 요청 보내서 응답 받기
         AiTomorrowRecommendResponse response = callAi(0.7, userPrompt, AiTomorrowRecommendResponse.class);
@@ -63,9 +63,9 @@ public class OpenAiAdapter implements AiPort {
      * @return 이번주 날씨 기반 추천 옷(아우터, 상의, 하의 중 3개)
      */
     @Override
-    public AiWeeklyRecommendResponse recommendWeekly(AiRecommendRequest request) {
+    public AiWeeklyRecommendResponse recommendWeekly(AiRecommendRequest request, String temperatureSensitivity) {
         // 1. 프롬프트 문자열 생성
-        String userPrompt = promptTemplate.buildWeeklyRecommendPrompt(request);
+        String userPrompt = promptTemplate.buildWeeklyRecommendPrompt(request, temperatureSensitivity);
 
         // 2. AI에게 요청 보내서 응답 받기
         AiWeeklyRecommendResponse response = callAi(0.3, userPrompt, AiWeeklyRecommendResponse.class);

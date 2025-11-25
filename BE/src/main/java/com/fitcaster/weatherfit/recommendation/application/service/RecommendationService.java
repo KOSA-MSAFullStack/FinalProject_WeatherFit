@@ -2,6 +2,8 @@ package com.fitcaster.weatherfit.recommendation.application.service;
 
 import com.fitcaster.weatherfit.catalog.application.ItemService;
 import com.fitcaster.weatherfit.catalog.domain.entity.Item;
+import com.fitcaster.weatherfit.mypage.api.dto.response.ProfileResponse;
+import com.fitcaster.weatherfit.mypage.application.ProfileService;
 import com.fitcaster.weatherfit.recommendation.api.dto.*;
 import com.fitcaster.weatherfit.recommendation.application.port.AiPort;
 import com.fitcaster.weatherfit.weather.api.dto.WeatherResponse;
@@ -28,12 +30,17 @@ public class RecommendationService {
     private final WeatherService weatherService; // 날씨 관련 비즈니스 로직
     private final ItemService itemService; // 상품 관련 비즈니스 로직
     private final AiPort aiPort; // AI 관련 어댑터
+    private final ProfileService profileService; // 사용자 관련 비즈니스 로직
 
     /**
      * 오늘 날씨 정보를 이용해서 DB에서 1차 분류를 받고 AI에게 옷을 추천 받는 메서드
      * @param address 지역
      */
-    public AiTodayRecommendResponse getTodayRecommendation(String address) {
+    public AiTodayRecommendResponse getTodayRecommendation(String address, Long userId) {
+        // 0. 개인 맞춤 추천을 위한 추위 민감도 조회
+        ProfileResponse profile = profileService.getUserProfile(userId);
+        String temperatureSensitivity = profile.getTemperatureSensitivity();
+        
         // 1. 지역에 따른 오늘의 날씨 정보 조회
         WeatherResponse todayWeather = weatherService.getTodayWeather(address);
 
@@ -41,14 +48,18 @@ public class RecommendationService {
         AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(todayWeather, true);
 
         // 3. AI에 요청 보내서 응답 받기
-        return aiPort.recommendToday(aiRecommendRequest);
+        return aiPort.recommendToday(aiRecommendRequest, temperatureSensitivity);
     }
 
     /**
      * 내일 날씨 정보를 이용해서 DB에서 1차 분류를 받고 AI에게 옷을 추천 받는 메서드
      * @param address 지역
      */
-    public AiTomorrowRecommendResponse getTomorrowRecommendation(String address) {
+    public AiTomorrowRecommendResponse getTomorrowRecommendation(String address, Long userId) {
+        // 0. 개인 맞춤 추천을 위한 추위 민감도 조회
+        ProfileResponse profile = profileService.getUserProfile(userId);
+        String temperatureSensitivity = profile.getTemperatureSensitivity();
+
         // 1. 지역에 따른 내일의 날씨 정보 조회
         WeatherResponse tomorrowWeather = weatherService.getTomorrowWeather(address);
 
@@ -56,14 +67,18 @@ public class RecommendationService {
         AiRecommendRequest aiRecommendRequest = getAiRecommendRequest(tomorrowWeather, false);
 
         // 3. AI에 요청 보내서 응답 받기
-        return aiPort.recommendTomorrow(aiRecommendRequest);
+        return aiPort.recommendTomorrow(aiRecommendRequest, temperatureSensitivity);
     }
 
     /**
      * 이번주 날씨 정보를 이용해 간단 규칙 + AI로 3개의 아이템을 추천 받는 메서드
      * @param address 지역
      */
-    public AiWeeklyRecommendResponse getWeeklyRecommendation(String address) {
+    public AiWeeklyRecommendResponse getWeeklyRecommendation(String address, Long userId) {
+        // 0. 개인 맞춤 추천을 위한 추위 민감도 조회
+        ProfileResponse profile = profileService.getUserProfile(userId);
+        String temperatureSensitivity = profile.getTemperatureSensitivity();
+
         // 1. 일주일 날씨 조회
         List<WeatherResponse> weeklyList = weatherService.getWeeklyWeather(address);
 
@@ -92,7 +107,7 @@ public class RecommendationService {
                 .build();
 
         // 7. AI 호출
-        return aiPort.recommendWeekly(request);
+        return aiPort.recommendWeekly(request, temperatureSensitivity);
     }
 
     /**

@@ -20,13 +20,14 @@ public class PromptTemplate {
      * @param request  날씨정보, 아우터 목록, 상의 목록, 하의 목록이 담긴 DTO
      * @return LLM에 그대로 전달 가능한 완성된 프롬프트 문자열
      */
-    public String buildTodayRecommendPrompt(AiRecommendRequest request) {
+    public String buildTodayRecommendPrompt(AiRecommendRequest request, String temperatureSensitivity) {
         WeatherResponse weather = request.getWeather(); // 날씨 정보
 
         return """
         [요구사항]
         - 오늘 날씨(최저 %.1f°C, 최고 %.1f°C, 상태: %s)에 맞춰 outer 1개, top 1개, bottom 1개를 추천하세요.
         - 상품의 최저기온과 최고기온을 파악하고 날씨 상태를 참고해서 오늘의 날씨에 최적화된 옷을 추천해주세요.
+        - 추위 민감도가 COLD면 더 낮은 기온에 입을 옷을 추천해주고 추위 민감도가 HOT이면 더 높은 기온에 입을 옷을 추천해주세요.
         - 반드시 아래 JSON "정확한 스키마"로만 출력(코드블록 금지, 설명 금지).
         {
             "outer": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
@@ -36,6 +37,9 @@ public class PromptTemplate {
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
 
+        [추위 민감도]
+        - %s
+        
         [날씨]
         - 날짜: %s
         - 최저/최고: %.1f/%.1f
@@ -51,6 +55,7 @@ public class PromptTemplate {
         %s
         """.formatted(
                 weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
+                temperatureSensitivity,
                 weather.getDate(), weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
                 toLines(request.getOuters()), toLines(request.getTops()), toLines(request.getBottoms())
         );
@@ -61,7 +66,7 @@ public class PromptTemplate {
      * @param request  날씨정보, 아우터 목록, 상의 목록, 하의 목록이 담긴 DTO
      * @return LLM에 그대로 전달 가능한 완성된 프롬프트 문자열
      */
-    public String buildTomorrowRecommendPrompt(AiRecommendRequest request) {
+    public String buildTomorrowRecommendPrompt(AiRecommendRequest request, String temperatureSensitivity) {
         WeatherResponse weather = request.getWeather(); // 날씨 정보
 
         return """
@@ -73,6 +78,7 @@ public class PromptTemplate {
           오늘 추천에서 선택될 가능성이 높은 아이템은 피하고,
           다른 대안 후보를 선택하세요.
         - 최적값보다는 다양하게 선택하는 것을 우선하세요.
+        - 추위 민감도가 COLD면 더 낮은 기온에 입을 옷을 추천해주고 추위 민감도가 HOT이면 더 높은 기온에 입을 옷을 추천해주세요.
         - 반드시 아래 JSON "정확한 스키마"로만 출력(코드블록 금지, 설명 금지).
           {
             "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
@@ -82,6 +88,9 @@ public class PromptTemplate {
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사하여 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성/변경 금지).
         - 숫자 필드는 따옴표 없이 숫자로 출력.
 
+        [추위 민감도]
+        - %s
+        
         [날씨]
         - 날짜: %s
         - 최저/최고: %.1f/%.1f
@@ -93,6 +102,7 @@ public class PromptTemplate {
         %s
         """.formatted(
                 weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
+                temperatureSensitivity,
                 weather.getDate(), weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
                 toLines(request.getOuters()), toLines(request.getTops()), toLines(request.getBottoms())
         );
@@ -103,7 +113,7 @@ public class PromptTemplate {
      * @param request  날씨정보, 옷 목록이 담긴 DTO
      * @return LLM에 그대로 전달 가능한 완성된 프롬프트 문자열
      */
-    public String buildWeeklyRecommendPrompt(AiRecommendRequest request) {
+    public String buildWeeklyRecommendPrompt(AiRecommendRequest request, String temperatureSensitivity) {
         WeatherResponse weather = request.getWeather(); // 날씨 정보
 
         return """
@@ -112,6 +122,7 @@ public class PromptTemplate {
         - 카테고리는 상관없으며, 이번주 전체에 무난하게 입기 좋은 아이템을 선택하세요.
         - 아우터/상의/하의 구분 없이 아래 전체 후보 목록에서 서로 다른 3개를 선택하세요.
         - 이번주 내내 무난하게 입기 좋은 상품을 우선적으로 선택하되, 서로 다른 스타일이 되도록 해주세요.
+        - 추위 민감도가 COLD면 더 낮은 기온에 입을 옷을 추천해주고 추위 민감도가 HOT이면 더 높은 기온에 입을 옷을 추천해주세요.
         - 반드시 아래 JSON 스키마를 정확히 지키고, 코드블록이나 설명은 출력하지 마세요.
         {
           "firstItem": { "itemId": <Long>,"itemName": "<String>", "imageURL": "<String>" },
@@ -121,6 +132,9 @@ public class PromptTemplate {
         - 선택은 아래 후보 목록에서만 하며, 선택한 항목의 필드를 그대로 복사해서 채우세요. 절대 후보에 없는 데이터를 생성하지 마세요.(값 생성, 변경 금지)
         - 숫자는 따옴표 없이 숫자로 출력합니다.
 
+        [추위 민감도]
+        - %s
+        
         [날씨]
         - 날짜: %s
         - 최저/최고: %.1f/%.1f
@@ -132,9 +146,9 @@ public class PromptTemplate {
         %s
         """.formatted(
                 weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
+                temperatureSensitivity,
                 weather.getDate(), weather.getMinTemperature(), weather.getMaxTemperature(), weather.getCondition(),
                 toLines(request.getOuters()), toLines(request.getTops()), toLines(request.getBottoms())
-//                request.getOuters(), request.getTops(), request.getBottoms()
         );
     }
 
