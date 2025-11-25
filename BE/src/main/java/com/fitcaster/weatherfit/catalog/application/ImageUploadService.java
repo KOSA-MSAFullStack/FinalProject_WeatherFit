@@ -23,10 +23,10 @@ public class ImageUploadService {
      * 이미지 서버의 로컬 파일 시스템에 업로드, 저장된 이미지의 웹 경로 반환
      *
      * @param image 업로드할 이미지 파일
+     * @param itemCode 상품 코드
      * @return 저장된 이미지의 웹 접근 경로 (예: /uploads/xxxxxxxx-xxxx.webp)
      * @throws IOException 이미지 처리 중 오류 발생 시
      */
-    // itemCode를 인자로 받도록 변경
     public String uploadImage(MultipartFile image, String itemCode) throws IOException {
         if (image == null || image.isEmpty()) {
             return null;
