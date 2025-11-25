@@ -10,7 +10,7 @@ description = 'Final Project WeatherFit'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(20)
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 }
 
