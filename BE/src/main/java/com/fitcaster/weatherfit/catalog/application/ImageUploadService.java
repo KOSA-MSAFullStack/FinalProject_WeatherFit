@@ -3,8 +3,8 @@
 
 package com.fitcaster.weatherfit.catalog.application;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//ㅑmport org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,7 +18,7 @@ import java.nio.file.StandardCopyOption;
 @Service
 public class ImageUploadService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageUploadService.class);
+    //private static final Lo gger logger = LoggerFactory.getLogger(ImageUploadService.class);
 
     @Value("${upload.path}")
     private String uploadPath;
@@ -36,7 +36,7 @@ public class ImageUploadService {
             return null;
         }
 
-        logger.info("Image upload path configured: {}", uploadPath); // 디버깅용 로그
+        //logger.info("Image upload path configured: {}", uploadPath); // 디버깅용 로그
 
         String fileExtension = "";
         String originalFilename = image.getOriginalFilename();
@@ -49,26 +49,25 @@ public class ImageUploadService {
         String fileName = cleanedItemCode + fileExtension;
 
         File uploadDir = new File(uploadPath);
-        logger.info("Resolved upload directory: {}", uploadDir.getAbsolutePath()); // 디버깅용 로그
+        //logger.info("Resolved upload directory: {}", uploadDir.getAbsolutePath()); // 디버깅용 로그
         if (!uploadDir.exists()) {
-            logger.warn("Upload directory does not exist, attempting to create: {}", uploadDir.getAbsolutePath()); // 디버깅용 로그
+            //logger.warn("Upload directory does not exist, attempting to create: {}", uploadDir.getAbsolutePath()); // 디버깅용 로그
             uploadDir.mkdirs();
         }
         
         String filePath = Paths.get(uploadPath, fileName).toString(); // fileName 사용
         File dest = new File(filePath);
 
-        logger.info("MultipartFile details - Original Filename: {}, Size: {} bytes, Content Type: {}", // 디버깅용 로그
-                image.getOriginalFilename(), image.getSize(), image.getContentType());
-        logger.info("Destination file path: {}", dest.getAbsolutePath()); // 디버깅용 로그
-        logger.info("Destination directory exists: {}, isWritable: {}", uploadDir.exists(), uploadDir.canWrite()); // 디버깅용 로그
-        logger.info("Destination file exists (before transfer): {}", dest.exists()); // 디버깅용 로그
+        //logger.info("MultipartFile details - Original Filename: {}, Size: {} bytes, Content Type: {}", image.getOriginalFilename(), image.getSize(), image.getContentType());     // 디버깅용 로그
+        //logger.info("Destination file path: {}", dest.getAbsolutePath()); // 디버깅용 로그
+        //logger.info("Destination directory exists: {}, isWritable: {}", uploadDir.exists(), uploadDir.canWrite()); // 디버깅용 로그
+        //logger.info("Destination file exists (before transfer): {}", dest.exists()); // 디버깅용 로그
 
         try {
             Files.copy(image.getInputStream(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            logger.info("Image successfully transferred to: {}", dest.getAbsolutePath()); // 디버깅용 로그
+            //logger.info("Image successfully transferred to: {}", dest.getAbsolutePath()); // 디버깅용 로그
         } catch (IOException e) {
-            logger.error("Failed to transfer image to {}: {}", dest.getAbsolutePath(), e.getMessage(), e); // 디버깅용 로그
+            //logger.error("Failed to transfer image to {}: {}", dest.getAbsolutePath(), e.getMessage(), e); // 디버깅용 로그
             throw e;
         }
 
